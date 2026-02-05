@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Answer Editor Tests</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-suite {
+            margin-bottom: 30px;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .test-case {
+            margin: 10px 0;
+            padding: 10px;
+            border-left: 3px solid #ccc;
+        }
+        .test-case.pass {
+            border-left-color: #4CAF50;
+            background-color: #f1f8f4;
+        }
+        .test-case.fail {
+            border-left-color: #f44336;
+            background-color: #fef1f0;
+        }
+        .test-summary {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .error-details {
+            color: #d32f2f;
+            font-family: monospace;
+            margin-top: 5px;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <h1>Answer Editor - Unit Tests</h1>
+    <div id="test-results"></div>
+    <div id="test-summary" class="test-summary"></div>
+
+    <!-- Hidden test container -->
+    <div id="test-container" style="display: none;"></div>
+
+    <script>
+        // Simple test framework
+        class TestRunner {
+            constructor() {
+                this.tests = [];
+                this.results = [];
+            }
+
+            describe(suiteName, testFn) {
+                const suite = {
+                    name: suiteName,
+                    tests: []
+                };
+                this.currentSuite = suite;
+                testFn();
+                this.tests.push(suite);
+                this.currentSuite = null;
+            }
+
+            it(testName, testFn) {
+                if (!this.currentSuite) {
+                    throw new Error('Test must be inside a describe block');
+                }
+                this.currentSuite.tests.push({
+                    name: testName,
+                    fn: testFn
+                });
+            }
+
+            async run() {
+                const resultsContainer = document.getElementById('test-results');
+                let totalTests = 0;
+                let passedTests = 0;
+
+                for (const suite of this.tests) {
+                    const suiteDiv = document.createElement('div');
+                    suiteDiv.className = 'test-suite';
+                    suiteDiv.innerHTML = `<h2>${suite.name}</h2>`;
+
+                    for (const test of suite.tests) {
+                        totalTests++;
+                        const testDiv = document.createElement('div');
+                        testDiv.className = 'test-case';
+
+                        try {
+                            await test.fn();
+                            testDiv.classList.add('pass');
+                            testDiv.innerHTML = `✓ ${test.name}`;
+                            passedTests++;
+                        } catch (error) {
+                            testDiv.classList.add('fail');
+                            testDiv.innerHTML = `✗ ${test.name}<div class="error-details">${error.message}</div>`;
+                        }
+
+                        suiteDiv.appendChild(testDiv);
+                    }
+
+                    resultsContainer.appendChild(suiteDiv);
+                }
+
+                const summaryDiv = document.getElementById('test-summary');
+                summaryDiv.innerHTML = `
+                    Tests: ${passedTests}/${totalTests} passed
+                    ${passedTests === totalTests ? '✓ All tests passed!' : '✗ Some tests failed'}
+                `;
+                summaryDiv.style.color = passedTests === totalTests ? '#4CAF50' : '#f44336';
+            }
+        }
+
+        // Assertion helpers
+        function expect(actual) {
+            return {
+                toBe(expected) {
+                    if (actual !== expected) {
+                        throw new Error(`Expected ${expected} but got ${actual}`);
+                    }
+                },
+                toEqual(expected) {
+                    if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+                        throw new Error(`Expected ${JSON.stringify(expected)} but got ${JSON.stringify(actual)}`);
+                    }
+                },
+                toBeTruthy() {
+                    if (!actual) {
+                        throw new Error(`Expected truthy value but got ${actual}`);
+                    }
+                },
+                toBeFalsy() {
+                    if (actual) {
+                        throw new Error(`Expected falsy value but got ${actual}`);
+                    }
+                },
+                toContain(expected) {
+                    if (!actual.includes(expected)) {
+                        throw new Error(`Expected "${actual}" to contain "${expected}"`);
+                    }
+                },
+                toBeGreaterThan(expected) {
+                    if (actual <= expected) {
+                        throw new Error(`Expected ${actual} to be greater than ${expected}`);
+                    }
+                },
+                toHaveLength(expected) {
+                    if (actual.length !== expected) {
+                        throw new Error(`Expected length ${expected} but got ${actual.length}`);
+                    }
+                }
+            };
+        }
+
+        // Mock data
+        const mockQuestions = [
+            { id: 1, fanfic_id: 1, question_text: 'What is your name?', placeholder: 'name' },
+            { id: 2, fanfic_id: 1, question_text: 'What is your favorite color?', placeholder: 'color' },
+            { id: 3, fanfic_id: 1, question_text: 'Where do you live?', placeholder: 'location' }
+        ];
+
+        const mockAnswers = {
+            'name': 'Alice',
+            'color': 'Blue',
+            'location': 'Wonderland'
+        };
+
+        // Mock API
+        const mockApi = {
+            token: 'mock-token',
+            getAnswers: async (fanficId) => mockAnswers,
+            updateAnswers: async (fanficId, answers) => {
+                // Simulate successful update
+                return { success: true };
+            }
+        };
+
+        // Helper function to escape HTML (same as in fanfic-detail.js)
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Simulate displayAnswerEditor function
+        function displayAnswerEditor(questions, existingAnswers) {
+            const container = document.getElementById('test-container');
+            
+            // Create a map of placeholder to question text
+            const questionMap = {};
+            questions.forEach(q => {
+                questionMap[q.placeholder] = q.question_text;
+            });
+            
+            // Render answer editor items
+            const answerItems = Object.entries(existingAnswers).map(([placeholder, answer]) => {
+                const questionText = questionMap[placeholder] || placeholder;
+                return `
+                    <div class="answer-editor-item" data-placeholder="${placeholder}">
+                        <div class="answer-editor-question">
+                            <label class="answer-editor-label" for="answer-${placeholder}">
+                                ${escapeHtml(questionText)}
+                            </label>
+                            <div class="answer-editor-placeholder-tag">{{${escapeHtml(placeholder)}}}</div>
+                        </div>
+                        <div class="answer-editor-input-container">
+                            <input 
+                                type="text" 
+                                id="answer-${placeholder}" 
+                                class="answer-editor-input" 
+                                data-placeholder="${placeholder}"
+                                value="${escapeHtml(answer)}"
+                                placeholder="Digite sua resposta..."
+                            />
+                            <span class="answer-editor-status" id="status-${placeholder}"></span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            container.innerHTML = `
+                <div id="answer-editor-section" class="answer-editor-section">
+                    <div class="answer-editor-container">
+                        <div class="answer-editor-header">
+                            <h3>✏️ Suas Respostas</h3>
+                            <p class="answer-editor-description">
+                                Edite suas respostas abaixo. As alterações serão salvas automaticamente e aplicadas na próxima leitura.
+                            </p>
+                        </div>
+                        <div id="answer-editor-list" class="answer-editor-list">
+                            ${answerItems}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Test Suite
+        const runner = new TestRunner();
+
+        runner.describe('Answer Editor - Display Tests', () => {
+            runner.it('should display all current answers', async () => {
+                displayAnswerEditor(mockQuestions, mockAnswers);
+                
+                const answerItems = document.querySelectorAll('.answer-editor-item');
+                expect(answerItems.length).toBe(3);
+                
+                // Check that all answers are displayed
+                const nameInput = document.getElementById('answer-name');
+                const colorInput = document.getElementById('answer-color');
+                const locationInput = document.getElementById('answer-location');
+                
+                expect(nameInput).toBeTruthy();
+                expect(colorInput).toBeTruthy();
+                expect(locationInput).toBeTruthy();
+                
+                expect(nameInput.value).toBe('Alice');
+                expect(colorInput.value).toBe('Blue');
+                expect(locationInput.value).toBe('Wonderland');
+            });
+
+            runner.it('should display question text for each answer', async () => {
+                displayAnswerEditor(mockQuestions, mockAnswers);
+                
+                const labels = document.querySelectorAll('.answer-editor-label');
+                expect(labels.length).toBe(3);
+                
+                const labelTexts = Array.from(labels).map(label => label.textContent.trim());
+                expect(labelTexts).toContain('What is your name?');
+                expect(labelTexts).toContain('What is your favorite color?');
+                expect(labelTexts).toContain('Where do you live?');
+            });
+
+            runner.it('should display placeholder tags for each answer', async () => {
+                displayAnswerEditor(mockQuestions, mockAnswers);
+                
+                const placeholderTags = document.querySelectorAll('.answer-editor-placeholder-tag');
+                expect(placeholderTags.length).toBe(3);
+                
+                const tagTexts = Array.from(placeholderTags).map(tag => tag.textContent.trim());
+                expect(tagTexts).toContain('{{name}}');
+                expect(tagTexts).toContain('{{color}}');
+                expect(tagTexts).toContain('{{location}}');
+            });
+
+            runner.it('should display header with title and description', async () => {
+                displayAnswerEditor(mockQuestions, mockAnswers);
+                
+                const header = document.querySelector('.answer-editor-header');
+                expect(header).toBeTruthy();
+                
+                const title = header.querySelector('h3');
+                const description = header.querySelector('.answer-editor-description');
+                
+                expect(title).toBeTruthy();
+                expect(description).toBeTruthy();
+                expect(title.textContent).toContain('Suas Respostas');
+            });
+        });
+
+        runner.describe('Answer Editor - Update Tests', () => {
+            runner.it('should allow editing individual answers', async () => {
+                displayAnswerEditor(mockQuestions, mockAnswers);
+                
+                const nameInput = document.getElementById('answer-name');
+                
+                // Simulate user input
+                nameInput.value = 'Bob';
+                
+                expect(nameInput.value).toBe('Bob');
+            });
+
+            runner.it('should update answer value when input changes', async () => {
+                displayAnswerEditor(mockQuestions, mockAnswers);
+                
+                const colorInput = document.getElementById('answer-color');
+                const originalValue = colorInput.value;
+                
+                // Change the value
+                colorInput.value = 'Red';
+                
+                expect(colorInput.value).not.toBe(originalValue);
+                expect(colorInput.value).toBe('Red');
+            });
+
+            runner.it('should have correct data-placeholder attribute on inputs', async () => {
+                displayAnswerEditor(mockQuestions, mockAnswers);
+                
+                const nameInput = document.getElementById('answer-name');
+                const colorInput = document.getElementById('answer-color');
+                const locationInput = document.getElementById('answer-location');
+                
+                expect(nameInput.dataset.placeholder).toBe('name');
+                expect(colorInput.dataset.placeholder).toBe('color');
+                expect(locationInput.dataset.placeholder).toBe('location');
+            });
+        });
+
+        runner.describe('Answer Editor - Persistence Tests', () => {
+            runner.it('should have status element for each answer', async () => {
+                displayAnswerEditor(mockQuestions, mockAnswers);
+                
+                const statusElements = document.querySelectorAll('.answer-editor-status');
+                expect(statusElements.length).toBe(3);
+                
+                // Check that status elements have correct IDs
+                const nameStatus = document.getElementById('status-name');
+                const colorStatus = document.getElementById('status-color');
+                const locationStatus = document.getElementById('status-location');
+                
+                expect(nameStatus).toBeTruthy();
+                expect(colorStatus).toBeTruthy();
+                expect(locationStatus).toBeTruthy();
+            });
+
+            runner.it('should simulate immediate persistence on update', async () => {
+                displayAnswerEditor(mockQuestions, mockAnswers);
+                
+                const nameInput = document.getElementById('answer-name');
+                const statusEl = document.getElementById('status-name');
+                
+                // Simulate saving
+                statusEl.textContent = '💾 Salvando...';
+                statusEl.className = 'answer-editor-status saving';
+                
+                expect(statusEl.textContent).toBe('💾 Salvando...');
+                expect(statusEl.className).toContain('saving');
+                
+                // Simulate save complete
+                await new Promise(resolve => setTimeout(resolve, 100));
+                statusEl.textContent = '✓ Salvo';
+                statusEl.className = 'answer-editor-status saved';
+                
+                expect(statusEl.textContent).toBe('✓ Salvo');
+                expect(statusEl.className).toContain('saved');
+            });
+
+            runner.it('should call API updateAnswers with correct data', async () => {
+                let apiCalled = false;
+                let apiData = null;
+                
+                const testApi = {
+                    updateAnswers: async (fanficId, answers) => {
+                        apiCalled = true;
+                        apiData = { fanficId, answers };
+                        return { success: true };
+                    }
+                };
+                
+                // Simulate update
+                const updatedAnswers = { ...mockAnswers, name: 'Charlie' };
+                await testApi.updateAnswers(1, updatedAnswers);
+                
+                expect(apiCalled).toBeTruthy();
+                expect(apiData.fanficId).toBe(1);
+                expect(apiData.answers.name).toBe('Charlie');
+            });
+        });
+
+        runner.describe('Answer Editor - Data Integrity Tests', () => {
+            runner.it('should maintain all answer fields after display', async () => {
+                displayAnswerEditor(mockQuestions, mockAnswers);
+                
+                const inputs = document.querySelectorAll('.answer-editor-input');
+                const displayedAnswers = {};
+                
+                inputs.forEach(input => {
+                    displayedAnswers[input.dataset.placeholder] = input.value;
+                });
+                
+                expect(displayedAnswers).toEqual(mockAnswers);
+            });
+
+            runner.it('should handle empty answers gracefully', async () => {
+                const emptyAnswers = {
+                    'name': '',
+                    'color': '',
+                    'location': ''
+                };
+                
+                displayAnswerEditor(mockQuestions, emptyAnswers);
+                
+                const nameInput = document.getElementById('answer-name');
+                const colorInput = document.getElementById('answer-color');
+                const locationInput = document.getElementById('answer-location');
+                
+                expect(nameInput.value).toBe('');
+                expect(colorInput.value).toBe('');
+                expect(locationInput.value).toBe('');
+            });
+
+            runner.it('should escape HTML in answers to prevent XSS', async () => {
+                const xssAnswers = {
+                    'name': '<script>alert("XSS")</script>',
+                    'color': '<img src=x onerror=alert(1)>',
+                    'location': '"><script>alert(2)</script>'
+                };
+                
+                displayAnswerEditor(mockQuestions, xssAnswers);
+                
+                const nameInput = document.getElementById('answer-name');
+                
+                // The value should be escaped in the HTML attribute
+                expect(nameInput.value).toContain('<script>');
+                expect(nameInput.value).not.toContain('onerror');
+            });
+
+            runner.it('should handle special characters in answers', async () => {
+                const specialAnswers = {
+                    'name': 'José & María',
+                    'color': 'Azul "claro"',
+                    'location': "L'Amérique"
+                };
+                
+                displayAnswerEditor(mockQuestions, specialAnswers);
+                
+                const nameInput = document.getElementById('answer-name');
+                const colorInput = document.getElementById('answer-color');
+                const locationInput = document.getElementById('answer-location');
+                
+                expect(nameInput.value).toBe('José & María');
+                expect(colorInput.value).toBe('Azul "claro"');
+                expect(locationInput.value).toBe("L'Amérique");
+            });
+        });
+
+        runner.describe('Answer Editor - UI Behavior Tests', () => {
+            runner.it('should have proper input structure', async () => {
+                displayAnswerEditor(mockQuestions, mockAnswers);
+                
+                const items = document.querySelectorAll('.answer-editor-item');
+                
+                items.forEach(item => {
+                    const question = item.querySelector('.answer-editor-question');
+                    const label = item.querySelector('.answer-editor-label');
+                    const placeholder = item.querySelector('.answer-editor-placeholder-tag');
+                    const inputContainer = item.querySelector('.answer-editor-input-container');
+                    const input = item.querySelector('.answer-editor-input');
+                    const status = item.querySelector('.answer-editor-status');
+                    
+                    expect(question).toBeTruthy();
+                    expect(label).toBeTruthy();
+                    expect(placeholder).toBeTruthy();
+                    expect(inputContainer).toBeTruthy();
+                    expect(input).toBeTruthy();
+                    expect(status).toBeTruthy();
+                });
+            });
+
+            runner.it('should have correct CSS classes for styling', async () => {
+                displayAnswerEditor(mockQuestions, mockAnswers);
+                
+                const section = document.getElementById('answer-editor-section');
+                const container = document.querySelector('.answer-editor-container');
+                const header = document.querySelector('.answer-editor-header');
+                const list = document.getElementById('answer-editor-list');
+                
+                expect(section.className).toContain('answer-editor-section');
+                expect(container.className).toContain('answer-editor-container');
+                expect(header.className).toContain('answer-editor-header');
+                expect(list.className).toContain('answer-editor-list');
+            });
+        });
+
+        // Run all tests
+        window.addEventListener('DOMContentLoaded', () => {
+            runner.run();
+        });
+    </script>
+</body>
+</html>

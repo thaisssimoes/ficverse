@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Menu Test - FicVerse</title>
+    <link rel="stylesheet" href="../css/landing.css">
+    <link rel="stylesheet" href="../css/ui-refinements.css">
+    <style>
+        body {
+            padding-top: 100px;
+        }
+        .test-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: var(--card-bg);
+            border-radius: 12px;
+        }
+        .test-section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: rgba(26, 26, 46, 0.5);
+            border-radius: 8px;
+        }
+        .test-section h3 {
+            color: var(--primary-purple);
+            margin-bottom: 1rem;
+        }
+        .test-result {
+            padding: 0.75rem;
+            margin: 0.5rem 0;
+            border-radius: 6px;
+            font-family: monospace;
+        }
+        .test-result.pass {
+            background: rgba(34, 197, 94, 0.2);
+            border-left: 3px solid #22c55e;
+        }
+        .test-result.fail {
+            background: rgba(239, 68, 68, 0.2);
+            border-left: 3px solid #ef4444;
+        }
+        .test-result.info {
+            background: rgba(59, 130, 246, 0.2);
+            border-left: 3px solid #3b82f6;
+        }
+        .test-button {
+            padding: 0.75rem 1.5rem;
+            background: var(--primary-purple);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 0.5rem 0.5rem 0.5rem 0;
+            font-weight: 500;
+        }
+        .test-button:hover {
+            background: var(--primary-blue);
+        }
+        .instructions {
+            background: rgba(139, 92, 246, 0.1);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+        .instructions h4 {
+            color: var(--primary-purple);
+            margin-bottom: 0.5rem;
+        }
+        .instructions ol {
+            margin-left: 1.5rem;
+        }
+        .instructions li {
+            margin: 0.5rem 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header with User Menu -->
+    <header class="main-header">
+        <div class="header-container">
+            <a href="/" class="logo">FicVerse</a>
+            
+            <div class="search-bar">
+                <input type="text" class="search-input" placeholder="Busca em FicVerse..." aria-label="Buscar fanfics">
+                <button class="search-icon" aria-label="Buscar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="header-actions">
+                <button class="categories-btn" aria-label="Menu de categorias" aria-expanded="false">
+                    <span>Categorias</span>
+                    <svg class="dropdown-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </button>
+                
+                <button class="notification-bell" aria-label="Notificações" style="display: none;">
+                    <svg class="bell-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <span class="notification-badge" style="display: none;">0</span>
+                </button>
+                
+                <div class="auth-area">
+                    <div class="auth-buttons">
+                        <a href="login.html" class="btn-entrar">Entrar</a>
+                        <a href="register.html" class="btn-cadastrar">Cadastrar</a>
+                    </div>
+                    
+                    <div class="user-menu" style="display: none;">
+                        <button class="user-avatar-btn" aria-label="Menu do usuário" aria-expanded="false">
+                            <img src="" alt="Avatar do usuário" class="user-avatar">
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="user-dropdown" style="display: none;" role="menu">
+            <a href="profile.html" class="user-dropdown-item" role="menuitem">Meu Perfil</a>
+            <a href="dashboard.html" class="user-dropdown-item" role="menuitem">Minhas Fanfics</a>
+            <a href="#settings" class="user-dropdown-item" role="menuitem">Configurações</a>
+            <button class="user-dropdown-item logout-btn" role="menuitem">Sair</button>
+        </div>
+    </header>
+
+    <div class="test-container">
+        <h2>User Menu Dropdown Test</h2>
+        
+        <div class="instructions">
+            <h4>Test Instructions:</h4>
+            <ol>
+                <li>Click "Simulate Login" to show the user avatar</li>
+                <li>Click the avatar to open the dropdown menu</li>
+                <li>Verify the menu appears below the avatar</li>
+                <li>Click outside the menu to close it</li>
+                <li>Open the menu again and press Escape to close it</li>
+                <li>Click "Simulate Logout" to return to login/register buttons</li>
+            </ol>
+        </div>
+
+        <div class="test-section">
+            <h3>Authentication State</h3>
+            <button class="test-button" id="simulate-login">Simulate Login</button>
+            <button class="test-button" id="simulate-logout">Simulate Logout</button>
+            <div id="auth-state-results"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Menu Toggle Tests</h3>
+            <button class="test-button" id="test-open-menu">Test Open Menu</button>
+            <button class="test-button" id="test-close-menu">Test Close Menu</button>
+            <button class="test-button" id="test-toggle-menu">Test Toggle Menu</button>
+            <div id="menu-toggle-results"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Event Listener Tests</h3>
+            <button class="test-button" id="test-click-outside">Simulate Click Outside</button>
+            <button class="test-button" id="test-escape-key">Simulate Escape Key</button>
+            <div id="event-results"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Visual Verification</h3>
+            <div class="test-result info">
+                <strong>Manual Check:</strong> When the menu is open, verify:
+                <ul>
+                    <li>Menu appears below the avatar</li>
+                    <li>Menu is aligned to the right</li>
+                    <li>Menu has proper styling (background, border, shadow)</li>
+                    <li>Menu items are clickable and have hover effects</li>
+                    <li>aria-expanded attribute changes on avatar button</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>Console Logs</h3>
+            <div class="test-result info">
+                Check the browser console for detailed logs about menu state changes.
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/auth-area.js"></script>
+    <script>
+        // Wait for auth area to initialize
+        setTimeout(() => {
+            const resultsDiv = document.getElementById('auth-state-results');
+            const menuToggleResults = document.getElementById('menu-toggle-results');
+            const eventResults = document.getElementById('event-results');
+
+            function addResult(container, message, type = 'info') {
+                const div = document.createElement('div');
+                div.className = `test-result ${type}`;
+                div.textContent = message;
+                container.appendChild(div);
+            }
+
+            // Simulate Login
+            document.getElementById('simulate-login').addEventListener('click', () => {
+                // Create a fake token
+                const fakeToken = btoa(JSON.stringify({
+                    header: { alg: 'HS256', typ: 'JWT' }
+                })) + '.' + btoa(JSON.stringify({
+                    user_id: 1,
+                    username: 'testuser',
+                    email: 'test@example.com',
+                    exp: Math.floor(Date.now() / 1000) + 3600
+                })) + '.signature';
+                
+                localStorage.setItem('token', fakeToken);
+                resultsDiv.innerHTML = '';
+                addResult(resultsDiv, 'Token set in localStorage', 'pass');
+                
+                // Reinitialize auth area
+                if (window.authArea) {
+                    window.authArea.init().then(() => {
+                        addResult(resultsDiv, 'Auth area reinitialized', 'pass');
+                        addResult(resultsDiv, 'User menu should now be visible', 'info');
+                    });
+                }
+            });
+
+            // Simulate Logout
+            document.getElementById('simulate-logout').addEventListener('click', () => {
+                localStorage.removeItem('token');
+                resultsDiv.innerHTML = '';
+                addResult(resultsDiv, 'Token removed from localStorage', 'pass');
+                
+                // Reinitialize auth area
+                if (window.authArea) {
+                    window.authArea.init().then(() => {
+                        addResult(resultsDiv, 'Auth area reinitialized', 'pass');
+                        addResult(resultsDiv, 'Login/Register buttons should now be visible', 'info');
+                    });
+                }
+            });
+
+            // Test Open Menu
+            document.getElementById('test-open-menu').addEventListener('click', () => {
+                menuToggleResults.innerHTML = '';
+                if (window.authArea && window.authArea.userDropdown) {
+                    window.authArea.openUserMenu();
+                    const isOpen = window.authArea.isUserMenuOpen;
+                    const display = window.authArea.userDropdown.style.display;
+                    addResult(menuToggleResults, `Menu opened. isUserMenuOpen: ${isOpen}, display: ${display}`, isOpen ? 'pass' : 'fail');
+                } else {
+                    addResult(menuToggleResults, 'Auth area or dropdown not available. Please login first.', 'fail');
+                }
+            });
+
+            // Test Close Menu
+            document.getElementById('test-close-menu').addEventListener('click', () => {
+                menuToggleResults.innerHTML = '';
+                if (window.authArea && window.authArea.userDropdown) {
+                    window.authArea.closeUserMenu();
+                    const isOpen = window.authArea.isUserMenuOpen;
+                    const display = window.authArea.userDropdown.style.display;
+                    addResult(menuToggleResults, `Menu closed. isUserMenuOpen: ${isOpen}, display: ${display}`, !isOpen ? 'pass' : 'fail');
+                } else {
+                    addResult(menuToggleResults, 'Auth area or dropdown not available. Please login first.', 'fail');
+                }
+            });
+
+            // Test Toggle Menu
+            document.getElementById('test-toggle-menu').addEventListener('click', () => {
+                menuToggleResults.innerHTML = '';
+                if (window.authArea && window.authArea.userDropdown) {
+                    const wasOpen = window.authArea.isUserMenuOpen;
+                    window.authArea.toggleUserMenu();
+                    const isOpen = window.authArea.isUserMenuOpen;
+                    addResult(menuToggleResults, `Menu toggled. Was: ${wasOpen}, Now: ${isOpen}`, wasOpen !== isOpen ? 'pass' : 'fail');
+                } else {
+                    addResult(menuToggleResults, 'Auth area or dropdown not available. Please login first.', 'fail');
+                }
+            });
+
+            // Test Click Outside
+            document.getElementById('test-click-outside').addEventListener('click', () => {
+                eventResults.innerHTML = '';
+                if (window.authArea && window.authArea.userDropdown) {
+                    // Open menu first
+                    window.authArea.openUserMenu();
+                    addResult(eventResults, 'Menu opened', 'info');
+                    
+                    // Simulate click outside
+                    setTimeout(() => {
+                        const clickEvent = new MouseEvent('click', {
+                            bubbles: true,
+                            cancelable: true,
+                            view: window
+                        });
+                        document.body.dispatchEvent(clickEvent);
+                        
+                        setTimeout(() => {
+                            const isOpen = window.authArea.isUserMenuOpen;
+                            addResult(eventResults, `After click outside: isUserMenuOpen = ${isOpen}`, !isOpen ? 'pass' : 'fail');
+                        }, 100);
+                    }, 100);
+                } else {
+                    addResult(eventResults, 'Auth area or dropdown not available. Please login first.', 'fail');
+                }
+            });
+
+            // Test Escape Key
+            document.getElementById('test-escape-key').addEventListener('click', () => {
+                eventResults.innerHTML = '';
+                if (window.authArea && window.authArea.userDropdown) {
+                    // Open menu first
+                    window.authArea.openUserMenu();
+                    addResult(eventResults, 'Menu opened', 'info');
+                    
+                    // Simulate Escape key
+                    setTimeout(() => {
+                        const escapeEvent = new KeyboardEvent('keydown', {
+                            key: 'Escape',
+                            bubbles: true,
+                            cancelable: true
+                        });
+                        document.dispatchEvent(escapeEvent);
+                        
+                        setTimeout(() => {
+                            const isOpen = window.authArea.isUserMenuOpen;
+                            addResult(eventResults, `After Escape key: isUserMenuOpen = ${isOpen}`, !isOpen ? 'pass' : 'fail');
+                        }, 100);
+                    }, 100);
+                } else {
+                    addResult(eventResults, 'Auth area or dropdown not available. Please login first.', 'fail');
+                }
+            });
+
+            // Initial state check
+            addResult(resultsDiv, 'Page loaded. Click "Simulate Login" to test user menu.', 'info');
+        }, 500);
+    </script>
+</body>
+</html>

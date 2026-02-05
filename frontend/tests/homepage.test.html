@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Homepage Tests</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-suite {
+            margin-bottom: 30px;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .test-case {
+            margin: 10px 0;
+            padding: 10px;
+            border-left: 3px solid #ccc;
+        }
+        .test-case.pass {
+            border-left-color: #4CAF50;
+            background-color: #f1f8f4;
+        }
+        .test-case.fail {
+            border-left-color: #f44336;
+            background-color: #fef1f0;
+        }
+        .test-summary {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .error-details {
+            color: #d32f2f;
+            font-family: monospace;
+            margin-top: 5px;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <h1>Homepage - Unit Tests</h1>
+    <div id="test-results"></div>
+    <div id="test-summary" class="test-summary"></div>
+
+    <!-- Hidden test container -->
+    <div id="test-container" style="display: none;"></div>
+
+    <script>
+        // Simple test framework
+        class TestRunner {
+            constructor() {
+                this.tests = [];
+                this.results = [];
+            }
+
+            describe(suiteName, testFn) {
+                const suite = {
+                    name: suiteName,
+                    tests: []
+                };
+                this.currentSuite = suite;
+                testFn();
+                this.tests.push(suite);
+                this.currentSuite = null;
+            }
+
+            it(testName, testFn) {
+                if (!this.currentSuite) {
+                    throw new Error('Test must be inside a describe block');
+                }
+                this.currentSuite.tests.push({
+                    name: testName,
+                    fn: testFn
+                });
+            }
+
+            async run() {
+                const resultsContainer = document.getElementById('test-results');
+                let totalTests = 0;
+                let passedTests = 0;
+
+                for (const suite of this.tests) {
+                    const suiteDiv = document.createElement('div');
+                    suiteDiv.className = 'test-suite';
+                    suiteDiv.innerHTML = `<h2>${suite.name}</h2>`;
+
+                    for (const test of suite.tests) {
+                        totalTests++;
+                        const testDiv = document.createElement('div');
+                        testDiv.className = 'test-case';
+
+                        try {
+                            await test.fn();
+                            testDiv.classList.add('pass');
+                            testDiv.innerHTML = `✓ ${test.name}`;
+                            passedTests++;
+                        } catch (error) {
+                            testDiv.classList.add('fail');
+                            testDiv.innerHTML = `✗ ${test.name}<div class="error-details">${error.message}</div>`;
+                        }
+
+                        suiteDiv.appendChild(testDiv);
+                    }
+
+                    resultsContainer.appendChild(suiteDiv);
+                }
+
+                const summaryDiv = document.getElementById('test-summary');
+                summaryDiv.innerHTML = `
+                    Tests: ${passedTests}/${totalTests} passed
+                    ${passedTests === totalTests ? '✓ All tests passed!' : '✗ Some tests failed'}
+                `;
+                summaryDiv.style.color = passedTests === totalTests ? '#4CAF50' : '#f44336';
+            }
+        }
+
+        // Assertion helpers
+        function expect(actual) {
+            return {
+                toBe(expected) {
+                    if (actual !== expected) {
+                        throw new Error(`Expected ${expected} but got ${actual}`);
+                    }
+                },
+                toEqual(expected) {
+                    if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+                        throw new Error(`Expected ${JSON.stringify(expected)} but got ${JSON.stringify(actual)}`);
+                    }
+                },
+                toBeTruthy() {
+                    if (!actual) {
+                        throw new Error(`Expected truthy value but got ${actual}`);
+                    }
+                },
+                toBeFalsy() {
+                    if (actual) {
+                        throw new Error(`Expected falsy value but got ${actual}`);
+                    }
+                },
+                toContain(expected) {
+                    if (!actual.includes(expected)) {
+                        throw new Error(`Expected "${actual}" to contain "${expected}"`);
+                    }
+                },
+                toBeGreaterThan(expected) {
+                    if (actual <= expected) {
+                        throw new Error(`Expected ${actual} to be greater than ${expected}`);
+                    }
+                },
+                toHaveLength(expected) {
+                    if (actual.length !== expected) {
+                        throw new Error(`Expected length ${expected} but got ${actual.length}`);
+                    }
+                }
+            };
+        }
+
+        // Mock API for testing
+        const mockApi = {
+            getFanfics: async () => ({
+                'Romance': [
+                    {
+                        id: 1,
+                        title: 'Love Story',
+                        synopsis: 'A beautiful love story',
+                        category: 'Romance',
+                        cover_url: 'https://example.com/cover1.jpg',
+                        created_at: '2024-01-15T10:00:00Z'
+                    },
+                    {
+                        id: 2,
+                        title: 'Eternal Love',
+                        synopsis: 'An eternal romance',
+                        category: 'Romance',
+                        cover_url: 'https://example.com/cover2.jpg',
+                        created_at: '2024-01-20T10:00:00Z'
+                    }
+                ],
+                'Aventura': [
+                    {
+                        id: 3,
+                        title: 'Epic Quest',
+                        synopsis: 'An epic adventure',
+                        category: 'Aventura',
+                        cover_url: 'https://example.com/cover3.jpg',
+                        created_at: '2024-01-10T10:00:00Z'
+                    }
+                ],
+                'Ficção Científica': [
+                    {
+                        id: 4,
+                        title: 'Space Odyssey',
+                        synopsis: 'A journey through space',
+                        category: 'Ficção Científica',
+                        cover_url: 'https://example.com/cover4.jpg',
+                        created_at: '2024-01-25T10:00:00Z'
+                    },
+                    {
+                        id: 5,
+                        title: 'Time Traveler',
+                        synopsis: 'Adventures in time',
+                        category: 'Ficção Científica',
+                        cover_url: 'https://example.com/cover5.jpg',
+                        created_at: '2024-01-18T10:00:00Z'
+                    }
+                ]
+            })
+        };
+
+        // Test Suite
+        const runner = new TestRunner();
+
+        runner.describe('Homepage - Fanfic Grouping by Category', () => {
+            runner.it('should group fanfics by category', async () => {
+                const fanficsByCategory = await mockApi.getFanfics();
+                
+                const categories = Object.keys(fanficsByCategory);
+                expect(categories).toHaveLength(3);
+                expect(categories).toContain('Romance');
+                expect(categories).toContain('Aventura');
+                expect(categories).toContain('Ficção Científica');
+            });
+
+            runner.it('should have correct number of fanfics per category', async () => {
+                const fanficsByCategory = await mockApi.getFanfics();
+                
+                expect(fanficsByCategory['Romance']).toHaveLength(2);
+                expect(fanficsByCategory['Aventura']).toHaveLength(1);
+                expect(fanficsByCategory['Ficção Científica']).toHaveLength(2);
+            });
+
+            runner.it('should display all fanfics in their correct categories', async () => {
+                const fanficsByCategory = await mockApi.getFanfics();
+                
+                // Check Romance category
+                const romanceFanfics = fanficsByCategory['Romance'];
+                expect(romanceFanfics[0].category).toBe('Romance');
+                expect(romanceFanfics[1].category).toBe('Romance');
+                
+                // Check Aventura category
+                const aventuraFanfics = fanficsByCategory['Aventura'];
+                expect(aventuraFanfics[0].category).toBe('Aventura');
+                
+                // Check Ficção Científica category
+                const sciFiFanfics = fanficsByCategory['Ficção Científica'];
+                expect(sciFiFanfics[0].category).toBe('Ficção Científica');
+                expect(sciFiFanfics[1].category).toBe('Ficção Científica');
+            });
+        });
+
+        runner.describe('Homepage - Fanfic Card Rendering', () => {
+            runner.it('should render fanfic card with cover image', async () => {
+                const fanficsByCategory = await mockApi.getFanfics();
+                const fanfic = fanficsByCategory['Romance'][0];
+                
+                // Simulate card rendering
+                const container = document.getElementById('test-container');
+                container.innerHTML = `
+                    <div class="fanfic-card">
+                        <img src="${fanfic.cover_url}" alt="${fanfic.title}" class="fanfic-card-cover">
+                        <h3>${fanfic.title}</h3>
+                    </div>
+                `;
+                
+                const cover = container.querySelector('.fanfic-card-cover');
+                expect(cover.src).toContain(fanfic.cover_url);
+                expect(cover.alt).toBe(fanfic.title);
+            });
+
+            runner.it('should render fanfic card with title', async () => {
+                const fanficsByCategory = await mockApi.getFanfics();
+                const fanfic = fanficsByCategory['Romance'][0];
+                
+                const container = document.getElementById('test-container');
+                container.innerHTML = `
+                    <div class="fanfic-card">
+                        <h3 class="fanfic-card-title">${fanfic.title}</h3>
+                    </div>
+                `;
+                
+                const title = container.querySelector('.fanfic-card-title');
+                expect(title.textContent).toBe(fanfic.title);
+            });
+
+            runner.it('should render fanfic card with synopsis in overlay', async () => {
+                const fanficsByCategory = await mockApi.getFanfics();
+                const fanfic = fanficsByCategory['Romance'][0];
+                
+                const container = document.getElementById('test-container');
+                container.innerHTML = `
+                    <div class="fanfic-card">
+                        <div class="fanfic-card-overlay">
+                            <div class="fanfic-card-synopsis">
+                                <p>${fanfic.synopsis}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                const synopsis = container.querySelector('.fanfic-card-synopsis p');
+                expect(synopsis.textContent).toBe(fanfic.synopsis);
+            });
+
+            runner.it('should render "Ler Mais" button on each card', async () => {
+                const fanficsByCategory = await mockApi.getFanfics();
+                const fanfic = fanficsByCategory['Romance'][0];
+                
+                const container = document.getElementById('test-container');
+                container.innerHTML = `
+                    <div class="fanfic-card">
+                        <button class="fanfic-card-btn">Ler Mais</button>
+                    </div>
+                `;
+                
+                const button = container.querySelector('.fanfic-card-btn');
+                expect(button.textContent).toContain('Ler Mais');
+            });
+        });
+
+        runner.describe('Homepage - Date Ordering Within Categories', () => {
+            runner.it('should order fanfics by date (newest first) within Romance category', async () => {
+                const fanficsByCategory = await mockApi.getFanfics();
+                const romanceFanfics = fanficsByCategory['Romance'];
+                
+                // Sort by date (newest first)
+                const sortedFanfics = [...romanceFanfics].sort((a, b) => 
+                    new Date(b.created_at) - new Date(a.created_at)
+                );
+                
+                // Verify newest is first
+                expect(sortedFanfics[0].title).toBe('Eternal Love'); // 2024-01-20
+                expect(sortedFanfics[1].title).toBe('Love Story'); // 2024-01-15
+            });
+
+            runner.it('should order fanfics by date (newest first) within Ficção Científica category', async () => {
+                const fanficsByCategory = await mockApi.getFanfics();
+                const sciFiFanfics = fanficsByCategory['Ficção Científica'];
+                
+                // Sort by date (newest first)
+                const sortedFanfics = [...sciFiFanfics].sort((a, b) => 
+                    new Date(b.created_at) - new Date(a.created_at)
+                );
+                
+                // Verify newest is first
+                expect(sortedFanfics[0].title).toBe('Space Odyssey'); // 2024-01-25
+                expect(sortedFanfics[1].title).toBe('Time Traveler'); // 2024-01-18
+            });
+
+            runner.it('should maintain date ordering after grouping by category', async () => {
+                const fanficsByCategory = await mockApi.getFanfics();
+                
+                // Check each category maintains date ordering
+                for (const category in fanficsByCategory) {
+                    const fanfics = fanficsByCategory[category];
+                    const sortedFanfics = [...fanfics].sort((a, b) => 
+                        new Date(b.created_at) - new Date(a.created_at)
+                    );
+                    
+                    // Verify dates are in descending order
+                    for (let i = 0; i < sortedFanfics.length - 1; i++) {
+                        const currentDate = new Date(sortedFanfics[i].created_at);
+                        const nextDate = new Date(sortedFanfics[i + 1].created_at);
+                        expect(currentDate >= nextDate).toBeTruthy();
+                    }
+                }
+            });
+        });
+
+        runner.describe('Homepage - Edge Cases', () => {
+            runner.it('should handle empty fanfics list gracefully', async () => {
+                const emptyFanfics = {};
+                
+                expect(Object.keys(emptyFanfics).length).toBe(0);
+                // In actual implementation, should show "Nenhuma fanfic publicada ainda"
+            });
+
+            runner.it('should handle category with single fanfic', async () => {
+                const fanficsByCategory = await mockApi.getFanfics();
+                const aventuraFanfics = fanficsByCategory['Aventura'];
+                
+                expect(aventuraFanfics).toHaveLength(1);
+                expect(aventuraFanfics[0].title).toBe('Epic Quest');
+            });
+
+            runner.it('should handle missing cover URL gracefully', async () => {
+                const fanficWithoutCover = {
+                    id: 6,
+                    title: 'No Cover Story',
+                    synopsis: 'A story without cover',
+                    category: 'Drama',
+                    cover_url: null,
+                    created_at: '2024-01-15T10:00:00Z'
+                };
+                
+                // Should use placeholder or default cover
+                const coverUrl = fanficWithoutCover.cover_url || 'https://via.placeholder.com/300x450?text=No+Cover';
+                expect(coverUrl).toContain('placeholder');
+            });
+        });
+
+        runner.describe('Homepage - Data Integrity', () => {
+            runner.it('should have all required fields for each fanfic', async () => {
+                const fanficsByCategory = await mockApi.getFanfics();
+                
+                for (const category in fanficsByCategory) {
+                    const fanfics = fanficsByCategory[category];
+                    fanfics.forEach(fanfic => {
+                        expect(fanfic.id).toBeTruthy();
+                        expect(fanfic.title).toBeTruthy();
+                        expect(fanfic.synopsis).toBeTruthy();
+                        expect(fanfic.category).toBeTruthy();
+                        expect(fanfic.created_at).toBeTruthy();
+                    });
+                }
+            });
+
+            runner.it('should have valid date format for created_at', async () => {
+                const fanficsByCategory = await mockApi.getFanfics();
+                
+                for (const category in fanficsByCategory) {
+                    const fanfics = fanficsByCategory[category];
+                    fanfics.forEach(fanfic => {
+                        const date = new Date(fanfic.created_at);
+                        expect(date instanceof Date && !isNaN(date)).toBeTruthy();
+                    });
+                }
+            });
+        });
+
+        // Run all tests
+        window.addEventListener('DOMContentLoaded', () => {
+            runner.run();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hero Section Tests</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-suite {
+            margin-bottom: 30px;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .test-case {
+            margin: 10px 0;
+            padding: 10px;
+            border-left: 3px solid #ccc;
+        }
+        .test-case.pass {
+            border-left-color: #4CAF50;
+            background-color: #f1f8f4;
+        }
+        .test-case.fail {
+            border-left-color: #f44336;
+            background-color: #fef1f0;
+        }
+        .test-summary {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .error-details {
+            color: #d32f2f;
+            font-family: monospace;
+            margin-top: 5px;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <h1>Hero Section - Unit Tests</h1>
+    <div id="test-results"></div>
+    <div id="test-summary" class="test-summary"></div>
+
+    <!-- Hidden test container -->
+    <div id="test-container" style="display: none;">
+        <section class="hero-section">
+            <div class="hero-background">
+                <img src="" alt="Featured Fanfic" class="hero-bg-image" id="hero-bg-image">
+                <div class="hero-overlay"></div>
+            </div>
+            
+            <div class="hero-content">
+                <button class="hero-nav-btn prev" id="hero-prev-btn" aria-label="Fanfic anterior">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                </button>
+                
+                <div class="hero-info">
+                    <span class="interactive-badge" id="hero-badge">✨ DESTAQUE INTERATIVO</span>
+                    <h1 class="hero-title" id="hero-title">Carregando...</h1>
+                    <p class="hero-subtitle" id="hero-subtitle">Sua aventura interativa. Você decide o destino.</p>
+                    <a href="#" class="btn-start-reading" id="hero-cta-btn">Começar a Ler</a>
+                </div>
+                
+                <button class="hero-nav-btn next" id="hero-next-btn" aria-label="Próxima fanfic">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </button>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // Simple test framework
+        class TestRunner {
+            constructor() {
+                this.tests = [];
+                this.results = [];
+            }
+
+            describe(suiteName, testFn) {
+                const suite = {
+                    name: suiteName,
+                    tests: []
+                };
+                this.currentSuite = suite;
+                testFn();
+                this.tests.push(suite);
+                this.currentSuite = null;
+            }
+
+            it(testName, testFn) {
+                if (!this.currentSuite) {
+                    throw new Error('Test must be inside a describe block');
+                }
+                this.currentSuite.tests.push({
+                    name: testName,
+                    fn: testFn
+                });
+            }
+
+            async run() {
+                const resultsContainer = document.getElementById('test-results');
+                let totalTests = 0;
+                let passedTests = 0;
+
+                for (const suite of this.tests) {
+                    const suiteDiv = document.createElement('div');
+                    suiteDiv.className = 'test-suite';
+                    suiteDiv.innerHTML = `<h2>${suite.name}</h2>`;
+
+                    for (const test of suite.tests) {
+                        totalTests++;
+                        const testDiv = document.createElement('div');
+                        testDiv.className = 'test-case';
+
+                        try {
+                            await test.fn();
+                            testDiv.classList.add('pass');
+                            testDiv.innerHTML = `✓ ${test.name}`;
+                            passedTests++;
+                        } catch (error) {
+                            testDiv.classList.add('fail');
+                            testDiv.innerHTML = `✗ ${test.name}<div class="error-details">${error.message}</div>`;
+                        }
+
+                        suiteDiv.appendChild(testDiv);
+                    }
+
+                    resultsContainer.appendChild(suiteDiv);
+                }
+
+                const summaryDiv = document.getElementById('test-summary');
+                summaryDiv.innerHTML = `
+                    Tests: ${passedTests}/${totalTests} passed
+                    ${passedTests === totalTests ? '✓ All tests passed!' : '✗ Some tests failed'}
+                `;
+                summaryDiv.style.color = passedTests === totalTests ? '#4CAF50' : '#f44336';
+            }
+        }
+
+        // Assertion helpers
+        function expect(actual) {
+            return {
+                toBe(expected) {
+                    if (actual !== expected) {
+                        throw new Error(`Expected ${expected} but got ${actual}`);
+                    }
+                },
+                toEqual(expected) {
+                    if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+                        throw new Error(`Expected ${JSON.stringify(expected)} but got ${JSON.stringify(actual)}`);
+                    }
+                },
+                toBeTruthy() {
+                    if (!actual) {
+                        throw new Error(`Expected truthy value but got ${actual}`);
+                    }
+                },
+                toBeFalsy() {
+                    if (actual) {
+                        throw new Error(`Expected falsy value but got ${actual}`);
+                    }
+                },
+                toContain(expected) {
+                    if (!actual.includes(expected)) {
+                        throw new Error(`Expected "${actual}" to contain "${expected}"`);
+                    }
+                },
+                toBeGreaterThan(expected) {
+                    if (actual <= expected) {
+                        throw new Error(`Expected ${actual} to be greater than ${expected}`);
+                    }
+                },
+                toHaveLength(expected) {
+                    if (actual.length !== expected) {
+                        throw new Error(`Expected length ${expected} but got ${actual.length}`);
+                    }
+                },
+                toBeNull() {
+                    if (actual !== null) {
+                        throw new Error(`Expected null but got ${actual}`);
+                    }
+                },
+                toBeDisabled() {
+                    if (!actual.disabled) {
+                        throw new Error(`Expected element to be disabled`);
+                    }
+                },
+                toBeEnabled() {
+                    if (actual.disabled) {
+                        throw new Error(`Expected element to be enabled`);
+                    }
+                }
+            };
+        }
+
+        // Test Suite
+        const runner = new TestRunner();
+
+        runner.describe('Hero Section - HTML Structure', () => {
+            runner.it('should have hero section element', () => {
+                const heroSection = document.querySelector('.hero-section');
+                expect(heroSection).toBeTruthy();
+            });
+
+            runner.it('should have background image container', () => {
+                const heroBackground = document.querySelector('.hero-background');
+                expect(heroBackground).toBeTruthy();
+            });
+
+            runner.it('should have background image element', () => {
+                const heroBgImage = document.getElementById('hero-bg-image');
+                expect(heroBgImage).toBeTruthy();
+                expect(heroBgImage.tagName).toBe('IMG');
+            });
+
+            runner.it('should have overlay element', () => {
+                const heroOverlay = document.querySelector('.hero-overlay');
+                expect(heroOverlay).toBeTruthy();
+            });
+
+            runner.it('should have hero content container', () => {
+                const heroContent = document.querySelector('.hero-content');
+                expect(heroContent).toBeTruthy();
+            });
+
+            runner.it('should have hero info container', () => {
+                const heroInfo = document.querySelector('.hero-info');
+                expect(heroInfo).toBeTruthy();
+            });
+
+            runner.it('should have interactive badge', () => {
+                const badge = document.getElementById('hero-badge');
+                expect(badge).toBeTruthy();
+                expect(badge.classList.contains('interactive-badge')).toBeTruthy();
+            });
+
+            runner.it('should have hero title', () => {
+                const title = document.getElementById('hero-title');
+                expect(title).toBeTruthy();
+                expect(title.tagName).toBe('H1');
+            });
+
+            runner.it('should have hero subtitle', () => {
+                const subtitle = document.getElementById('hero-subtitle');
+                expect(subtitle).toBeTruthy();
+                expect(subtitle.tagName).toBe('P');
+            });
+
+            runner.it('should have CTA button', () => {
+                const ctaBtn = document.getElementById('hero-cta-btn');
+                expect(ctaBtn).toBeTruthy();
+                expect(ctaBtn.classList.contains('btn-start-reading')).toBeTruthy();
+            });
+
+            runner.it('should have previous navigation button', () => {
+                const prevBtn = document.getElementById('hero-prev-btn');
+                expect(prevBtn).toBeTruthy();
+                expect(prevBtn.classList.contains('hero-nav-btn')).toBeTruthy();
+                expect(prevBtn.classList.contains('prev')).toBeTruthy();
+            });
+
+            runner.it('should have next navigation button', () => {
+                const nextBtn = document.getElementById('hero-next-btn');
+                expect(nextBtn).toBeTruthy();
+                expect(nextBtn.classList.contains('hero-nav-btn')).toBeTruthy();
+                expect(nextBtn.classList.contains('next')).toBeTruthy();
+            });
+        });
+
+        runner.describe('Hero Section - Content Display', () => {
+            runner.it('should display title text', () => {
+                const title = document.getElementById('hero-title');
+                expect(title.textContent).toBeTruthy();
+            });
+
+            runner.it('should display subtitle text', () => {
+                const subtitle = document.getElementById('hero-subtitle');
+                expect(subtitle.textContent).toBeTruthy();
+            });
+
+            runner.it('should display badge text', () => {
+                const badge = document.getElementById('hero-badge');
+                expect(badge.textContent).toBeTruthy();
+            });
+
+            runner.it('should have CTA button text', () => {
+                const ctaBtn = document.getElementById('hero-cta-btn');
+                expect(ctaBtn.textContent).toContain('Começar a Ler');
+            });
+        });
+
+        runner.describe('Hero Section - Navigation Buttons', () => {
+            runner.it('should have aria-label on previous button', () => {
+                const prevBtn = document.getElementById('hero-prev-btn');
+                expect(prevBtn.getAttribute('aria-label')).toBeTruthy();
+            });
+
+            runner.it('should have aria-label on next button', () => {
+                const nextBtn = document.getElementById('hero-next-btn');
+                expect(nextBtn.getAttribute('aria-label')).toBeTruthy();
+            });
+
+            runner.it('should have SVG icons in navigation buttons', () => {
+                const prevBtn = document.getElementById('hero-prev-btn');
+                const nextBtn = document.getElementById('hero-next-btn');
+                
+                expect(prevBtn.querySelector('svg')).toBeTruthy();
+                expect(nextBtn.querySelector('svg')).toBeTruthy();
+            });
+        });
+
+        runner.describe('Hero Section - Accessibility', () => {
+            runner.it('should have alt text on background image', () => {
+                const bgImage = document.getElementById('hero-bg-image');
+                expect(bgImage.getAttribute('alt')).toBeTruthy();
+            });
+
+            runner.it('should have proper heading hierarchy', () => {
+                const title = document.getElementById('hero-title');
+                expect(title.tagName).toBe('H1');
+            });
+
+            runner.it('should have semantic HTML structure', () => {
+                const heroSection = document.querySelector('.hero-section');
+                expect(heroSection.tagName).toBe('SECTION');
+            });
+        });
+
+        runner.describe('Hero Section - Requirements Validation', () => {
+            runner.it('should have container for background image (Req 4.1)', () => {
+                const heroBackground = document.querySelector('.hero-background');
+                const bgImage = document.getElementById('hero-bg-image');
+                expect(heroBackground).toBeTruthy();
+                expect(bgImage).toBeTruthy();
+            });
+
+            runner.it('should have overlay element (Req 4.1)', () => {
+                const overlay = document.querySelector('.hero-overlay');
+                expect(overlay).toBeTruthy();
+            });
+
+            runner.it('should display fanfic title (Req 4.2)', () => {
+                const title = document.getElementById('hero-title');
+                expect(title).toBeTruthy();
+                expect(title.classList.contains('hero-title')).toBeTruthy();
+            });
+
+            runner.it('should display subtitle/description (Req 4.3)', () => {
+                const subtitle = document.getElementById('hero-subtitle');
+                expect(subtitle).toBeTruthy();
+                expect(subtitle.classList.contains('hero-subtitle')).toBeTruthy();
+            });
+
+            runner.it('should have interactive badge (Req 4.4)', () => {
+                const badge = document.getElementById('hero-badge');
+                expect(badge).toBeTruthy();
+                expect(badge.classList.contains('interactive-badge')).toBeTruthy();
+            });
+
+            runner.it('should have "Começar a Ler" button (Req 4.5)', () => {
+                const ctaBtn = document.getElementById('hero-cta-btn');
+                expect(ctaBtn).toBeTruthy();
+                expect(ctaBtn.textContent).toContain('Começar a Ler');
+            });
+
+            runner.it('should have navigation arrows (Req 4.7)', () => {
+                const prevBtn = document.getElementById('hero-prev-btn');
+                const nextBtn = document.getElementById('hero-next-btn');
+                expect(prevBtn).toBeTruthy();
+                expect(nextBtn).toBeTruthy();
+            });
+        });
+
+        // Run all tests
+        window.addEventListener('DOMContentLoaded', () => {
+            runner.run();
+        });
+    </script>
+</body>
+</html>

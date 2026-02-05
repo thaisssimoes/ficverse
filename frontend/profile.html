@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meu Perfil - Fanfics Interativas</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <h1 class="logo">Fanfics Interativas</h1>
+            <nav class="nav">
+                <!-- Navigation will be populated by nav.js -->
+            </nav>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <div class="profile-container">
+                <div class="card" style="max-width: 800px; margin: 2rem auto;">
+                    <h2 style="margin-bottom: 2rem; color: var(--intense-purple);">Meu Perfil</h2>
+                    
+                    <!-- Profile Info -->
+                    <div id="profile-info" class="profile-section">
+                        <div class="loading">Carregando...</div>
+                    </div>
+
+                    <!-- Stats Section -->
+                    <div class="profile-section" style="margin-top: 2rem;">
+                        <h3 style="color: var(--intense-blue); margin-bottom: 1rem;">Estatísticas</h3>
+                        <div id="profile-stats" class="stats-grid">
+                            <div class="loading">Carregando...</div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Fanfics -->
+                    <div class="profile-section" style="margin-top: 2rem;">
+                        <h3 style="color: var(--intense-blue); margin-bottom: 1rem;">Minhas Fanfics Recentes</h3>
+                        <div id="recent-fanfics">
+                            <div class="loading">Carregando...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 Plataforma de Fanfics Interativas</p>
+        </div>
+    </footer>
+
+    <script src="js/api.js"></script>
+    <script src="js/nav.js"></script>
+    <script src="js/profile.js"></script>
+</body>
+</html>

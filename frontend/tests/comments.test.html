@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comment Components Tests</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #7C3AED;
+            padding-bottom: 10px;
+        }
+        .test-suite {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-suite h2 {
+            color: #7C3AED;
+            margin-top: 0;
+        }
+        .test-case {
+            margin: 15px 0;
+            padding: 15px;
+            border-left: 4px solid #ddd;
+            background-color: #f9f9f9;
+        }
+        .test-case.pass {
+            border-left-color: #4CAF50;
+            background-color: #f1f8f4;
+        }
+        .test-case.fail {
+            border-left-color: #f44336;
+            background-color: #fef1f0;
+        }
+        .test-name {
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        .test-result {
+            font-size: 0.9em;
+            color: #666;
+        }
+        .test-error {
+            color: #f44336;
+            font-family: monospace;
+            background: #fff;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 8px;
+            white-space: pre-wrap;
+        }
+        .summary {
+            background: linear-gradient(135deg, #E6D5F5, #DBEAFE);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-size: 1.1em;
+        }
+        .summary.all-pass {
+            background: linear-gradient(135deg, #d4edda, #c3e6cb);
+        }
+        .summary.has-fail {
+            background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Comment Components Unit Tests</h1>
+    <div id="test-results"></div>
+    <div id="summary" class="summary"></div>
+
+    <script>
+        // Test utilities
+        const testResults = [];
+        
+        function assert(condition, message) {
+            if (!condition) {
+                throw new Error(message || 'Assertion failed');
+            }
+        }
+
+        function assertEqual(actual, expected, message) {
+            if (actual !== expected) {
+                throw new Error(message || `Expected ${expected}, but got ${actual}`);
+            }
+        }
+
+        function assertArrayEqual(actual, expected, message) {
+            if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+                throw new Error(message || `Arrays not equal. Expected ${JSON.stringify(expected)}, but got ${JSON.stringify(actual)}`);
+            }
+        }
+
+        function runTest(name, testFn) {
+            try {
+                testFn();
+                testResults.push({ name, passed: true });
+                return true;
+            } catch (error) {
+                testResults.push({ name, passed: false, error: error.message });
+                return false;
+            }
+        }
+
+        // Mock API client
+        class MockAPIClient {
+            constructor() {
+                this.token = 'mock-token';
+                this.comments = [];
+                this.nextId = 1;
+            }
+
+            async getComments(fanficId) {
+                return this.comments.filter(c => c.fanfic_id === fanficId && !c.chapter_id);
+            }
+
+            async getChapterComments(chapterId) {
+                return this.comments.filter(c => c.chapter_id === chapterId);
+            }
+
+            async createComment(fanficId, content) {
+                const comment = {
+                    id: this.nextId++,
+                    fanfic_id: fanficId,
+                    user_id: 1,
+                    username: 'Test User',
+                    content: content,
+                    created_at: new Date().toISOString()
+                };
+                this.comments.push(comment);
+                return comment;
+            }
+
+            async createChapterComment(chapterId, content) {
+                const comment = {
+                    id: this.nextId++,
+                    chapter_id: chapterId,
+                    user_id: 1,
+                    username: 'Test User',
+                    content: content,
+                    created_at: new Date().toISOString()
+                };
+                this.comments.push(comment);
+                return comment;
+            }
+
+            async deleteComment(commentId) {
+                this.comments = this.comments.filter(c => c.id !== commentId);
+                return { success: true };
+            }
+
+            reset() {
+                this.comments = [];
+                this.nextId = 1;
+            }
+        }
+
+        const mockApi = new MockAPIClient();
+
+        // Helper functions from the actual implementation
+        function formatTimestamp(timestamp) {
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+            
+            if (diffMins < 1) {
+                return 'Agora mesmo';
+            } else if (diffMins < 60) {
+                return `${diffMins} minuto${diffMins > 1 ? 's' : ''} atrás`;
+            } else if (diffHours < 24) {
+                return `${diffHours} hora${diffHours > 1 ? 's' : ''} atrás`;
+            } else if (diffDays < 7) {
+                return `${diffDays} dia${diffDays > 1 ? 's' : ''} atrás`;
+            } else {
+                return date.toLocaleDateString('pt-BR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric'
+                });
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Test Suite 1: Comment Submission
+        console.log('Running Test Suite 1: Comment Submission');
+
+        runTest('Should submit comment with valid content', async () => {
+            mockApi.reset();
+            const fanficId = 1;
+            const content = 'This is a test comment';
+            
+            const comment = await mockApi.createComment(fanficId, content);
+            
+            assert(comment.id, 'Comment should have an ID');
+            assertEqual(comment.content, content, 'Comment content should match');
+            assertEqual(comment.fanfic_id, fanficId, 'Comment should be associated with fanfic');
+            assert(comment.created_at, 'Comment should have a timestamp');
+        });
+
+        runTest('Should submit chapter comment with valid content', async () => {
+            mockApi.reset();
+            const chapterId = 1;
+            const content = 'This is a chapter comment';
+            
+            const comment = await mockApi.createChapterComment(chapterId, content);
+            
+            assert(comment.id, 'Comment should have an ID');
+            assertEqual(comment.content, content, 'Comment content should match');
+            assertEqual(comment.chapter_id, chapterId, 'Comment should be associated with chapter');
+            assert(comment.created_at, 'Comment should have a timestamp');
+        });
+
+        runTest('Should store multiple comments', async () => {
+            mockApi.reset();
+            const fanficId = 1;
+            
+            await mockApi.createComment(fanficId, 'First comment');
+            await mockApi.createComment(fanficId, 'Second comment');
+            await mockApi.createComment(fanficId, 'Third comment');
+            
+            const comments = await mockApi.getComments(fanficId);
+            assertEqual(comments.length, 3, 'Should have 3 comments');
+        });
+
+        // Test Suite 2: Chronological Ordering
+        console.log('Running Test Suite 2: Chronological Ordering');
+
+        runTest('Should order comments chronologically (oldest first)', async () => {
+            mockApi.reset();
+            const fanficId = 1;
+            
+            // Create comments with different timestamps
+            const comment1 = await mockApi.createComment(fanficId, 'First');
+            await new Promise(resolve => setTimeout(resolve, 10));
+            const comment2 = await mockApi.createComment(fanficId, 'Second');
+            await new Promise(resolve => setTimeout(resolve, 10));
+            const comment3 = await mockApi.createComment(fanficId, 'Third');
+            
+            const comments = await mockApi.getComments(fanficId);
+            
+            // Sort chronologically (oldest first)
+            const sorted = [...comments].sort((a, b) => {
+                return new Date(a.created_at) - new Date(b.created_at);
+            });
+            
+            assertEqual(sorted[0].content, 'First', 'First comment should be oldest');
+            assertEqual(sorted[1].content, 'Second', 'Second comment should be in middle');
+            assertEqual(sorted[2].content, 'Third', 'Third comment should be newest');
+        });
+
+        runTest('Should maintain chronological order after deletion', async () => {
+            mockApi.reset();
+            const fanficId = 1;
+            
+            const comment1 = await mockApi.createComment(fanficId, 'First');
+            await new Promise(resolve => setTimeout(resolve, 10));
+            const comment2 = await mockApi.createComment(fanficId, 'Second');
+            await new Promise(resolve => setTimeout(resolve, 10));
+            const comment3 = await mockApi.createComment(fanficId, 'Third');
+            
+            // Delete middle comment
+            await mockApi.deleteComment(comment2.id);
+            
+            const comments = await mockApi.getComments(fanficId);
+            const sorted = [...comments].sort((a, b) => {
+                return new Date(a.created_at) - new Date(b.created_at);
+            });
+            
+            assertEqual(sorted.length, 2, 'Should have 2 comments after deletion');
+            assertEqual(sorted[0].content, 'First', 'First comment should still be first');
+            assertEqual(sorted[1].content, 'Third', 'Third comment should be second');
+        });
+
+        runTest('Should format timestamps correctly', () => {
+            const now = new Date();
+            
+            // Test "Agora mesmo" (just now)
+            const justNow = formatTimestamp(now.toISOString());
+            assertEqual(justNow, 'Agora mesmo', 'Should show "Agora mesmo" for current time');
+            
+            // Test minutes ago
+            const fiveMinutesAgo = new Date(now - 5 * 60 * 1000);
+            const fiveMin = formatTimestamp(fiveMinutesAgo.toISOString());
+            assertEqual(fiveMin, '5 minutos atrás', 'Should show minutes ago');
+            
+            // Test hours ago
+            const twoHoursAgo = new Date(now - 2 * 60 * 60 * 1000);
+            const twoHours = formatTimestamp(twoHoursAgo.toISOString());
+            assertEqual(twoHours, '2 horas atrás', 'Should show hours ago');
+            
+            // Test days ago
+            const threeDaysAgo = new Date(now - 3 * 24 * 60 * 60 * 1000);
+            const threeDays = formatTimestamp(threeDaysAgo.toISOString());
+            assertEqual(threeDays, '3 dias atrás', 'Should show days ago');
+        });
+
+        // Test Suite 3: Delete Authorization
+        console.log('Running Test Suite 3: Delete Authorization');
+
+        runTest('Should allow comment author to delete their comment', async () => {
+            mockApi.reset();
+            const fanficId = 1;
+            
+            const comment = await mockApi.createComment(fanficId, 'Test comment');
+            
+            // Simulate user is comment author
+            const storedUser = { id: 1 };
+            const canDelete = comment.user_id === storedUser.id;
+            
+            assert(canDelete, 'Comment author should be able to delete');
+        });
+
+        runTest('Should allow fanfic owner to delete any comment', async () => {
+            mockApi.reset();
+            const fanficId = 1;
+            
+            // Create comment by user 2
+            const comment = {
+                id: 1,
+                user_id: 2,
+                fanfic_id: fanficId,
+                content: 'Test comment'
+            };
+            
+            // Fanfic owned by user 1
+            const fanfic = { id: fanficId, author_id: 1 };
+            const currentUser = { id: 1 };
+            
+            // Check authorization
+            const canDelete = comment.user_id === currentUser.id || fanfic.author_id === currentUser.id;
+            
+            assert(canDelete, 'Fanfic owner should be able to delete any comment');
+        });
+
+        runTest('Should not allow other users to delete comments', async () => {
+            mockApi.reset();
+            const fanficId = 1;
+            
+            // Create comment by user 2
+            const comment = {
+                id: 1,
+                user_id: 2,
+                fanfic_id: fanficId,
+                content: 'Test comment'
+            };
+            
+            // Fanfic owned by user 3
+            const fanfic = { id: fanficId, author_id: 3 };
+            const currentUser = { id: 4 }; // Different user
+            
+            // Check authorization
+            const canDelete = comment.user_id === currentUser.id || fanfic.author_id === currentUser.id;
+            
+            assert(!canDelete, 'Other users should not be able to delete comments');
+        });
+
+        runTest('Should successfully delete comment when authorized', async () => {
+            mockApi.reset();
+            const fanficId = 1;
+            
+            const comment = await mockApi.createComment(fanficId, 'Test comment');
+            
+            // Delete comment
+            await mockApi.deleteComment(comment.id);
+            
+            const comments = await mockApi.getComments(fanficId);
+            assertEqual(comments.length, 0, 'Comment should be deleted');
+        });
+
+        // Test Suite 4: HTML Escaping
+        console.log('Running Test Suite 4: HTML Escaping');
+
+        runTest('Should escape HTML in comment content', () => {
+            const maliciousContent = '<script>alert("XSS")</script>';
+            const escaped = escapeHtml(maliciousContent);
+            
+            assert(!escaped.includes('<script>'), 'Should not contain script tags');
+            assert(escaped.includes('&lt;script&gt;'), 'Should contain escaped HTML');
+        });
+
+        runTest('Should preserve line breaks in comment content', () => {
+            const content = 'Line 1\nLine 2\nLine 3';
+            const escaped = escapeHtml(content);
+            
+            assert(escaped.includes('\n'), 'Should preserve line breaks');
+        });
+
+        // Test Suite 5: Comment Filtering
+        console.log('Running Test Suite 5: Comment Filtering');
+
+        runTest('Should filter fanfic comments from chapter comments', async () => {
+            mockApi.reset();
+            const fanficId = 1;
+            const chapterId = 1;
+            
+            await mockApi.createComment(fanficId, 'Fanfic comment 1');
+            await mockApi.createComment(fanficId, 'Fanfic comment 2');
+            await mockApi.createChapterComment(chapterId, 'Chapter comment 1');
+            await mockApi.createChapterComment(chapterId, 'Chapter comment 2');
+            
+            const fanficComments = await mockApi.getComments(fanficId);
+            const chapterComments = await mockApi.getChapterComments(chapterId);
+            
+            assertEqual(fanficComments.length, 2, 'Should have 2 fanfic comments');
+            assertEqual(chapterComments.length, 2, 'Should have 2 chapter comments');
+        });
+
+        runTest('Should only return comments for specific fanfic', async () => {
+            mockApi.reset();
+            
+            await mockApi.createComment(1, 'Fanfic 1 comment');
+            await mockApi.createComment(2, 'Fanfic 2 comment');
+            await mockApi.createComment(1, 'Another Fanfic 1 comment');
+            
+            const fanfic1Comments = await mockApi.getComments(1);
+            const fanfic2Comments = await mockApi.getComments(2);
+            
+            assertEqual(fanfic1Comments.length, 2, 'Fanfic 1 should have 2 comments');
+            assertEqual(fanfic2Comments.length, 1, 'Fanfic 2 should have 1 comment');
+        });
+
+        // Display results
+        function displayResults() {
+            const resultsDiv = document.getElementById('test-results');
+            const summaryDiv = document.getElementById('summary');
+            
+            const passed = testResults.filter(r => r.passed).length;
+            const failed = testResults.filter(r => !r.passed).length;
+            const total = testResults.length;
+            
+            // Group tests by suite
+            const suites = {
+                'Comment Submission': testResults.slice(0, 3),
+                'Chronological Ordering': testResults.slice(3, 6),
+                'Delete Authorization': testResults.slice(6, 10),
+                'HTML Escaping': testResults.slice(10, 12),
+                'Comment Filtering': testResults.slice(12, 14)
+            };
+            
+            let html = '';
+            for (const [suiteName, tests] of Object.entries(suites)) {
+                html += `<div class="test-suite">
+                    <h2>${suiteName}</h2>`;
+                
+                tests.forEach(test => {
+                    html += `<div class="test-case ${test.passed ? 'pass' : 'fail'}">
+                        <div class="test-name">${test.passed ? '✅' : '❌'} ${test.name}</div>
+                        <div class="test-result">${test.passed ? 'Passed' : 'Failed'}</div>
+                        ${test.error ? `<div class="test-error">${test.error}</div>` : ''}
+                    </div>`;
+                });
+                
+                html += '</div>';
+            }
+            
+            resultsDiv.innerHTML = html;
+            
+            const summaryClass = failed === 0 ? 'all-pass' : 'has-fail';
+            summaryDiv.className = `summary ${summaryClass}`;
+            summaryDiv.innerHTML = `
+                <strong>Test Summary:</strong><br>
+                Total: ${total} | Passed: ${passed} | Failed: ${failed}<br>
+                ${failed === 0 ? '🎉 All tests passed!' : '⚠️ Some tests failed'}
+            `;
+        }
+
+        // Run all tests
+        displayResults();
+    </script>
+</body>
+</html>

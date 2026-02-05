@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auth Area Visual Test</title>
+    <link rel="stylesheet" href="../css/landing.css">
+    <style>
+        body {
+            padding: 20px;
+        }
+        .test-section {
+            margin: 40px 0;
+            padding: 20px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+        }
+        .test-section h2 {
+            margin-top: 0;
+        }
+        .controls {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 5px;
+        }
+        .controls button {
+            margin: 5px;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            background: #e3f2fd;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Auth Area Component - Visual Test</h1>
+    
+    <div class="controls">
+        <h3>Test Controls</h3>
+        <button onclick="simulateLogout()">Simulate Logout (Clear Token)</button>
+        <button onclick="simulateLogin()">Simulate Login (Set Token)</button>
+        <button onclick="refreshAuthArea()">Refresh Auth Area</button>
+        <div class="status" id="status">Status: Not authenticated</div>
+    </div>
+
+    <div class="test-section">
+        <h2>Header with Auth Area</h2>
+        <header class="main-header">
+            <div class="header-container">
+                <!-- Logo -->
+                <a href="/" class="logo">FicVerse</a>
+                
+                <!-- Search Bar -->
+                <div class="search-bar">
+                    <input type="text" class="search-input" placeholder="Busca em FoVene..." aria-label="Buscar fanfics">
+                    <button class="search-icon" aria-label="Buscar">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.35-4.35"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <!-- Header Actions -->
+                <div class="header-actions">
+                    <!-- Categories Button -->
+                    <button class="categories-btn" aria-label="Menu de categorias" aria-expanded="false">
+                        <span>Categorias</span>
+                        <svg class="dropdown-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
+                    
+                    <!-- Notification Bell -->
+                    <button class="notification-bell" aria-label="Notificações" style="display: none;">
+                        <svg class="bell-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                        </svg>
+                        <span class="notification-badge" style="display: none;">0</span>
+                    </button>
+                    
+                    <!-- Auth Area -->
+                    <div class="auth-area">
+                        <!-- Not Authenticated State -->
+                        <div class="auth-buttons">
+                            <a href="login.html" class="btn-entrar">Entrar</a>
+                            <a href="register.html" class="btn-cadastrar">Cadastrar</a>
+                        </div>
+                        
+                        <!-- Authenticated State -->
+                        <div class="user-menu" style="display: none;">
+                            <button class="user-avatar-btn" aria-label="Menu do usuário" aria-expanded="false">
+                                <img src="" alt="Avatar do usuário" class="user-avatar">
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <!-- User Dropdown Menu -->
+        <div class="user-dropdown" style="display: none;" role="menu">
+            <a href="profile.html" class="user-dropdown-item" role="menuitem">Meu Perfil</a>
+            <a href="dashboard.html" class="user-dropdown-item" role="menuitem">Minhas Fanfics</a>
+            <a href="#settings" class="user-dropdown-item" role="menuitem">Configurações</a>
+            <button class="user-dropdown-item logout-btn" role="menuitem">Sair</button>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Expected Behavior</h2>
+        <ul>
+            <li><strong>When not authenticated:</strong> Should show "Entrar" and "Cadastrar" buttons</li>
+            <li><strong>When authenticated:</strong> Should show user avatar</li>
+            <li><strong>Clicking avatar:</strong> Should toggle dropdown menu with profile options</li>
+            <li><strong>Clicking logout:</strong> Should clear token and show login buttons again</li>
+        </ul>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/auth-area.js"></script>
+    
+    <script>
+        // Test helper functions
+        function simulateLogout() {
+            api.clearToken();
+            updateStatus();
+            // Reinitialize auth area
+            if (window.authArea) {
+                window.authArea.updateAuthDisplay();
+            }
+        }
+
+        function simulateLogin() {
+            // Create a mock JWT token
+            const mockToken = btoa(JSON.stringify({ alg: 'HS256' })) + '.' +
+                             btoa(JSON.stringify({ 
+                                 user_id: 1, 
+                                 username: 'testuser', 
+                                 email: 'test@example.com',
+                                 avatar: null
+                             })) + '.' +
+                             btoa('signature');
+            api.setToken(mockToken);
+            updateStatus();
+            // Reinitialize auth area
+            if (window.authArea) {
+                window.authArea.updateAuthDisplay();
+            }
+        }
+
+        function refreshAuthArea() {
+            if (window.authArea) {
+                window.authArea.updateAuthDisplay();
+            }
+            updateStatus();
+        }
+
+        function updateStatus() {
+            const statusDiv = document.getElementById('status');
+            if (api.isAuthenticated()) {
+                const user = getUserFromToken();
+                statusDiv.innerHTML = `Status: <strong>Authenticated</strong> as ${user ? user.username : 'unknown'}`;
+                statusDiv.style.background = '#c8e6c9';
+            } else {
+                statusDiv.innerHTML = 'Status: <strong>Not authenticated</strong>';
+                statusDiv.style.background = '#ffcdd2';
+            }
+        }
+
+        function getUserFromToken() {
+            if (!api.isAuthenticated()) {
+                return null;
+            }
+
+            try {
+                const token = api.getToken();
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                return {
+                    id: payload.user_id,
+                    username: payload.username,
+                    email: payload.email,
+                    avatar: payload.avatar || null
+                };
+            } catch (error) {
+                console.error('Error parsing token:', error);
+                return null;
+            }
+        }
+
+        // Initialize status on load
+        window.addEventListener('DOMContentLoaded', () => {
+            updateStatus();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auth Area Component Tests</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-suite {
+            margin-bottom: 30px;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .test-case {
+            margin: 10px 0;
+            padding: 10px;
+            border-left: 3px solid #ccc;
+        }
+        .test-case.pass {
+            border-left-color: #4CAF50;
+            background-color: #f1f8f4;
+        }
+        .test-case.fail {
+            border-left-color: #f44336;
+            background-color: #fef1f0;
+        }
+        .test-summary {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .error-details {
+            color: #d32f2f;
+            font-family: monospace;
+            margin-top: 5px;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <h1>Auth Area Component - Unit Tests</h1>
+    <div id="test-results"></div>
+    <div id="test-summary" class="test-summary"></div>
+
+    <!-- Hidden test container -->
+    <div id="test-container" style="display: none;"></div>
+
+    <script>
+        // Mock API client
+        const api = {
+            token: null,
+            isAuthenticated() {
+                return !!this.token;
+            },
+            getToken() {
+                return this.token;
+            },
+            setToken(token) {
+                this.token = token;
+            },
+            clearToken() {
+                this.token = null;
+            },
+            async logout() {
+                this.clearToken();
+            }
+        };
+
+        // Simple test framework
+        class TestRunner {
+            constructor() {
+                this.tests = [];
+                this.results = [];
+            }
+
+            describe(suiteName, testFn) {
+                const suite = {
+                    name: suiteName,
+                    tests: []
+                };
+                this.currentSuite = suite;
+                testFn();
+                this.tests.push(suite);
+                this.currentSuite = null;
+            }
+
+            it(testName, testFn) {
+                if (!this.currentSuite) {
+                    throw new Error('Test must be inside a describe block');
+                }
+                this.currentSuite.tests.push({
+                    name: testName,
+                    fn: testFn
+                });
+            }
+
+            async run() {
+                const resultsContainer = document.getElementById('test-results');
+                let totalTests = 0;
+                let passedTests = 0;
+
+                for (const suite of this.tests) {
+                    const suiteDiv = document.createElement('div');
+                    suiteDiv.className = 'test-suite';
+                    suiteDiv.innerHTML = `<h2>${suite.name}</h2>`;
+
+                    for (const test of suite.tests) {
+                        totalTests++;
+                        const testDiv = document.createElement('div');
+                        testDiv.className = 'test-case';
+
+                        try {
+                            await test.fn();
+                            testDiv.classList.add('pass');
+                            testDiv.innerHTML = `✓ ${test.name}`;
+                            passedTests++;
+                        } catch (error) {
+                            testDiv.classList.add('fail');
+                            testDiv.innerHTML = `✗ ${test.name}<div class="error-details">${error.message}</div>`;
+                        }
+
+                        suiteDiv.appendChild(testDiv);
+                    }
+
+                    resultsContainer.appendChild(suiteDiv);
+                }
+
+                const summaryDiv = document.getElementById('test-summary');
+                summaryDiv.innerHTML = `
+                    Tests: ${passedTests}/${totalTests} passed
+                    ${passedTests === totalTests ? '✓ All tests passed!' : '✗ Some tests failed'}
+                `;
+                summaryDiv.style.color = passedTests === totalTests ? '#4CAF50' : '#f44336';
+            }
+        }
+
+        // Assertion helpers
+        function expect(actual) {
+            return {
+                toBe(expected) {
+                    if (actual !== expected) {
+                        throw new Error(`Expected ${expected} but got ${actual}`);
+                    }
+                },
+                toEqual(expected) {
+                    if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+                        throw new Error(`Expected ${JSON.stringify(expected)} but got ${JSON.stringify(actual)}`);
+                    }
+                },
+                toBeTruthy() {
+                    if (!actual) {
+                        throw new Error(`Expected truthy value but got ${actual}`);
+                    }
+                },
+                toBeFalsy() {
+                    if (actual) {
+                        throw new Error(`Expected falsy value but got ${actual}`);
+                    }
+                },
+                toContain(expected) {
+                    if (!actual.includes(expected)) {
+                        throw new Error(`Expected "${actual}" to contain "${expected}"`);
+                    }
+                },
+                not: {
+                    toBeNull() {
+                        if (actual === null) {
+                            throw new Error(`Expected not null but got null`);
+                        }
+                    }
+                }
+            };
+        }
+
+        // Helper function to create auth area HTML
+        function createAuthAreaHTML() {
+            return `
+                <div class="auth-area">
+                    <!-- Not Authenticated State -->
+                    <div class="auth-buttons" style="display: flex;">
+                        <a href="login.html" class="btn-entrar">Entrar</a>
+                        <a href="register.html" class="btn-cadastrar">Cadastrar</a>
+                    </div>
+                    
+                    <!-- Authenticated State -->
+                    <div class="user-menu" style="display: none;">
+                        <button class="user-avatar-btn" aria-label="Menu do usuário" aria-expanded="false">
+                            <img src="" alt="Avatar do usuário" class="user-avatar">
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- User Dropdown Menu -->
+                <div class="user-dropdown" style="display: none;" role="menu">
+                    <a href="profile.html" class="user-dropdown-item" role="menuitem">Meu Perfil</a>
+                    <a href="dashboard.html" class="user-dropdown-item" role="menuitem">Minhas Fanfics</a>
+                    <a href="#settings" class="user-dropdown-item" role="menuitem">Configurações</a>
+                    <button class="user-dropdown-item logout-btn" role="menuitem">Sair</button>
+                </div>
+            `;
+        }
+
+        // Mock AuthArea class for testing
+        class AuthArea {
+            constructor() {
+                this.authArea = null;
+                this.authButtons = null;
+                this.userMenu = null;
+                this.userAvatarBtn = null;
+                this.userAvatar = null;
+                this.userDropdown = null;
+                this.logoutBtn = null;
+                this.isUserMenuOpen = false;
+            }
+
+            init() {
+                this.authArea = document.querySelector('.auth-area');
+                this.authButtons = document.querySelector('.auth-buttons');
+                this.userMenu = document.querySelector('.user-menu');
+                this.userAvatarBtn = document.querySelector('.user-avatar-btn');
+                this.userAvatar = document.querySelector('.user-avatar');
+                this.userDropdown = document.querySelector('.user-dropdown');
+                this.logoutBtn = document.querySelector('.logout-btn');
+
+                if (!this.authArea) {
+                    console.error('Auth area element not found');
+                    return;
+                }
+
+                this.updateAuthDisplay();
+                this.setupEventListeners();
+            }
+
+            updateAuthDisplay() {
+                const isAuthenticated = api.isAuthenticated();
+
+                if (isAuthenticated) {
+                    this.showAuthenticatedState();
+                } else {
+                    this.showUnauthenticatedState();
+                }
+            }
+
+            showUnauthenticatedState() {
+                if (this.authButtons) {
+                    this.authButtons.style.display = 'flex';
+                }
+                if (this.userMenu) {
+                    this.userMenu.style.display = 'none';
+                }
+            }
+
+            showAuthenticatedState() {
+                if (this.authButtons) {
+                    this.authButtons.style.display = 'none';
+                }
+                if (this.userMenu) {
+                    this.userMenu.style.display = 'block';
+                }
+
+                const user = this.getUserFromToken();
+                if (user && this.userAvatar) {
+                    const avatarUrl = user.avatar || this.getDefaultAvatar(user.username);
+                    this.userAvatar.src = avatarUrl;
+                    this.userAvatar.alt = `Avatar de ${user.username}`;
+                }
+            }
+
+            setupEventListeners() {
+                if (this.userAvatarBtn) {
+                    this.userAvatarBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        this.toggleUserMenu();
+                    });
+                }
+
+                if (this.logoutBtn) {
+                    this.logoutBtn.addEventListener('click', async (e) => {
+                        e.preventDefault();
+                        await this.handleLogout();
+                    });
+                }
+            }
+
+            toggleUserMenu() {
+                if (this.isUserMenuOpen) {
+                    this.closeUserMenu();
+                } else {
+                    this.openUserMenu();
+                }
+            }
+
+            openUserMenu() {
+                if (this.userDropdown) {
+                    this.userDropdown.style.display = 'block';
+                    this.isUserMenuOpen = true;
+                    
+                    if (this.userAvatarBtn) {
+                        this.userAvatarBtn.setAttribute('aria-expanded', 'true');
+                    }
+                }
+            }
+
+            closeUserMenu() {
+                if (this.userDropdown) {
+                    this.userDropdown.style.display = 'none';
+                    this.isUserMenuOpen = false;
+                    
+                    if (this.userAvatarBtn) {
+                        this.userAvatarBtn.setAttribute('aria-expanded', 'false');
+                    }
+                }
+            }
+
+            async handleLogout() {
+                await api.logout();
+            }
+
+            getUserFromToken() {
+                if (!api.isAuthenticated()) {
+                    return null;
+                }
+
+                try {
+                    const token = api.getToken();
+                    const payload = JSON.parse(atob(token.split('.')[1]));
+                    return {
+                        id: payload.user_id,
+                        username: payload.username,
+                        email: payload.email,
+                        avatar: payload.avatar || null
+                    };
+                } catch (error) {
+                    console.error('Error parsing token:', error);
+                    return null;
+                }
+            }
+
+            getDefaultAvatar(username) {
+                const initial = username ? username.charAt(0).toUpperCase() : 'U';
+                return `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=6366f1&color=fff&size=128`;
+            }
+        }
+
+        // Test Suite
+        const runner = new TestRunner();
+
+        runner.describe('Auth Area - Unauthenticated State (Requirements 1.5, 3.1)', () => {
+            runner.it('should display login and register buttons when not authenticated', () => {
+                const container = document.getElementById('test-container');
+                container.innerHTML = createAuthAreaHTML();
+                
+                // Clear token to simulate unauthenticated state
+                api.clearToken();
+                
+                const authArea = new AuthArea();
+                authArea.init();
+                
+                const authButtons = container.querySelector('.auth-buttons');
+                const userMenu = container.querySelector('.user-menu');
+                
+                expect(authButtons.style.display).toBe('flex');
+                expect(userMenu.style.display).toBe('none');
+            });
+
+            runner.it('should have "Entrar" button linking to login.html', () => {
+                const container = document.getElementById('test-container');
+                container.innerHTML = createAuthAreaHTML();
+                
+                const loginBtn = container.querySelector('.btn-entrar');
+                
+                expect(loginBtn).not.toBeNull();
+                expect(loginBtn.textContent).toContain('Entrar');
+                expect(loginBtn.href).toContain('login.html');
+            });
+
+            runner.it('should have "Cadastrar" button linking to register.html', () => {
+                const container = document.getElementById('test-container');
+                container.innerHTML = createAuthAreaHTML();
+                
+                const registerBtn = container.querySelector('.btn-cadastrar');
+                
+                expect(registerBtn).not.toBeNull();
+                expect(registerBtn.textContent).toContain('Cadastrar');
+                expect(registerBtn.href).toContain('register.html');
+            });
+        });
+
+        runner.describe('Auth Area - Authenticated State (Requirements 1.6, 3.4)', () => {
+            runner.it('should display user avatar when authenticated', () => {
+                const container = document.getElementById('test-container');
+                container.innerHTML = createAuthAreaHTML();
+                
+                // Create a mock JWT token
+                const mockToken = btoa(JSON.stringify({ alg: 'HS256' })) + '.' +
+                                 btoa(JSON.stringify({ user_id: 1, username: 'testuser', email: 'test@example.com' })) + '.' +
+                                 btoa('signature');
+                api.setToken(mockToken);
+                
+                const authArea = new AuthArea();
+                authArea.init();
+                
+                const authButtons = container.querySelector('.auth-buttons');
+                const userMenu = container.querySelector('.user-menu');
+                
+                expect(authButtons.style.display).toBe('none');
+                expect(userMenu.style.display).toBe('block');
+            });
+
+            runner.it('should set avatar image src when authenticated', () => {
+                const container = document.getElementById('test-container');
+                container.innerHTML = createAuthAreaHTML();
+                
+                const mockToken = btoa(JSON.stringify({ alg: 'HS256' })) + '.' +
+                                 btoa(JSON.stringify({ user_id: 1, username: 'testuser', email: 'test@example.com' })) + '.' +
+                                 btoa('signature');
+                api.setToken(mockToken);
+                
+                const authArea = new AuthArea();
+                authArea.init();
+                
+                const userAvatar = container.querySelector('.user-avatar');
+                
+                expect(userAvatar.src).not.toBe('');
+                expect(userAvatar.alt).toContain('testuser');
+            });
+
+            runner.it('should use default avatar when user has no avatar URL', () => {
+                const container = document.getElementById('test-container');
+                container.innerHTML = createAuthAreaHTML();
+                
+                const mockToken = btoa(JSON.stringify({ alg: 'HS256' })) + '.' +
+                                 btoa(JSON.stringify({ user_id: 1, username: 'testuser', email: 'test@example.com' })) + '.' +
+                                 btoa('signature');
+                api.setToken(mockToken);
+                
+                const authArea = new AuthArea();
+                authArea.init();
+                
+                const userAvatar = container.querySelector('.user-avatar');
+                
+                expect(userAvatar.src).toContain('ui-avatars.com');
+                expect(userAvatar.src).toContain('testuser');
+            });
+        });
+
+        runner.describe('Auth Area - User Menu Toggle (Requirement 3.5)', () => {
+            runner.it('should toggle user dropdown menu on avatar click', () => {
+                const container = document.getElementById('test-container');
+                container.innerHTML = createAuthAreaHTML();
+                
+                const mockToken = btoa(JSON.stringify({ alg: 'HS256' })) + '.' +
+                                 btoa(JSON.stringify({ user_id: 1, username: 'testuser', email: 'test@example.com' })) + '.' +
+                                 btoa('signature');
+                api.setToken(mockToken);
+                
+                const authArea = new AuthArea();
+                authArea.init();
+                
+                const userAvatarBtn = container.querySelector('.user-avatar-btn');
+                const userDropdown = container.querySelector('.user-dropdown');
+                
+                // Initially closed
+                expect(userDropdown.style.display).toBe('none');
+                expect(authArea.isUserMenuOpen).toBeFalsy();
+                
+                // Click to open
+                userAvatarBtn.click();
+                expect(userDropdown.style.display).toBe('block');
+                expect(authArea.isUserMenuOpen).toBeTruthy();
+                
+                // Click to close
+                userAvatarBtn.click();
+                expect(userDropdown.style.display).toBe('none');
+                expect(authArea.isUserMenuOpen).toBeFalsy();
+            });
+
+            runner.it('should update aria-expanded attribute when toggling menu', () => {
+                const container = document.getElementById('test-container');
+                container.innerHTML = createAuthAreaHTML();
+                
+                const mockToken = btoa(JSON.stringify({ alg: 'HS256' })) + '.' +
+                                 btoa(JSON.stringify({ user_id: 1, username: 'testuser', email: 'test@example.com' })) + '.' +
+                                 btoa('signature');
+                api.setToken(mockToken);
+                
+                const authArea = new AuthArea();
+                authArea.init();
+                
+                const userAvatarBtn = container.querySelector('.user-avatar-btn');
+                
+                // Initially false
+                expect(userAvatarBtn.getAttribute('aria-expanded')).toBe('false');
+                
+                // Open menu
+                userAvatarBtn.click();
+                expect(userAvatarBtn.getAttribute('aria-expanded')).toBe('true');
+                
+                // Close menu
+                userAvatarBtn.click();
+                expect(userAvatarBtn.getAttribute('aria-expanded')).toBe('false');
+            });
+
+            runner.it('should have dropdown menu with profile options', () => {
+                const container = document.getElementById('test-container');
+                container.innerHTML = createAuthAreaHTML();
+                
+                const userDropdown = container.querySelector('.user-dropdown');
+                const profileLink = userDropdown.querySelector('a[href="profile.html"]');
+                const dashboardLink = userDropdown.querySelector('a[href="dashboard.html"]');
+                const logoutBtn = userDropdown.querySelector('.logout-btn');
+                
+                expect(profileLink).not.toBeNull();
+                expect(profileLink.textContent).toContain('Meu Perfil');
+                
+                expect(dashboardLink).not.toBeNull();
+                expect(dashboardLink.textContent).toContain('Minhas Fanfics');
+                
+                expect(logoutBtn).not.toBeNull();
+                expect(logoutBtn.textContent).toContain('Sair');
+            });
+        });
+
+        runner.describe('Auth Area - State Consistency', () => {
+            runner.it('should show exactly one state: login buttons OR avatar, never both', () => {
+                const container = document.getElementById('test-container');
+                container.innerHTML = createAuthAreaHTML();
+                
+                // Test unauthenticated state
+                api.clearToken();
+                const authArea1 = new AuthArea();
+                authArea1.init();
+                
+                const authButtons1 = container.querySelector('.auth-buttons');
+                const userMenu1 = container.querySelector('.user-menu');
+                
+                const hasLoginButtons = authButtons1.style.display !== 'none';
+                const hasAvatar = userMenu1.style.display !== 'none';
+                
+                // Should have exactly one: login buttons XOR avatar
+                expect((hasLoginButtons && !hasAvatar) || (!hasLoginButtons && hasAvatar)).toBeTruthy();
+                
+                // Test authenticated state
+                container.innerHTML = createAuthAreaHTML();
+                const mockToken = btoa(JSON.stringify({ alg: 'HS256' })) + '.' +
+                                 btoa(JSON.stringify({ user_id: 1, username: 'testuser', email: 'test@example.com' })) + '.' +
+                                 btoa('signature');
+                api.setToken(mockToken);
+                
+                const authArea2 = new AuthArea();
+                authArea2.init();
+                
+                const authButtons2 = container.querySelector('.auth-buttons');
+                const userMenu2 = container.querySelector('.user-menu');
+                
+                const hasLoginButtons2 = authButtons2.style.display !== 'none';
+                const hasAvatar2 = userMenu2.style.display !== 'none';
+                
+                // Should have exactly one: login buttons XOR avatar
+                expect((hasLoginButtons2 && !hasAvatar2) || (!hasLoginButtons2 && hasAvatar2)).toBeTruthy();
+            });
+        });
+
+        // Run all tests
+        window.addEventListener('DOMContentLoaded', () => {
+            runner.run();
+        });
+    </script>
+</body>
+</html>

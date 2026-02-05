@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Categories Menu Tests</title>
+    <link rel="stylesheet" href="../css/landing.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-suite {
+            margin-bottom: 30px;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .test-case {
+            margin: 10px 0;
+            padding: 10px;
+            border-left: 3px solid #ccc;
+        }
+        .test-case.pass {
+            border-left-color: #4CAF50;
+            background-color: #f1f8f4;
+        }
+        .test-case.fail {
+            border-left-color: #f44336;
+            background-color: #fef1f0;
+        }
+        .test-summary {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .error-details {
+            color: #d32f2f;
+            font-family: monospace;
+            margin-top: 5px;
+            font-size: 0.9em;
+        }
+        #visual-test-area {
+            margin-top: 30px;
+            padding: 20px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <h1>Categories Menu - Unit Tests</h1>
+    <div id="test-results"></div>
+    <div id="test-summary" class="test-summary"></div>
+
+    <!-- Visual Test Area -->
+    <div id="visual-test-area">
+        <h2>Visual Test - Categories Menu</h2>
+        <p>Click the "Categorias" button to test the dropdown functionality:</p>
+        
+        <header class="main-header">
+            <div class="header-container">
+                <a href="/" class="logo">FicVerse</a>
+                
+                <div class="search-bar">
+                    <input type="text" class="search-input" placeholder="Busca em FoVene...">
+                    <button class="search-icon">🔍</button>
+                </div>
+                
+                <div class="header-actions">
+                    <button class="categories-btn" aria-label="Menu de categorias" aria-expanded="false">
+                        <span>Categorias</span>
+                        <svg class="dropdown-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="categories-dropdown" style="display: none;" role="menu">
+                <div class="categories-list">
+                    <button class="category-item active" data-category="all" role="menuitem">Todos</button>
+                    <button class="category-item" data-category="interactive" role="menuitem">
+                        <span class="category-icon">⚡</span> Interativos
+                    </button>
+                    <button class="category-item" data-category="kpop" role="menuitem">K-Pop</button>
+                    <button class="category-item" data-category="romance" role="menuitem">Romance</button>
+                    <button class="category-item" data-category="fantasia" role="menuitem">Fantasia</button>
+                    <button class="category-item" data-category="ficcao-cientifica" role="menuitem">Ficção Científica</button>
+                    <button class="category-item" data-category="terror" role="menuitem">Terror</button>
+                    <button class="category-item" data-category="aventura" role="menuitem">Aventura</button>
+                    <button class="category-item" data-category="drama" role="menuitem">Drama</button>
+                    <button class="category-item" data-category="comedia" role="menuitem">Comédia</button>
+                </div>
+            </div>
+        </header>
+        
+        <div id="selected-category" style="margin-top: 20px; padding: 10px; background: #e3f2fd; border-radius: 4px;">
+            <strong>Selected Category:</strong> <span id="category-display">all</span>
+        </div>
+    </div>
+
+    <!-- Hidden test container -->
+    <div id="test-container" style="display: none;"></div>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/categories-menu.js"></script>
+    <script>
+        // Simple test framework
+        class TestRunner {
+            constructor() {
+                this.tests = [];
+                this.results = [];
+            }
+
+            describe(suiteName, testFn) {
+                const suite = {
+                    name: suiteName,
+                    tests: []
+                };
+                this.currentSuite = suite;
+                testFn();
+                this.tests.push(suite);
+                this.currentSuite = null;
+            }
+
+            it(testName, testFn) {
+                if (!this.currentSuite) {
+                    throw new Error('Test must be inside a describe block');
+                }
+                this.currentSuite.tests.push({
+                    name: testName,
+                    fn: testFn
+                });
+            }
+
+            async run() {
+                const resultsContainer = document.getElementById('test-results');
+                let totalTests = 0;
+                let passedTests = 0;
+
+                for (const suite of this.tests) {
+                    const suiteDiv = document.createElement('div');
+                    suiteDiv.className = 'test-suite';
+                    suiteDiv.innerHTML = `<h2>${suite.name}</h2>`;
+
+                    for (const test of suite.tests) {
+                        totalTests++;
+                        const testDiv = document.createElement('div');
+                        testDiv.className = 'test-case';
+
+                        try {
+                            await test.fn();
+                            testDiv.classList.add('pass');
+                            testDiv.innerHTML = `✓ ${test.name}`;
+                            passedTests++;
+                        } catch (error) {
+                            testDiv.classList.add('fail');
+                            testDiv.innerHTML = `✗ ${test.name}<div class="error-details">${error.message}</div>`;
+                        }
+
+                        suiteDiv.appendChild(testDiv);
+                    }
+
+                    resultsContainer.appendChild(suiteDiv);
+                }
+
+                const summaryDiv = document.getElementById('test-summary');
+                summaryDiv.innerHTML = `
+                    Tests: ${passedTests}/${totalTests} passed
+                    ${passedTests === totalTests ? '✓ All tests passed!' : '✗ Some tests failed'}
+                `;
+                summaryDiv.style.color = passedTests === totalTests ? '#4CAF50' : '#f44336';
+            }
+        }
+
+        // Assertion helpers
+        function expect(actual) {
+            return {
+                toBe(expected) {
+                    if (actual !== expected) {
+                        throw new Error(`Expected ${expected} but got ${actual}`);
+                    }
+                },
+                toBeTruthy() {
+                    if (!actual) {
+                        throw new Error(`Expected truthy value but got ${actual}`);
+                    }
+                },
+                toBeFalsy() {
+                    if (actual) {
+                        throw new Error(`Expected falsy value but got ${actual}`);
+                    }
+                },
+                toBeGreaterThan(expected) {
+                    if (actual <= expected) {
+                        throw new Error(`Expected ${actual} to be greater than ${expected}`);
+                    }
+                },
+                not: {
+                    toBeNull() {
+                        if (actual === null) {
+                            throw new Error(`Expected not null but got null`);
+                        }
+                    }
+                }
+            };
+        }
+
+        // Test Suite
+        const runner = new TestRunner();
+
+        runner.describe('Categories Menu - Initialization', () => {
+            runner.it('should initialize categories menu component', () => {
+                expect(typeof categoriesMenu).toBe('object');
+                expect(categoriesMenu).not.toBeNull();
+            });
+
+            runner.it('should find categories button element', () => {
+                expect(categoriesMenu.categoriesBtn).not.toBeNull();
+            });
+
+            runner.it('should find categories dropdown element', () => {
+                expect(categoriesMenu.categoriesDropdown).not.toBeNull();
+            });
+
+            runner.it('should find category items', () => {
+                expect(categoriesMenu.categoryItems).not.toBeNull();
+                expect(categoriesMenu.categoryItems.length).toBeGreaterThan(0);
+            });
+
+            runner.it('should start with menu closed', () => {
+                expect(categoriesMenu.isCategoriesMenuOpen).toBe(false);
+            });
+
+            runner.it('should start with "all" category selected', () => {
+                expect(categoriesMenu.selectedCategory).toBe('all');
+            });
+        });
+
+        runner.describe('Categories Menu - Toggle Behavior (Requirement 2.1)', () => {
+            runner.it('should open menu when button is clicked', () => {
+                // Close menu first if open
+                if (categoriesMenu.isCategoriesMenuOpen) {
+                    categoriesMenu.closeCategoriesMenu();
+                }
+                
+                // Click button to open
+                categoriesMenu.categoriesBtn.click();
+                
+                expect(categoriesMenu.isCategoriesMenuOpen).toBe(true);
+                expect(categoriesMenu.categoriesDropdown.style.display).toBe('block');
+            });
+
+            runner.it('should close menu when button is clicked again', () => {
+                // Open menu first if closed
+                if (!categoriesMenu.isCategoriesMenuOpen) {
+                    categoriesMenu.openCategoriesMenu();
+                }
+                
+                // Click button to close
+                categoriesMenu.categoriesBtn.click();
+                
+                expect(categoriesMenu.isCategoriesMenuOpen).toBe(false);
+                expect(categoriesMenu.categoriesDropdown.style.display).toBe('none');
+            });
+
+            runner.it('should update aria-expanded attribute when opening', () => {
+                categoriesMenu.closeCategoriesMenu();
+                categoriesMenu.openCategoriesMenu();
+                
+                expect(categoriesMenu.categoriesBtn.getAttribute('aria-expanded')).toBe('true');
+            });
+
+            runner.it('should update aria-expanded attribute when closing', () => {
+                categoriesMenu.openCategoriesMenu();
+                categoriesMenu.closeCategoriesMenu();
+                
+                expect(categoriesMenu.categoriesBtn.getAttribute('aria-expanded')).toBe('false');
+            });
+        });
+
+        runner.describe('Categories Menu - Category Selection (Requirement 2.3)', () => {
+            runner.it('should update selected category when item is clicked', () => {
+                const romanceItem = Array.from(categoriesMenu.categoryItems).find(
+                    item => item.dataset.category === 'romance'
+                );
+                
+                if (romanceItem) {
+                    romanceItem.click();
+                    expect(categoriesMenu.selectedCategory).toBe('romance');
+                }
+            });
+
+            runner.it('should add active class to selected category', () => {
+                const kpopItem = Array.from(categoriesMenu.categoryItems).find(
+                    item => item.dataset.category === 'kpop'
+                );
+                
+                if (kpopItem) {
+                    kpopItem.click();
+                    expect(kpopItem.classList.contains('active')).toBe(true);
+                }
+            });
+
+            runner.it('should remove active class from previously selected category', () => {
+                // Select first category
+                const firstItem = categoriesMenu.categoryItems[0];
+                firstItem.click();
+                
+                // Select second category
+                const secondItem = categoriesMenu.categoryItems[1];
+                secondItem.click();
+                
+                // First item should no longer be active
+                expect(firstItem.classList.contains('active')).toBe(false);
+            });
+
+            runner.it('should close menu after selecting a category', () => {
+                categoriesMenu.openCategoriesMenu();
+                
+                const item = categoriesMenu.categoryItems[0];
+                item.click();
+                
+                expect(categoriesMenu.isCategoriesMenuOpen).toBe(false);
+            });
+        });
+
+        runner.describe('Categories Menu - Close on Outside Click (Requirement 2.4)', () => {
+            runner.it('should close menu when clicking outside', async () => {
+                // Open menu
+                categoriesMenu.openCategoriesMenu();
+                expect(categoriesMenu.isCategoriesMenuOpen).toBe(true);
+                
+                // Simulate click outside
+                document.body.click();
+                
+                // Wait a bit for event to process
+                await new Promise(resolve => setTimeout(resolve, 50));
+                
+                expect(categoriesMenu.isCategoriesMenuOpen).toBe(false);
+            });
+
+            runner.it('should not close menu when clicking inside dropdown', () => {
+                categoriesMenu.openCategoriesMenu();
+                
+                // Click inside dropdown
+                categoriesMenu.categoriesDropdown.click();
+                
+                expect(categoriesMenu.isCategoriesMenuOpen).toBe(true);
+            });
+        });
+
+        runner.describe('Categories Menu - Keyboard Support', () => {
+            runner.it('should close menu on Escape key', () => {
+                categoriesMenu.openCategoriesMenu();
+                
+                // Simulate Escape key
+                const escapeEvent = new KeyboardEvent('keydown', { key: 'Escape' });
+                document.dispatchEvent(escapeEvent);
+                
+                expect(categoriesMenu.isCategoriesMenuOpen).toBe(false);
+            });
+        });
+
+        runner.describe('Categories Menu - Callback Support', () => {
+            runner.it('should call callback when category changes', () => {
+                let callbackCalled = false;
+                let callbackCategory = null;
+                
+                categoriesMenu.onCategoryChange((category) => {
+                    callbackCalled = true;
+                    callbackCategory = category;
+                });
+                
+                const item = Array.from(categoriesMenu.categoryItems).find(
+                    item => item.dataset.category === 'fantasia'
+                );
+                
+                if (item) {
+                    item.click();
+                    expect(callbackCalled).toBe(true);
+                    expect(callbackCategory).toBe('fantasia');
+                }
+            });
+        });
+
+        // Run all tests
+        window.addEventListener('DOMContentLoaded', () => {
+            runner.run();
+            
+            // Set up visual test callback
+            categoriesMenu.onCategoryChange((category) => {
+                document.getElementById('category-display').textContent = category;
+            });
+        });
+    </script>
+</body>
+</html>

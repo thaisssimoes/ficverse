@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificação de Correções de Layout</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f0f1e;
+            color: #ffffff;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #8b5cf6;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .test-section {
+            background: #1a1a2e;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(139, 92, 246, 0.2);
+        }
+
+        .test-section h2 {
+            color: #3b82f6;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+
+        .test-item {
+            background: rgba(139, 92, 246, 0.1);
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 8px;
+            border-left: 4px solid #8b5cf6;
+        }
+
+        .test-item h3 {
+            color: #ffffff;
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .test-item p {
+            color: #a0a0b8;
+            line-height: 1.6;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-left: 0.5rem;
+        }
+
+        .status.fixed {
+            background: #10b981;
+            color: white;
+        }
+
+        .status.pending {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .code-block {
+            background: #0a0a14;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 0.5rem;
+            overflow-x: auto;
+        }
+
+        .code-block code {
+            color: #93c5fd;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(139, 92, 246, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(139, 92, 246, 0.2);
+            color: #8b5cf6;
+            border: 1px solid #8b5cf6;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(139, 92, 246, 0.3);
+        }
+
+        .checklist {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .checklist li {
+            padding: 0.5rem 0;
+            padding-left: 2rem;
+            position: relative;
+        }
+
+        .checklist li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #10b981;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Verificação de Correções de Layout</h1>
+
+        <!-- Problema 1: Criação de Fanfic -->
+        <div class="test-section">
+            <h2>1. Problema: Fanfic Não Está Sendo Salva <span class="status fixed">CORRIGIDO</span></h2>
+            
+            <div class="test-item">
+                <h3>Causa Raiz</h3>
+                <p>A variável <code>API_BASE_URL</code> não estava definida no escopo do arquivo <code>fanfic-form.js</code>.</p>
+            </div>
+
+            <div class="test-item">
+                <h3>Correção Aplicada</h3>
+                <p>Substituição da variável por URL hardcoded:</p>
+                <div class="code-block">
+                    <code>
+// Antes:<br>
+const url = `${API_BASE_URL}/fanfics`;<br>
+<br>
+// Depois:<br>
+const url = 'http://localhost:8080/api/fanfics';
+                    </code>
+                </div>
+            </div>
+
+            <div class="test-item">
+                <h3>Como Testar</h3>
+                <ul class="checklist">
+                    <li>Abra o Dashboard</li>
+                    <li>Clique em "Nova Fanfic"</li>
+                    <li>Preencha: Título, Categoria, Sinopse</li>
+                    <li>Abra o Console (F12)</li>
+                    <li>Clique em "Salvar como Rascunho" ou "Publicar"</li>
+                    <li>Verifique os logs no console</li>
+                    <li>Confirme que a fanfic foi salva</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Problema 2: Layout da Página Inicial -->
+        <div class="test-section">
+            <h2>2. Problema: Layout da Página Inicial Quebrado <span class="status fixed">CORRIGIDO</span></h2>
+            
+            <div class="test-item">
+                <h3>Causa Raiz</h3>
+                <p>Conflitos de z-index entre elementos do header e conteúdo da página, causando sobreposição.</p>
+            </div>
+
+            <div class="test-item">
+                <h3>Correção Aplicada</h3>
+                <p>Ajuste da hierarquia de z-index:</p>
+                <div class="code-block">
+                    <code>
+Header principal: z-index 1000<br>
+User dropdown: z-index 999<br>
+Notifications dropdown: z-index 999<br>
+Categories dropdown: z-index 998<br>
+Search dropdown: z-index 999<br>
+Hero section: z-index 1<br>
+Quick filters: z-index 1<br>
+Trending section: z-index 1
+                    </code>
+                </div>
+            </div>
+
+            <div class="test-item">
+                <h3>Como Testar</h3>
+                <ul class="checklist">
+                    <li>Abra a página inicial (index.html)</li>
+                    <li>Verifique se o menu do usuário NÃO sobrepõe o carrossel</li>
+                    <li>Clique no avatar - dropdown deve aparecer abaixo do header</li>
+                    <li>Verifique se o carrossel está visível e funcional</li>
+                    <li>Verifique se "Bombando Hoje" está visível</li>
+                    <li>Teste todos os dropdowns (Categorias, Notificações, Busca)</li>
+                    <li>Confirme que não há elementos sobrepostos</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Arquivos Modificados -->
+        <div class="test-section">
+            <h2>📝 Arquivos Modificados</h2>
+            
+            <div class="test-item">
+                <h3>frontend/js/fanfic-form.js</h3>
+                <ul class="checklist">
+                    <li>Método saveDraft() - URL corrigida</li>
+                    <li>Método publish() - URL corrigida</li>
+                    <li>Método validateForm() - logs adicionados</li>
+                </ul>
+            </div>
+
+            <div class="test-item">
+                <h3>frontend/css/landing.css</h3>
+                <ul class="checklist">
+                    <li>.main-header - width: 100% adicionado</li>
+                    <li>.user-dropdown - z-index: 999</li>
+                    <li>.notifications-dropdown - z-index: 999</li>
+                    <li>.categories-dropdown - z-index: 998</li>
+                    <li>.search-dropdown - z-index: 999</li>
+                    <li>.hero-section - z-index: 1</li>
+                    <li>.quick-filters-section - z-index: 1</li>
+                    <li>.trending-section - z-index: 1</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Botões de Ação -->
+        <div class="button-group">
+            <a href="../index.html" class="btn btn-primary">Testar Página Inicial</a>
+            <a href="../dashboard.html" class="btn btn-primary">Testar Dashboard</a>
+            <a href="../CORRECOES-FANFIC-E-LAYOUT.md" class="btn btn-secondary">Ver Documentação Completa</a>
+        </div>
+
+        <!-- Notas Adicionais -->
+        <div class="test-section">
+            <h2>📌 Notas Importantes</h2>
+            
+            <div class="test-item">
+                <h3>Logs de Debug</h3>
+                <p>Os logs adicionados no console ajudam a diagnosticar problemas. Para produção, considere removê-los ou usar um sistema de logging condicional.</p>
+            </div>
+
+            <div class="test-item">
+                <h3>URL Hardcoded</h3>
+                <p>A URL foi hardcoded como solução temporária. Para uma solução mais robusta, considere:</p>
+                <ul style="margin-left: 2rem; margin-top: 0.5rem; color: #a0a0b8;">
+                    <li>Exportar API_BASE_URL como variável global</li>
+                    <li>Criar um arquivo config.js</li>
+                    <li>Usar módulos ES6 (import/export)</li>
+                </ul>
+            </div>
+
+            <div class="test-item">
+                <h3>Testes em Diferentes Resoluções</h3>
+                <p>Teste o layout em:</p>
+                <ul style="margin-left: 2rem; margin-top: 0.5rem; color: #a0a0b8;">
+                    <li>Desktop: 1920x1080</li>
+                    <li>Tablet: 768x1024</li>
+                    <li>Mobile: 375x667</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        console.log('='.repeat(50));
+        console.log('VERIFICAÇÃO DE CORREÇÕES DE LAYOUT');
+        console.log('='.repeat(50));
+        console.log('');
+        console.log('✓ Correção 1: URL da API corrigida em fanfic-form.js');
+        console.log('✓ Correção 2: Z-index ajustado em landing.css');
+        console.log('');
+        console.log('Use os botões acima para testar as correções.');
+        console.log('='.repeat(50));
+    </script>
+</body>
+</html>

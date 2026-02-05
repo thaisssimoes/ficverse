@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>End-to-End Integration Tests - Homepage Redesign</title>
+    <link rel="stylesheet" href="../css/landing.css">
+    <style>
+        body {
+            padding: 2rem;
+            background: var(--bg-dark);
+            color: var(--text-light);
+        }
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-section {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        .test-section h2 {
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+        .test-case {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        .test-case h3 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1rem;
+        }
+        .test-result {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-weight: 600;
+            margin-left: 0.5rem;
+        }
+        .test-result.pass {
+            background: var(--pastel-green);
+            color: var(--intense-green);
+        }
+        .test-result.fail {
+            background: var(--pastel-pink);
+            color: var(--intense-pink);
+        }
+        .test-result.pending {
+            background: var(--pastel-yellow);
+            color: var(--intense-yellow);
+        }
+        .test-details {
+            margin-top: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+        .test-actions {
+            margin-top: 1rem;
+            display: flex;
+            gap: 1rem;
+        }
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-light);
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+        .test-summary {
+            display: flex;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        .summary-card {
+            flex: 1;
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+        .summary-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        .summary-label {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>End-to-End Integration Tests</h1>
+        <p style="color: var(--text-muted); margin-bottom: 2rem;">
+            Comprehensive testing of the homepage redesign with authentication integration
+        </p>
+
+        <div class="test-summary">
+            <div class="summary-card">
+                <div class="summary-number" id="total-tests">0</div>
+                <div class="summary-label">Total Tests</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-number" style="color: var(--intense-green);" id="passed-tests">0</div>
+                <div class="summary-label">Passed</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-number" style="color: var(--intense-pink);" id="failed-tests">0</div>
+                <div class="summary-label">Failed</div>
+            </div>
+        </div>
+
+        <!-- Test Section 1: Unauthenticated User Flow -->
+        <div class="test-section">
+            <h2>1. Unauthenticated User Flow</h2>
+            <div id="unauth-tests"></div>
+            <div class="test-actions">
+                <button class="btn btn-primary" onclick="runUnauthenticatedTests()">Run Tests</button>
+                <button class="btn btn-secondary" onclick="clearAuthState()">Clear Auth State</button>
+            </div>
+        </div>
+
+        <!-- Test Section 2: Authenticated User Flow -->
+        <div class="test-section">
+            <h2>2. Authenticated User Flow</h2>
+            <div id="auth-tests"></div>
+            <div class="test-actions">
+                <button class="btn btn-primary" onclick="runAuthenticatedTests()">Run Tests</button>
+                <button class="btn btn-secondary" onclick="simulateLogin()">Simulate Login</button>
+            </div>
+        </div>
+
+        <!-- Test Section 3: Component Interactions -->
+        <div class="test-section">
+            <h2>3. Component Interactions</h2>
+            <div id="interaction-tests"></div>
+            <div class="test-actions">
+                <button class="btn btn-primary" onclick="runInteractionTests()">Run Tests</button>
+            </div>
+        </div>
+
+        <!-- Test Section 4: Navigation Flow -->
+        <div class="test-section">
+            <h2>4. Navigation Flow</h2>
+            <div id="navigation-tests"></div>
+            <div class="test-actions">
+                <button class="btn btn-primary" onclick="runNavigationTests()">Run Tests</button>
+            </div>
+        </div>
+
+        <div class="test-actions" style="margin-top: 2rem;">
+            <button class="btn btn-primary" onclick="runAllTests()" style="font-size: 1.1rem; padding: 0.75rem 2rem;">
+                Run All Tests
+            </button>
+        </div>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script>
+        // Test utilities
+        let testResults = {
+            total: 0,
+            passed: 0,
+            failed: 0
+        };
+
+        function createTestCase(name, status, details) {
+            const div = document.createElement('div');
+            div.className = 'test-case';
+            
+            const statusClass = status === 'pass' ? 'pass' : status === 'fail' ? 'fail' : 'pending';
+            
+            div.innerHTML = `
+                <h3>
+                    ${name}
+                    <span class="test-result ${statusClass}">${status.toUpperCase()}</span>
+                </h3>
+                ${details ? `<div class="test-details">${details}</div>` : ''}
+            `;
+            
+            return div;
+        }
+
+        function updateSummary() {
+            document.getElementById('total-tests').textContent = testResults.total;
+            document.getElementById('passed-tests').textContent = testResults.passed;
+            document.getElementById('failed-tests').textContent = testResults.failed;
+        }
+
+        function recordTest(passed) {
+            testResults.total++;
+            if (passed) {
+                testResults.passed++;
+            } else {
+                testResults.failed++;
+            }
+            updateSummary();
+        }
+
+        // Clear authentication state
+        function clearAuthState() {
+            localStorage.removeItem('auth_token');
+            api.clearToken();
+            alert('Authentication state cleared. Reload the page to see unauthenticated state.');
+        }
+
+        // Simulate login with a mock token
+        function simulateLogin() {
+            // Create a mock JWT token (this is for testing only)
+            const mockPayload = {
+                user_id: 1,
+                username: 'testuser',
+                email: 'test@example.com',
+                avatar: null,
+                exp: Math.floor(Date.now() / 1000) + 3600 // Expires in 1 hour
+            };
+            
+            const mockToken = 'header.' + btoa(JSON.stringify(mockPayload)) + '.signature';
+            api.setToken(mockToken);
+            alert('Mock login successful. Reload the page to see authenticated state.');
+        }
+
+        // Test 1: Unauthenticated User Flow
+        async function runUnauthenticatedTests() {
+            const container = document.getElementById('unauth-tests');
+            container.innerHTML = '';
+            
+            // Clear auth state for testing
+            api.clearToken();
+            
+            // Test 1.1: Login/Register buttons visible
+            const authButtons = document.querySelector('.auth-buttons');
+            const hasLoginButtons = authButtons && authButtons.style.display !== 'none';
+            container.appendChild(createTestCase(
+                'Login/Register buttons are visible',
+                hasLoginButtons ? 'pass' : 'fail',
+                hasLoginButtons ? 'Auth buttons found and visible' : 'Auth buttons not found or hidden'
+            ));
+            recordTest(hasLoginButtons);
+            
+            // Test 1.2: User menu hidden
+            const userMenu = document.querySelector('.user-menu');
+            const userMenuHidden = userMenu && userMenu.style.display === 'none';
+            container.appendChild(createTestCase(
+                'User menu is hidden',
+                userMenuHidden ? 'pass' : 'fail',
+                userMenuHidden ? 'User menu correctly hidden' : 'User menu should be hidden'
+            ));
+            recordTest(userMenuHidden);
+            
+            // Test 1.3: Notification bell hidden
+            const notificationBell = document.querySelector('.notification-bell');
+            const bellHidden = notificationBell && notificationBell.style.display === 'none';
+            container.appendChild(createTestCase(
+                'Notification bell is hidden',
+                bellHidden ? 'pass' : 'fail',
+                bellHidden ? 'Notification bell correctly hidden' : 'Notification bell should be hidden'
+            ));
+            recordTest(bellHidden);
+            
+            // Test 1.4: Categories menu accessible
+            const categoriesBtn = document.querySelector('.categories-btn');
+            const categoriesAccessible = categoriesBtn !== null;
+            container.appendChild(createTestCase(
+                'Categories menu is accessible',
+                categoriesAccessible ? 'pass' : 'fail',
+                categoriesAccessible ? 'Categories button found' : 'Categories button not found'
+            ));
+            recordTest(categoriesAccessible);
+            
+            // Test 1.5: Search bar visible
+            const searchBar = document.querySelector('.search-bar');
+            const searchVisible = searchBar !== null;
+            container.appendChild(createTestCase(
+                'Search bar is visible',
+                searchVisible ? 'pass' : 'fail',
+                searchVisible ? 'Search bar found' : 'Search bar not found'
+            ));
+            recordTest(searchVisible);
+        }
+
+        // Test 2: Authenticated User Flow
+        async function runAuthenticatedTests() {
+            const container = document.getElementById('auth-tests');
+            container.innerHTML = '';
+            
+            // Simulate authentication
+            const mockPayload = {
+                user_id: 1,
+                username: 'testuser',
+                email: 'test@example.com',
+                avatar: null,
+                exp: Math.floor(Date.now() / 1000) + 3600
+            };
+            const mockToken = 'header.' + btoa(JSON.stringify(mockPayload)) + '.signature';
+            api.setToken(mockToken);
+            
+            // Reload page components (simulate page load)
+            setTimeout(() => {
+                // Test 2.1: Login/Register buttons hidden
+                const authButtons = document.querySelector('.auth-buttons');
+                const buttonsHidden = authButtons && authButtons.style.display === 'none';
+                container.appendChild(createTestCase(
+                    'Login/Register buttons are hidden',
+                    buttonsHidden ? 'pass' : 'fail',
+                    buttonsHidden ? 'Auth buttons correctly hidden' : 'Auth buttons should be hidden when authenticated'
+                ));
+                recordTest(buttonsHidden);
+                
+                // Test 2.2: User menu visible
+                const userMenu = document.querySelector('.user-menu');
+                const menuVisible = userMenu && userMenu.style.display !== 'none';
+                container.appendChild(createTestCase(
+                    'User menu is visible',
+                    menuVisible ? 'pass' : 'fail',
+                    menuVisible ? 'User menu correctly visible' : 'User menu should be visible when authenticated'
+                ));
+                recordTest(menuVisible);
+                
+                // Test 2.3: User avatar displayed
+                const userAvatar = document.querySelector('.user-avatar');
+                const avatarDisplayed = userAvatar && userAvatar.src;
+                container.appendChild(createTestCase(
+                    'User avatar is displayed',
+                    avatarDisplayed ? 'pass' : 'fail',
+                    avatarDisplayed ? `Avatar src: ${userAvatar.src}` : 'Avatar not found or no src'
+                ));
+                recordTest(avatarDisplayed);
+                
+                // Test 2.4: Notification bell visible
+                const notificationBell = document.querySelector('.notification-bell');
+                const bellVisible = notificationBell && notificationBell.style.display !== 'none';
+                container.appendChild(createTestCase(
+                    'Notification bell is visible',
+                    bellVisible ? 'pass' : 'fail',
+                    bellVisible ? 'Notification bell correctly visible' : 'Notification bell should be visible when authenticated'
+                ));
+                recordTest(bellVisible);
+                
+                // Test 2.5: User dropdown menu exists
+                const userDropdown = document.querySelector('.user-dropdown');
+                const dropdownExists = userDropdown !== null;
+                container.appendChild(createTestCase(
+                    'User dropdown menu exists',
+                    dropdownExists ? 'pass' : 'fail',
+                    dropdownExists ? 'User dropdown found' : 'User dropdown not found'
+                ));
+                recordTest(dropdownExists);
+            }, 100);
+        }
+
+        // Test 3: Component Interactions
+        async function runInteractionTests() {
+            const container = document.getElementById('interaction-tests');
+            container.innerHTML = '';
+            
+            // Test 3.1: Categories menu toggle
+            const categoriesBtn = document.querySelector('.categories-btn');
+            const categoriesDropdown = document.querySelector('.categories-dropdown');
+            
+            if (categoriesBtn && categoriesDropdown) {
+                const initialDisplay = categoriesDropdown.style.display;
+                categoriesBtn.click();
+                const afterClickDisplay = categoriesDropdown.style.display;
+                const toggleWorks = initialDisplay !== afterClickDisplay;
+                
+                container.appendChild(createTestCase(
+                    'Categories menu toggles on click',
+                    toggleWorks ? 'pass' : 'fail',
+                    toggleWorks ? `Display changed from "${initialDisplay}" to "${afterClickDisplay}"` : 'Display did not change'
+                ));
+                recordTest(toggleWorks);
+                
+                // Close it again
+                categoriesBtn.click();
+            } else {
+                container.appendChild(createTestCase(
+                    'Categories menu toggles on click',
+                    'fail',
+                    'Categories button or dropdown not found'
+                ));
+                recordTest(false);
+            }
+            
+            // Test 3.2: Quick filters selection
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            if (filterButtons.length > 0) {
+                const firstFilter = filterButtons[0];
+                const secondFilter = filterButtons[1];
+                
+                if (secondFilter) {
+                    secondFilter.click();
+                    const hasActive = secondFilter.classList.contains('active');
+                    
+                    container.appendChild(createTestCase(
+                        'Quick filter selection works',
+                        hasActive ? 'pass' : 'fail',
+                        hasActive ? 'Filter button has active class after click' : 'Filter button should have active class'
+                    ));
+                    recordTest(hasActive);
+                }
+            } else {
+                container.appendChild(createTestCase(
+                    'Quick filter selection works',
+                    'fail',
+                    'No filter buttons found'
+                ));
+                recordTest(false);
+            }
+            
+            // Test 3.3: Search bar interaction
+            const searchInput = document.querySelector('.search-input');
+            if (searchInput) {
+                searchInput.focus();
+                const isFocused = document.activeElement === searchInput;
+                
+                container.appendChild(createTestCase(
+                    'Search bar is focusable',
+                    isFocused ? 'pass' : 'fail',
+                    isFocused ? 'Search input can receive focus' : 'Search input cannot receive focus'
+                ));
+                recordTest(isFocused);
+            } else {
+                container.appendChild(createTestCase(
+                    'Search bar is focusable',
+                    'fail',
+                    'Search input not found'
+                ));
+                recordTest(false);
+            }
+            
+            // Test 3.4: Hero section navigation buttons
+            const heroPrevBtn = document.getElementById('hero-prev-btn');
+            const heroNextBtn = document.getElementById('hero-next-btn');
+            const navButtonsExist = heroPrevBtn && heroNextBtn;
+            
+            container.appendChild(createTestCase(
+                'Hero navigation buttons exist',
+                navButtonsExist ? 'pass' : 'fail',
+                navButtonsExist ? 'Both prev and next buttons found' : 'Navigation buttons not found'
+            ));
+            recordTest(navButtonsExist);
+        }
+
+        // Test 4: Navigation Flow
+        async function runNavigationTests() {
+            const container = document.getElementById('navigation-tests');
+            container.innerHTML = '';
+            
+            // Test 4.1: Header is fixed
+            const header = document.querySelector('.main-header');
+            const isFixed = header && window.getComputedStyle(header).position === 'fixed';
+            
+            container.appendChild(createTestCase(
+                'Header has fixed position',
+                isFixed ? 'pass' : 'fail',
+                isFixed ? 'Header position is fixed' : 'Header should have position: fixed'
+            ));
+            recordTest(isFixed);
+            
+            // Test 4.2: All navigation links exist
+            const logo = document.querySelector('.logo');
+            const logoExists = logo !== null;
+            
+            container.appendChild(createTestCase(
+                'Logo link exists',
+                logoExists ? 'pass' : 'fail',
+                logoExists ? 'Logo found' : 'Logo not found'
+            ));
+            recordTest(logoExists);
+            
+            // Test 4.3: Hero CTA button exists
+            const heroCTA = document.getElementById('hero-cta-btn');
+            const ctaExists = heroCTA !== null;
+            
+            container.appendChild(createTestCase(
+                'Hero CTA button exists',
+                ctaExists ? 'pass' : 'fail',
+                ctaExists ? 'CTA button found' : 'CTA button not found'
+            ));
+            recordTest(ctaExists);
+            
+            // Test 4.4: Trending section exists
+            const trendingSection = document.querySelector('.trending-section');
+            const trendingExists = trendingSection !== null;
+            
+            container.appendChild(createTestCase(
+                'Trending section exists',
+                trendingExists ? 'pass' : 'fail',
+                trendingExists ? 'Trending section found' : 'Trending section not found'
+            ));
+            recordTest(trendingExists);
+            
+            // Test 4.5: Footer exists
+            const footer = document.querySelector('.footer');
+            const footerExists = footer !== null;
+            
+            container.appendChild(createTestCase(
+                'Footer exists',
+                footerExists ? 'pass' : 'fail',
+                footerExists ? 'Footer found' : 'Footer not found'
+            ));
+            recordTest(footerExists);
+        }
+
+        // Run all tests
+        async function runAllTests() {
+            testResults = { total: 0, passed: 0, failed: 0 };
+            updateSummary();
+            
+            await runUnauthenticatedTests();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await runAuthenticatedTests();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await runInteractionTests();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await runNavigationTests();
+            
+            alert(`Tests completed!\nTotal: ${testResults.total}\nPassed: ${testResults.passed}\nFailed: ${testResults.failed}`);
+        }
+
+        // Initialize
+        updateSummary();
+    </script>
+</body>
+</html>

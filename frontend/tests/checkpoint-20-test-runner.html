@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkpoint 20: Frontend Core Complete - Test Runner</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .section h2 {
+            font-size: 22px;
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .test-card {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .test-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .test-card h3 {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .test-card p {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+
+        .test-card .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .status.implemented {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status.pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background: #5568d3;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .checklist {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 15px;
+        }
+
+        .checklist-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            margin-bottom: 8px;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
+        }
+
+        .checklist-item input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 12px;
+            cursor: pointer;
+        }
+
+        .checklist-item label {
+            flex: 1;
+            cursor: pointer;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #e9ecef;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .summary {
+            background: #e7f3ff;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .summary h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .summary ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .summary li {
+            padding: 5px 0;
+            color: #666;
+        }
+
+        .summary li::before {
+            content: "✓ ";
+            color: #28a745;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Checkpoint 20: Frontend Core Complete</h1>
+            <p>Comprehensive verification of all frontend components for Fanfic Management System</p>
+        </div>
+
+        <div class="content">
+            <div class="summary">
+                <h3>📋 Checkpoint Overview</h3>
+                <ul>
+                    <li>Verify all frontend tests pass</li>
+                    <li>Test all forms and workflows manually</li>
+                    <li>Verify rich text editor works correctly</li>
+                    <li>Verify tag system works correctly</li>
+                    <li>Ensure system is ready for integration testing</li>
+                </ul>
+            </div>
+
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressBar" style="width: 0%">0%</div>
+            </div>
+
+            <!-- Component Tests Section -->
+            <div class="section">
+                <h2>🧪 Component Tests</h2>
+                <div class="test-grid">
+                    <div class="test-card">
+                        <span class="status implemented">Implemented</span>
+                        <h3>Rich Text Editor</h3>
+                        <p>Tests Quill.js integration, formatting options, and HTML preservation</p>
+                        <a href="rich-text-editor.test.html" target="_blank" class="btn">Run Test</a>
+                    </div>
+
+                    <div class="test-card">
+                        <span class="status implemented">Implemented</span>
+                        <h3>Fanfic Form</h3>
+                        <p>Tests creation form with all fields, validation, and draft/publish functionality</p>
+                        <a href="fanfic-form.test.html" target="_blank" class="btn">Run Test</a>
+                    </div>
+
+                    <div class="test-card">
+                        <span class="status implemented">Implemented</span>
+                        <h3>Tag Search</h3>
+                        <p>Tests tag filtering, multiple tag selection, and search results</p>
+                        <a href="tag-search.test.html" target="_blank" class="btn">Run Test</a>
+                    </div>
+
+                    <div class="test-card">
+                        <span class="status implemented">Implemented</span>
+                        <h3>Content Warning Modal</h3>
+                        <p>Tests adult content warnings and trigger warning display</p>
+                        <a href="content-warning-modal.test.html" target="_blank" class="btn">Run Test</a>
+                    </div>
+
+                    <div class="test-card">
+                        <span class="status implemented">Implemented</span>
+                        <h3>Dashboard Draft/Publish</h3>
+                        <p>Tests draft status display and quick publish/unpublish</p>
+                        <a href="dashboard-draft-publish.test.html" target="_blank" class="btn">Run Test</a>
+                    </div>
+
+                    <div class="test-card">
+                        <span class="status implemented">Implemented</span>
+                        <h3>Fanfic Card Metadata</h3>
+                        <p>Tests display of badges, tags, and metadata on fanfic cards</p>
+                        <a href="fanfic-card-metadata.test.html" target="_blank" class="btn">Run Test</a>
+                    </div>
+
+                    <div class="test-card">
+                        <span class="status implemented">Implemented</span>
+                        <h3>Chapter Draft Mode</h3>
+                        <p>Tests chapter draft creation and publishing</p>
+                        <a href="chapter-draft-mode.test.html" target="_blank" class="btn">Run Test</a>
+                    </div>
+
+                    <div class="test-card">
+                        <span class="status implemented">Implemented</span>
+                        <h3>Chapter Deletion</h3>
+                        <p>Tests chapter deletion with confirmation and reordering</p>
+                        <a href="chapter-deletion.test.html" target="_blank" class="btn">Run Test</a>
+                    </div>
+
+                    <div class="test-card">
+                        <span class="status implemented">Implemented</span>
+                        <h3>Cover Upload</h3>
+                        <p>Tests image upload validation and file handling</p>
+                        <a href="cover-upload-test.html" target="_blank" class="btn">Run Test</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Manual Testing Checklist -->
+            <div class="section">
+                <h2>✅ Manual Testing Checklist</h2>
+                <div class="checklist">
+                    <h3 style="margin-bottom: 15px;">Rich Text Editor</h3>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check1" onchange="updateProgress()">
+                        <label for="check1">Bold, italic, underline, strikethrough formatting works</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check2" onchange="updateProgress()">
+                        <label for="check2">Lists (ordered and unordered) work correctly</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check3" onchange="updateProgress()">
+                        <label for="check3">Headings (H1, H2, H3) work correctly</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check4" onchange="updateProgress()">
+                        <label for="check4">Content is saved as HTML and displayed correctly</label>
+                    </div>
+
+                    <h3 style="margin: 20px 0 15px 0;">Fanfic Form</h3>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check5" onchange="updateProgress()">
+                        <label for="check5">All fields are present and functional</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check6" onchange="updateProgress()">
+                        <label for="check6">Cover upload validates format (JPEG, PNG, GIF, WEBP)</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check7" onchange="updateProgress()">
+                        <label for="check7">Cover upload validates size (max 5MB)</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check8" onchange="updateProgress()">
+                        <label for="check8">Tags can be added (max 5 per type)</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check9" onchange="updateProgress()">
+                        <label for="check9">Tag limit is enforced</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check10" onchange="updateProgress()">
+                        <label for="check10">Category is required field</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check11" onchange="updateProgress()">
+                        <label for="check11">Save as draft works correctly</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check12" onchange="updateProgress()">
+                        <label for="check12">Publish validates required fields</label>
+                    </div>
+
+                    <h3 style="margin: 20px 0 15px 0;">Tag Search</h3>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check13" onchange="updateProgress()">
+                        <label for="check13">Search by single tag works</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check14" onchange="updateProgress()">
+                        <label for="check14">Search by multiple tags works (AND logic)</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check15" onchange="updateProgress()">
+                        <label for="check15">Only published fanfics appear in results</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check16" onchange="updateProgress()">
+                        <label for="check16">Tag autocomplete works</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check17" onchange="updateProgress()">
+                        <label for="check17">Clicking tags in detail page navigates to search</label>
+                    </div>
+
+                    <h3 style="margin: 20px 0 15px 0;">Content Warning Modal</h3>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check18" onchange="updateProgress()">
+                        <label for="check18">Modal displays for adult content</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check19" onchange="updateProgress()">
+                        <label for="check19">Modal displays trigger warnings</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check20" onchange="updateProgress()">
+                        <label for="check20">Confirmation is required to proceed</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check21" onchange="updateProgress()">
+                        <label for="check21">Confirmation is stored in session</label>
+                    </div>
+
+                    <h3 style="margin: 20px 0 15px 0;">Dashboard</h3>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check22" onchange="updateProgress()">
+                        <label for="check22">Draft and published fanfics are shown</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check23" onchange="updateProgress()">
+                        <label for="check23">Draft badges are displayed correctly</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check24" onchange="updateProgress()">
+                        <label for="check24">Filter by draft/published works</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check25" onchange="updateProgress()">
+                        <label for="check25">Quick publish button works</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check26" onchange="updateProgress()">
+                        <label for="check26">Quick unpublish button works</label>
+                    </div>
+
+                    <h3 style="margin: 20px 0 15px 0;">Fanfic Cards</h3>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check27" onchange="updateProgress()">
+                        <label for="check27">Adult content badge displays</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check28" onchange="updateProgress()">
+                        <label for="check28">Trigger warning icon displays</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check29" onchange="updateProgress()">
+                        <label for="check29">Tags are displayed and grouped by type</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check30" onchange="updateProgress()">
+                        <label for="check30">Category badge displays</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check31" onchange="updateProgress()">
+                        <label for="check31">Cover images display correctly</label>
+                    </div>
+
+                    <h3 style="margin: 20px 0 15px 0;">Chapter Management</h3>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check32" onchange="updateProgress()">
+                        <label for="check32">Draft chapters can be created</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check33" onchange="updateProgress()">
+                        <label for="check33">Draft chapters show badge</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check34" onchange="updateProgress()">
+                        <label for="check34">Publish chapter button works</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check35" onchange="updateProgress()">
+                        <label for="check35">Delete chapter shows confirmation</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check36" onchange="updateProgress()">
+                        <label for="check36">Chapters reorder after deletion</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="section">
+                <h2>🚀 Quick Actions</h2>
+                <div class="action-buttons">
+                    <a href="../dashboard.html" target="_blank" class="btn">Open Dashboard</a>
+                    <a href="../edit-fanfic.html" target="_blank" class="btn">Open Fanfic Form</a>
+                    <a href="../tag-search.html" target="_blank" class="btn">Open Tag Search</a>
+                    <a href="../index.html" target="_blank" class="btn">Open Homepage</a>
+                    <a href="run-all-tests.html" target="_blank" class="btn btn-secondary">Run All Tests</a>
+                    <a href="checkpoint-20-verification.md" target="_blank" class="btn btn-secondary">View Full Report</a>
+                </div>
+            </div>
+
+            <!-- Results Summary -->
+            <div class="section">
+                <h2>📊 Results Summary</h2>
+                <div id="resultsSummary" style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
+                    <p style="color: #666; text-align: center;">Complete the checklist above to see your progress</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function updateProgress() {
+            const checkboxes = document.querySelectorAll('.checklist input[type="checkbox"]');
+            const checked = document.querySelectorAll('.checklist input[type="checkbox"]:checked');
+            const percentage = Math.round((checked.length / checkboxes.length) * 100);
+            
+            const progressBar = document.getElementById('progressBar');
+            progressBar.style.width = percentage + '%';
+            progressBar.textContent = percentage + '%';
+
+            // Update results summary
+            const summary = document.getElementById('resultsSummary');
+            if (percentage === 100) {
+                summary.innerHTML = `
+                    <div style="text-align: center;">
+                        <h3 style="color: #28a745; margin-bottom: 10px;">✅ All Checks Complete!</h3>
+                        <p style="color: #666; margin-bottom: 15px;">
+                            Congratulations! All ${checkboxes.length} manual tests have been verified.
+                        </p>
+                        <p style="color: #666;">
+                            <strong>Next Step:</strong> Proceed to Task 21 - Integration Testing and Bug Fixes
+                        </p>
+                    </div>
+                `;
+            } else {
+                summary.innerHTML = `
+                    <div style="text-align: center;">
+                        <h3 style="color: #333; margin-bottom: 10px;">Progress: ${checked.length} / ${checkboxes.length}</h3>
+                        <p style="color: #666;">
+                            ${checkboxes.length - checked.length} items remaining
+                        </p>
+                    </div>
+                `;
+            }
+
+            // Save progress to localStorage
+            const progress = {};
+            checkboxes.forEach((checkbox, index) => {
+                progress[`check${index + 1}`] = checkbox.checked;
+            });
+            localStorage.setItem('checkpoint20Progress', JSON.stringify(progress));
+        }
+
+        // Load progress from localStorage
+        window.addEventListener('DOMContentLoaded', () => {
+            const saved = localStorage.getItem('checkpoint20Progress');
+            if (saved) {
+                const progress = JSON.parse(saved);
+                Object.keys(progress).forEach(key => {
+                    const checkbox = document.getElementById(key);
+                    if (checkbox) {
+                        checkbox.checked = progress[key];
+                    }
+                });
+                updateProgress();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Content Warning Modal Test</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <style>
+        .test-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 2rem;
+        }
+
+        .test-section {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .test-section h2 {
+            color: var(--intense-purple);
+            margin-bottom: 1rem;
+        }
+
+        .test-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .test-result {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 8px;
+            background-color: var(--pastel-blue);
+            color: var(--dark-gray);
+        }
+
+        .test-result.success {
+            background-color: var(--pastel-blue);
+            border-left: 4px solid var(--intense-blue);
+        }
+
+        .test-result.error {
+            background-color: var(--pastel-pink);
+            border-left: 4px solid var(--intense-pink);
+        }
+
+        .fanfic-preview {
+            background-color: var(--light-gray);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+
+        .fanfic-preview h3 {
+            color: var(--intense-purple);
+            margin-bottom: 0.5rem;
+        }
+
+        .fanfic-preview .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-right: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .badge.adult {
+            background-color: var(--pastel-pink);
+            color: var(--intense-pink);
+        }
+
+        .badge.warning {
+            background-color: var(--pastel-purple);
+            color: var(--intense-purple);
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1 style="color: var(--intense-purple); margin-bottom: 2rem;">Content Warning Modal - Test Suite</h1>
+
+        <!-- Test 1: Adult Content Only -->
+        <div class="test-section">
+            <h2>Test 1: Adult Content Warning Only</h2>
+            <p>This test shows a modal with only adult content warning (no trigger warnings).</p>
+            <div class="fanfic-preview">
+                <h3>Test Fanfic: "Mature Romance"</h3>
+                <span class="badge adult">🔞 Adult Content</span>
+            </div>
+            <div class="test-buttons">
+                <button class="btn btn-primary" onclick="testAdultContentOnly()">
+                    Show Adult Content Warning
+                </button>
+                <button class="btn btn-secondary" onclick="clearConfirmation(1)">
+                    Clear Session
+                </button>
+            </div>
+            <div id="result-1" class="test-result" style="display: none;"></div>
+        </div>
+
+        <!-- Test 2: Trigger Warnings Only -->
+        <div class="test-section">
+            <h2>Test 2: Trigger Warnings Only</h2>
+            <p>This test shows a modal with only trigger warnings (no adult content flag).</p>
+            <div class="fanfic-preview">
+                <h3>Test Fanfic: "Dark Fantasy"</h3>
+                <span class="badge warning">⚠️ Trigger Warnings</span>
+            </div>
+            <div class="test-buttons">
+                <button class="btn btn-primary" onclick="testTriggerWarningsOnly()">
+                    Show Trigger Warnings
+                </button>
+                <button class="btn btn-secondary" onclick="clearConfirmation(2)">
+                    Clear Session
+                </button>
+            </div>
+            <div id="result-2" class="test-result" style="display: none;"></div>
+        </div>
+
+        <!-- Test 3: Both Warnings -->
+        <div class="test-section">
+            <h2>Test 3: Adult Content + Trigger Warnings</h2>
+            <p>This test shows a modal with both adult content and trigger warnings.</p>
+            <div class="fanfic-preview">
+                <h3>Test Fanfic: "Intense Drama"</h3>
+                <span class="badge adult">🔞 Adult Content</span>
+                <span class="badge warning">⚠️ Trigger Warnings</span>
+            </div>
+            <div class="test-buttons">
+                <button class="btn btn-primary" onclick="testBothWarnings()">
+                    Show Both Warnings
+                </button>
+                <button class="btn btn-secondary" onclick="clearConfirmation(3)">
+                    Clear Session
+                </button>
+            </div>
+            <div id="result-3" class="test-result" style="display: none;"></div>
+        </div>
+
+        <!-- Test 4: No Warnings -->
+        <div class="test-section">
+            <h2>Test 4: No Warnings (Should Skip Modal)</h2>
+            <p>This test should NOT show a modal and proceed directly.</p>
+            <div class="fanfic-preview">
+                <h3>Test Fanfic: "Wholesome Adventure"</h3>
+                <span class="badge" style="background-color: var(--pastel-blue); color: var(--intense-blue);">✓ Safe Content</span>
+            </div>
+            <div class="test-buttons">
+                <button class="btn btn-primary" onclick="testNoWarnings()">
+                    Test No Warnings
+                </button>
+            </div>
+            <div id="result-4" class="test-result" style="display: none;"></div>
+        </div>
+
+        <!-- Test 5: Session Persistence -->
+        <div class="test-section">
+            <h2>Test 5: Session Persistence</h2>
+            <p>After confirming once, the modal should not show again for the same fanfic in the same session.</p>
+            <div class="test-buttons">
+                <button class="btn btn-primary" onclick="testSessionPersistence()">
+                    Test Session Persistence
+                </button>
+                <button class="btn btn-secondary" onclick="clearAllConfirmations()">
+                    Clear All Sessions
+                </button>
+            </div>
+            <div id="result-5" class="test-result" style="display: none;"></div>
+        </div>
+
+        <!-- Test 6: Long Trigger Warnings -->
+        <div class="test-section">
+            <h2>Test 6: Long Trigger Warnings Text</h2>
+            <p>This test shows how the modal handles long trigger warning text.</p>
+            <div class="test-buttons">
+                <button class="btn btn-primary" onclick="testLongTriggerWarnings()">
+                    Show Long Warnings
+                </button>
+                <button class="btn btn-secondary" onclick="clearConfirmation(6)">
+                    Clear Session
+                </button>
+            </div>
+            <div id="result-6" class="test-result" style="display: none;"></div>
+        </div>
+
+        <!-- Test Results Summary -->
+        <div class="test-section">
+            <h2>Test Summary</h2>
+            <p>All tests completed. Check the results above.</p>
+            <div class="test-buttons">
+                <button class="btn btn-primary" onclick="runAllTests()">
+                    Run All Tests
+                </button>
+                <button class="btn btn-secondary" onclick="clearAllConfirmations()">
+                    Reset All
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/content-warning-modal.js"></script>
+    <script>
+        // Test 1: Adult Content Only
+        function testAdultContentOnly() {
+            const fanfic = {
+                id: 1,
+                title: "Mature Romance",
+                is_adult_content: true,
+                trigger_warnings: ""
+            };
+
+            const modal = new ContentWarningModal();
+            modal.show(fanfic, () => {
+                showResult(1, "success", "✓ User confirmed adult content warning");
+            });
+        }
+
+        // Test 2: Trigger Warnings Only
+        function testTriggerWarningsOnly() {
+            const fanfic = {
+                id: 2,
+                title: "Dark Fantasy",
+                is_adult_content: false,
+                trigger_warnings: "Violência, Morte de personagens, Temas sombrios"
+            };
+
+            const modal = new ContentWarningModal();
+            modal.show(fanfic, () => {
+                showResult(2, "success", "✓ User confirmed trigger warnings");
+            });
+        }
+
+        // Test 3: Both Warnings
+        function testBothWarnings() {
+            const fanfic = {
+                id: 3,
+                title: "Intense Drama",
+                is_adult_content: true,
+                trigger_warnings: "Violência gráfica, Abuso, Linguagem forte, Conteúdo sexual explícito"
+            };
+
+            const modal = new ContentWarningModal();
+            modal.show(fanfic, () => {
+                showResult(3, "success", "✓ User confirmed both adult content and trigger warnings");
+            });
+        }
+
+        // Test 4: No Warnings
+        function testNoWarnings() {
+            const fanfic = {
+                id: 4,
+                title: "Wholesome Adventure",
+                is_adult_content: false,
+                trigger_warnings: ""
+            };
+
+            const modal = new ContentWarningModal();
+            modal.show(fanfic, () => {
+                showResult(4, "success", "✓ No warnings needed - proceeded directly without modal");
+            });
+        }
+
+        // Test 5: Session Persistence
+        function testSessionPersistence() {
+            const fanfic = {
+                id: 5,
+                title: "Test Persistence",
+                is_adult_content: true,
+                trigger_warnings: "Test warnings"
+            };
+
+            const modal = new ContentWarningModal();
+            
+            // First call - should show modal
+            modal.show(fanfic, () => {
+                showResult(5, "success", "✓ First call: Modal shown and confirmed");
+                
+                // Second call - should skip modal
+                setTimeout(() => {
+                    const modal2 = new ContentWarningModal();
+                    modal2.show(fanfic, () => {
+                        showResult(5, "success", "✓ Session persistence working! Second call skipped modal.");
+                    });
+                }, 500);
+            });
+        }
+
+        // Test 6: Long Trigger Warnings
+        function testLongTriggerWarnings() {
+            const fanfic = {
+                id: 6,
+                title: "Complex Story",
+                is_adult_content: true,
+                trigger_warnings: `Esta história contém os seguintes avisos de conteúdo:
+
+• Violência gráfica e descrições detalhadas de combate
+• Morte de personagens principais e secundários
+• Temas de abuso físico e emocional
+• Linguagem forte e palavrões frequentes
+• Conteúdo sexual explícito entre adultos
+• Uso de drogas e álcool
+• Temas de saúde mental incluindo depressão e ansiedade
+• Automutilação e pensamentos suicidas
+• Discriminação e preconceito
+• Trauma e PTSD
+
+Por favor, leia com cautela e cuide de sua saúde mental.`
+            };
+
+            const modal = new ContentWarningModal();
+            modal.show(fanfic, () => {
+                showResult(6, "success", "✓ Long trigger warnings displayed correctly");
+            });
+        }
+
+        // Helper Functions
+        function showResult(testNumber, type, message) {
+            const resultEl = document.getElementById(`result-${testNumber}`);
+            resultEl.className = `test-result ${type}`;
+            resultEl.textContent = message;
+            resultEl.style.display = 'block';
+        }
+
+        function clearConfirmation(fanficId) {
+            ContentWarningModal.clearConfirmation(fanficId);
+            showResult(fanficId, "success", "✓ Session cleared for this fanfic");
+        }
+
+        function clearAllConfirmations() {
+            ContentWarningModal.clearAllConfirmations();
+            alert("All session confirmations cleared!");
+        }
+
+        function runAllTests() {
+            alert("Running all tests sequentially. Please confirm each modal that appears.");
+            
+            setTimeout(() => testAdultContentOnly(), 500);
+            setTimeout(() => testTriggerWarningsOnly(), 2000);
+            setTimeout(() => testBothWarnings(), 4000);
+            setTimeout(() => testNoWarnings(), 6000);
+            setTimeout(() => testLongTriggerWarnings(), 8000);
+        }
+
+        // Display initial instructions
+        console.log("Content Warning Modal Test Suite Loaded");
+        console.log("Click the test buttons to verify modal functionality");
+    </script>
+</body>
+</html>

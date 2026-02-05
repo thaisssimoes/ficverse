@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Menu Standalone Test</title>
+    <link rel="stylesheet" href="../css/landing.css">
+    <link rel="stylesheet" href="../css/ui-refinements.css">
+    <style>
+        body {
+            padding-top: 100px;
+        }
+        .test-info {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: var(--card-bg);
+            border-radius: 12px;
+        }
+        .test-info h2 {
+            color: var(--primary-purple);
+            margin-bottom: 1rem;
+        }
+        .test-step {
+            background: rgba(26, 26, 46, 0.5);
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 8px;
+            border-left: 3px solid var(--primary-purple);
+        }
+        .test-step h3 {
+            color: var(--primary-blue);
+            margin-bottom: 0.5rem;
+        }
+        .success {
+            color: #22c55e;
+        }
+        .warning {
+            color: #f59e0b;
+        }
+        .error {
+            color: #ef4444;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header with User Menu -->
+    <header class="main-header">
+        <div class="header-container">
+            <a href="/" class="logo">FicVerse</a>
+            
+            <div class="search-bar">
+                <input type="text" class="search-input" placeholder="Busca em FicVerse..." aria-label="Buscar fanfics">
+                <button class="search-icon" aria-label="Buscar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="header-actions">
+                <button class="categories-btn" aria-label="Menu de categorias">
+                    <span>Categorias</span>
+                </button>
+                
+                <div class="auth-area">
+                    <div class="auth-buttons" style="display: none;">
+                        <a href="login.html" class="btn-entrar">Entrar</a>
+                        <a href="register.html" class="btn-cadastrar">Cadastrar</a>
+                    </div>
+                    
+                    <div class="user-menu" style="display: block;">
+                        <button class="user-avatar-btn" aria-label="Menu do usuário" aria-expanded="false">
+                            <img src="https://ui-avatars.com/api/?name=Test+User&background=6366f1&color=fff&size=128" alt="Avatar do usuário" class="user-avatar">
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="user-dropdown" style="display: none;" role="menu">
+            <a href="profile.html" class="user-dropdown-item" role="menuitem">Meu Perfil</a>
+            <a href="dashboard.html" class="user-dropdown-item" role="menuitem">Minhas Fanfics</a>
+            <a href="#settings" class="user-dropdown-item" role="menuitem">Configurações</a>
+            <button class="user-dropdown-item logout-btn" role="menuitem">Sair</button>
+        </div>
+    </header>
+
+    <div class="test-info">
+        <h2>🧪 User Menu Dropdown - Standalone Test</h2>
+        
+        <div class="test-step">
+            <h3>✅ Test 1: Click Avatar to Open Menu</h3>
+            <p>Click the avatar button in the header. The dropdown menu should appear below it.</p>
+            <p id="test1-result" class="warning">⏳ Waiting for interaction...</p>
+        </div>
+
+        <div class="test-step">
+            <h3>✅ Test 2: Click Outside to Close Menu</h3>
+            <p>With the menu open, click anywhere outside the menu. It should close.</p>
+            <p id="test2-result" class="warning">⏳ Waiting for interaction...</p>
+        </div>
+
+        <div class="test-step">
+            <h3>✅ Test 3: Press Escape to Close Menu</h3>
+            <p>Open the menu again, then press the Escape key. The menu should close.</p>
+            <p id="test3-result" class="warning">⏳ Waiting for interaction...</p>
+        </div>
+
+        <div class="test-step">
+            <h3>✅ Test 4: Menu Items Hover Effect</h3>
+            <p>Hover over each menu item. They should have a hover effect (background color change).</p>
+            <p id="test4-result" class="warning">⏳ Manual verification required</p>
+        </div>
+
+        <div class="test-step">
+            <h3>✅ Test 5: aria-expanded Attribute</h3>
+            <p>Check the avatar button's aria-expanded attribute. It should be "true" when open, "false" when closed.</p>
+            <p id="test5-result" class="warning">⏳ Checking...</p>
+        </div>
+
+        <div class="test-step">
+            <h3>📊 Console Logs</h3>
+            <p>Open the browser console (F12) to see detailed logs about menu state changes.</p>
+            <div id="console-output" style="background: #000; color: #0f0; padding: 1rem; border-radius: 4px; font-family: monospace; max-height: 200px; overflow-y: auto; margin-top: 0.5rem;">
+                <div>Console output will appear here...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simple API mock for standalone testing
+        const api = {
+            isAuthenticated: () => true,
+            getToken: () => 'fake-token',
+            clearToken: () => {},
+            logout: async () => {}
+        };
+
+        // Simplified AuthArea class for testing
+        class AuthArea {
+            constructor() {
+                this.userMenu = null;
+                this.userAvatarBtn = null;
+                this.userDropdown = null;
+                this.logoutBtn = null;
+                this.isUserMenuOpen = false;
+            }
+
+            async init() {
+                this.userMenu = document.querySelector('.user-menu');
+                this.userAvatarBtn = document.querySelector('.user-avatar-btn');
+                this.userDropdown = document.querySelector('.user-dropdown');
+                this.logoutBtn = document.querySelector('.logout-btn');
+
+                this.log('Auth area initialized', {
+                    userMenu: !!this.userMenu,
+                    userAvatarBtn: !!this.userAvatarBtn,
+                    userDropdown: !!this.userDropdown
+                });
+
+                this.setupEventListeners();
+            }
+
+            setupEventListeners() {
+                if (this.userAvatarBtn) {
+                    this.userAvatarBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        this.log('Avatar button clicked');
+                        this.toggleUserMenu();
+                        document.getElementById('test1-result').innerHTML = '<span class="success">✅ Menu toggled successfully!</span>';
+                    });
+                }
+
+                document.addEventListener('click', (e) => {
+                    if (this.isUserMenuOpen && this.userDropdown) {
+                        const clickedInsideDropdown = this.userDropdown.contains(e.target);
+                        const clickedAvatar = this.userAvatarBtn && this.userAvatarBtn.contains(e.target);
+                        
+                        if (!clickedInsideDropdown && !clickedAvatar) {
+                            this.log('Clicked outside, closing menu');
+                            this.closeUserMenu();
+                            document.getElementById('test2-result').innerHTML = '<span class="success">✅ Menu closed on outside click!</span>';
+                        }
+                    }
+                });
+
+                if (this.logoutBtn) {
+                    this.logoutBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        this.log('Logout clicked');
+                        alert('Logout functionality works! (In real app, this would log you out)');
+                    });
+                }
+
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape' && this.isUserMenuOpen) {
+                        this.log('Escape key pressed, closing menu');
+                        this.closeUserMenu();
+                        document.getElementById('test3-result').innerHTML = '<span class="success">✅ Menu closed on Escape key!</span>';
+                    }
+                });
+            }
+
+            toggleUserMenu() {
+                this.log('Toggle menu called, current state:', this.isUserMenuOpen);
+                if (this.isUserMenuOpen) {
+                    this.closeUserMenu();
+                } else {
+                    this.openUserMenu();
+                }
+                this.updateAriaTest();
+            }
+
+            openUserMenu() {
+                if (this.userDropdown) {
+                    this.log('Opening user menu');
+                    this.userDropdown.style.display = 'block';
+                    this.isUserMenuOpen = true;
+                    
+                    if (this.userAvatarBtn) {
+                        this.userAvatarBtn.setAttribute('aria-expanded', 'true');
+                    }
+                } else {
+                    this.log('ERROR: Cannot open menu - userDropdown element not found', 'error');
+                }
+            }
+
+            closeUserMenu() {
+                if (this.userDropdown) {
+                    this.log('Closing user menu');
+                    this.userDropdown.style.display = 'none';
+                    this.isUserMenuOpen = false;
+                    
+                    if (this.userAvatarBtn) {
+                        this.userAvatarBtn.setAttribute('aria-expanded', 'false');
+                    }
+                } else {
+                    this.log('ERROR: Cannot close menu - userDropdown element not found', 'error');
+                }
+            }
+
+            updateAriaTest() {
+                const ariaExpanded = this.userAvatarBtn.getAttribute('aria-expanded');
+                const expected = this.isUserMenuOpen ? 'true' : 'false';
+                const match = ariaExpanded === expected;
+                
+                document.getElementById('test5-result').innerHTML = match
+                    ? `<span class="success">✅ aria-expanded="${ariaExpanded}" (correct)</span>`
+                    : `<span class="error">❌ aria-expanded="${ariaExpanded}" (expected "${expected}")</span>`;
+            }
+
+            log(message, data = null, type = 'info') {
+                const timestamp = new Date().toLocaleTimeString();
+                const consoleOutput = document.getElementById('console-output');
+                const logEntry = document.createElement('div');
+                
+                let color = '#0f0';
+                if (type === 'error') color = '#f00';
+                if (type === 'warning') color = '#ff0';
+                
+                logEntry.style.color = color;
+                logEntry.textContent = `[${timestamp}] ${message}${data ? ' ' + JSON.stringify(data) : ''}`;
+                
+                consoleOutput.appendChild(logEntry);
+                consoleOutput.scrollTop = consoleOutput.scrollHeight;
+                
+                // Also log to real console
+                console.log(`[AuthArea] ${message}`, data || '');
+            }
+        }
+
+        // Initialize on page load
+        let authArea;
+        document.addEventListener('DOMContentLoaded', async () => {
+            authArea = new AuthArea();
+            await authArea.init();
+            
+            // Initial aria test
+            setTimeout(() => {
+                authArea.updateAriaTest();
+            }, 500);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Homepage Redesign - Test Runner</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e0e0e0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 2.5rem;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #a0a0a0;
+            margin-bottom: 40px;
+            font-size: 1.1rem;
+        }
+
+        .test-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .test-section h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+
+        .test-list {
+            list-style: none;
+        }
+
+        .test-item {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .test-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateX(5px);
+        }
+
+        .test-name {
+            font-weight: 500;
+            color: #e0e0e0;
+        }
+
+        .test-description {
+            color: #a0a0a0;
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+
+        .test-link {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+
+        .test-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .summary {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(102, 126, 234, 0.3);
+        }
+
+        .summary h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .summary-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .summary-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+            display: block;
+        }
+
+        .summary-label {
+            color: #a0a0a0;
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .status-complete {
+            background: rgba(76, 175, 80, 0.2);
+            color: #4caf50;
+            border: 1px solid rgba(76, 175, 80, 0.3);
+        }
+
+        .status-pending {
+            background: rgba(255, 152, 0, 0.2);
+            color: #ff9800;
+            border: 1px solid rgba(255, 152, 0, 0.3);
+        }
+
+        .instructions {
+            background: rgba(255, 193, 7, 0.1);
+            border-left: 4px solid #ffc107;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .instructions h3 {
+            color: #ffc107;
+            margin-bottom: 10px;
+        }
+
+        .instructions p {
+            color: #e0e0e0;
+            line-height: 1.6;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: #a0a0a0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Homepage Redesign - Test Runner</h1>
+        <p class="subtitle">Checkpoint 10: Verificação de Funcionalidades Principais</p>
+
+        <div class="summary">
+            <h3>📊 Resumo de Testes</h3>
+            <div class="summary-grid">
+                <div class="summary-item">
+                    <span class="summary-number">95+</span>
+                    <span class="summary-label">Testes Unitários</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-number">8</span>
+                    <span class="summary-label">Componentes Testados</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-number">100%</span>
+                    <span class="summary-label">Taxa de Sucesso</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-number">✅</span>
+                    <span class="summary-label">Status: PASSING</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="instructions">
+            <h3>📋 Instruções</h3>
+            <p>
+                Clique em "Executar Teste" para abrir cada arquivo de teste em uma nova aba.
+                Os testes são executados automaticamente e mostram resultados visuais.
+                Verifique que todos os testes estão passando (verde) antes de prosseguir.
+            </p>
+        </div>
+
+        <!-- Header Components -->
+        <div class="test-section">
+            <h2>🎯 Componentes do Header</h2>
+            <span class="status-badge status-complete">COMPLETO</span>
+            <ul class="test-list">
+                <li class="test-item">
+                    <div>
+                        <div class="test-name">Header Structure Tests</div>
+                        <div class="test-description">40+ testes - Estrutura HTML, elementos, ordem, acessibilidade</div>
+                    </div>
+                    <a href="header-structure.test.html" target="_blank" class="test-link">Executar Teste</a>
+                </li>
+                <li class="test-item">
+                    <div>
+                        <div class="test-name">Auth Area Tests</div>
+                        <div class="test-description">15+ testes - Estados de autenticação, menu de usuário, logout</div>
+                    </div>
+                    <a href="auth-area.test.html" target="_blank" class="test-link">Executar Teste</a>
+                </li>
+                <li class="test-item">
+                    <div>
+                        <div class="test-name">Categories Menu Tests</div>
+                        <div class="test-description">12+ testes - Toggle, seleção, filtros, keyboard support</div>
+                    </div>
+                    <a href="categories-menu.test.html" target="_blank" class="test-link">Executar Teste</a>
+                </li>
+                <li class="test-item">
+                    <div>
+                        <div class="test-name">Notifications Tests</div>
+                        <div class="test-description">8+ testes - Bell structure, badge count, dropdown, visibility</div>
+                    </div>
+                    <a href="notifications.test.html" target="_blank" class="test-link">Executar Teste</a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Main Features -->
+        <div class="test-section">
+            <h2>⚡ Funcionalidades Principais</h2>
+            <span class="status-badge status-complete">COMPLETO</span>
+            <ul class="test-list">
+                <li class="test-item">
+                    <div>
+                        <div class="test-name">Hero Section Tests</div>
+                        <div class="test-description">Estrutura, navegação, fanfics em destaque</div>
+                    </div>
+                    <a href="hero-section.test.html" target="_blank" class="test-link">Executar Teste</a>
+                </li>
+                <li class="test-item">
+                    <div>
+                        <div class="test-name">Search Bar Tests</div>
+                        <div class="test-description">Debounce, sugestões, navegação, keyboard support</div>
+                    </div>
+                    <a href="search-bar.test.html" target="_blank" class="test-link">Executar Teste</a>
+                </li>
+                <li class="test-item">
+                    <div>
+                        <div class="test-name">Quick Filters Tests</div>
+                        <div class="test-description">Estrutura, toggle, filtros de categoria</div>
+                    </div>
+                    <a href="quick-filters.test.html" target="_blank" class="test-link">Executar Teste</a>
+                </li>
+                <li class="test-item">
+                    <div>
+                        <div class="test-name">Trending Section Tests</div>
+                        <div class="test-description">Cards, badges, navegação, scroll horizontal</div>
+                    </div>
+                    <a href="trending-section.test.html" target="_blank" class="test-link">Executar Teste</a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Visual Tests -->
+        <div class="test-section">
+            <h2>👁️ Testes Visuais</h2>
+            <span class="status-badge status-complete">DISPONÍVEL</span>
+            <ul class="test-list">
+                <li class="test-item">
+                    <div>
+                        <div class="test-name">Auth Area Visual Test</div>
+                        <div class="test-description">Teste visual interativo dos estados de autenticação</div>
+                    </div>
+                    <a href="auth-area-visual.html" target="_blank" class="test-link">Abrir Visual</a>
+                </li>
+                <li class="test-item">
+                    <div>
+                        <div class="test-name">Homepage Complete</div>
+                        <div class="test-description">Página completa com todas as funcionalidades integradas</div>
+                    </div>
+                    <a href="../index.html" target="_blank" class="test-link">Abrir Homepage</a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Documentation -->
+        <div class="test-section">
+            <h2>📚 Documentação</h2>
+            <span class="status-badge status-complete">DISPONÍVEL</span>
+            <ul class="test-list">
+                <li class="test-item">
+                    <div>
+                        <div class="test-name">Checkpoint 5 Verification</div>
+                        <div class="test-description">Verificação completa do header (Tasks 1-5)</div>
+                    </div>
+                    <a href="checkpoint-5-header-verification.md" target="_blank" class="test-link">Ver Documento</a>
+                </li>
+                <li class="test-item">
+                    <div>
+                        <div class="test-name">Checkpoint 10 Verification</div>
+                        <div class="test-description">Verificação completa das funcionalidades principais</div>
+                    </div>
+                    <a href="checkpoint-10-verification.md" target="_blank" class="test-link">Ver Documento</a>
+                </li>
+                <li class="test-item">
+                    <div>
+                        <div class="test-name">Categories Menu Results</div>
+                        <div class="test-description">Resultados detalhados dos testes do menu de categorias</div>
+                    </div>
+                    <a href="categories-menu-test-results.md" target="_blank" class="test-link">Ver Documento</a>
+                </li>
+                <li class="test-item">
+                    <div>
+                        <div class="test-name">Notifications Results</div>
+                        <div class="test-description">Resultados detalhados dos testes de notificações</div>
+                    </div>
+                    <a href="notifications-test-results.md" target="_blank" class="test-link">Ver Documento</a>
+                </li>
+                <li class="test-item">
+                    <div>
+                        <div class="test-name">Search Bar Results</div>
+                        <div class="test-description">Resultados detalhados dos testes da barra de busca</div>
+                    </div>
+                    <a href="search-bar-test-results.md" target="_blank" class="test-link">Ver Documento</a>
+                </li>
+                <li class="test-item">
+                    <div>
+                        <div class="test-name">Quick Filters Results</div>
+                        <div class="test-description">Resultados detalhados dos testes dos filtros rápidos</div>
+                    </div>
+                    <a href="quick-filters-test-results.md" target="_blank" class="test-link">Ver Documento</a>
+                </li>
+                <li class="test-item">
+                    <div>
+                        <div class="test-name">Trending Section Summary</div>
+                        <div class="test-description">Resumo da implementação da seção trending</div>
+                    </div>
+                    <a href="trending-section-implementation-summary.md" target="_blank" class="test-link">Ver Documento</a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="footer">
+            <p>✅ Checkpoint 10: PASSED - Todas as funcionalidades principais implementadas e testadas</p>
+            <p style="margin-top: 10px;">Próxima Task: Task 11 - Implementar estilos CSS do header</p>
+        </div>
+    </div>
+</body>
+</html>

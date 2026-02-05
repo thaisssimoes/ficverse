@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Simples - Criação de Fanfic</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: #0f0f1e;
+            color: #fff;
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #333;
+            border-radius: 4px;
+            background: #1a1a2e;
+            color: #fff;
+        }
+        
+        button {
+            padding: 0.75rem 1.5rem;
+            background: #8b5cf6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-right: 1rem;
+        }
+        
+        button:hover {
+            background: #7c3aed;
+        }
+        
+        .result {
+            margin-top: 2rem;
+            padding: 1rem;
+            background: #1a1a2e;
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+        
+        .success {
+            border-color: #10b981;
+            background: rgba(16, 185, 129, 0.1);
+        }
+        
+        .error {
+            border-color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+        
+        pre {
+            background: #0a0a14;
+            padding: 1rem;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Teste Simples - Criação de Fanfic</h1>
+    
+    <form id="test-form">
+        <div class="form-group">
+            <label>Título *</label>
+            <input type="text" id="title" value="Fanfic de Teste" required>
+        </div>
+        
+        <div class="form-group">
+            <label>Categoria *</label>
+            <select id="category" required>
+                <option value="">Selecione...</option>
+                <option value="Romance" selected>Romance</option>
+                <option value="Aventura">Aventura</option>
+                <option value="Drama">Drama</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label>Sinopse *</label>
+            <textarea id="synopsis" rows="4" required>Esta é uma fanfic de teste para verificar se o sistema está funcionando corretamente.</textarea>
+        </div>
+        
+        <div class="form-group">
+            <label>
+                <input type="checkbox" id="is_draft" checked>
+                Salvar como rascunho
+            </label>
+        </div>
+        
+        <button type="button" onclick="testCreate()">Testar Criação</button>
+        <button type="button" onclick="clearResult()">Limpar Resultado</button>
+    </form>
+    
+    <div id="result"></div>
+    
+    <script src="../js/api.js"></script>
+    <script>
+        async function testCreate() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>Enviando requisição...</p>';
+            
+            try {
+                // Get form data
+                const title = document.getElementById('title').value;
+                const category = document.getElementById('category').value;
+                const synopsis = document.getElementById('synopsis').value;
+                const isDraft = document.getElementById('is_draft').checked;
+                
+                console.log('='.repeat(50));
+                console.log('TESTE DE CRIAÇÃO DE FANFIC');
+                console.log('='.repeat(50));
+                console.log('Dados:', { title, category, synopsis, isDraft });
+                
+                // Create FormData
+                const formData = new FormData();
+                formData.append('title', title);
+                formData.append('category', category);
+                formData.append('synopsis', synopsis);
+                formData.append('is_draft', isDraft);
+                formData.append('disclaimer', '');
+                formData.append('trigger_warnings', '');
+                formData.append('is_adult_content', false);
+                formData.append('interactive_mode', false);
+                
+                console.log('FormData criado');
+                console.log('Token:', api.token ? 'Presente' : 'Ausente');
+                
+                // Send request
+                const url = 'http://localhost:8080/api/fanfics';
+                const headers = {};
+                if (api.token) {
+                    headers['Authorization'] = `Bearer ${api.token}`;
+                }
+                
+                console.log('Enviando para:', url);
+                console.log('Headers:', headers);
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers,
+                    body: formData
+                });
+                
+                console.log('Status da resposta:', response.status);
+                console.log('Status text:', response.statusText);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Erro na resposta:', errorText);
+                    
+                    let errorData;
+                    try {
+                        errorData = JSON.parse(errorText);
+                    } catch (e) {
+                        errorData = { message: errorText };
+                    }
+                    
+                    throw new Error(errorData.message || errorData.error?.message || `Erro ${response.status}`);
+                }
+                
+                const result = await response.json();
+                console.log('Resultado:', result);
+                console.log('='.repeat(50));
+                
+                // Show success
+                resultDiv.className = 'result success';
+                resultDiv.innerHTML = `
+                    <h3>✅ Sucesso!</h3>
+                    <p><strong>ID:</strong> ${result.id}</p>
+                    <p><strong>Título:</strong> ${result.title}</p>
+                    <p><strong>Status:</strong> ${result.is_draft ? 'Rascunho' : 'Publicado'}</p>
+                    <h4>Resposta completa:</h4>
+                    <pre>${JSON.stringify(result, null, 2)}</pre>
+                `;
+                
+            } catch (error) {
+                console.error('Erro:', error);
+                console.log('='.repeat(50));
+                
+                // Show error
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `
+                    <h3>❌ Erro!</h3>
+                    <p><strong>Mensagem:</strong> ${error.message}</p>
+                    <h4>Detalhes:</h4>
+                    <pre>${error.stack || error.toString()}</pre>
+                `;
+            }
+        }
+        
+        function clearResult() {
+            document.getElementById('result').innerHTML = '';
+            document.getElementById('result').className = '';
+        }
+        
+        // Check authentication on load
+        window.addEventListener('load', () => {
+            if (!api.isAuthenticated()) {
+                document.getElementById('result').className = 'result error';
+                document.getElementById('result').innerHTML = `
+                    <h3>⚠️ Não Autenticado</h3>
+                    <p>Você precisa fazer login primeiro.</p>
+                    <p><a href="../login.html" style="color: #8b5cf6;">Ir para Login</a></p>
+                `;
+            } else {
+                document.getElementById('result').className = 'result success';
+                document.getElementById('result').innerHTML = `
+                    <h3>✅ Autenticado</h3>
+                    <p>Token presente. Você pode testar a criação de fanfic.</p>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>

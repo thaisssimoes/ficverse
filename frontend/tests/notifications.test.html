@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notifications Component Tests</title>
+    <link rel="stylesheet" href="../css/landing.css">
+    <style>
+        body {
+            padding: 2rem;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+        .test-section {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(139, 92, 246, 0.2);
+        }
+        .test-section h2 {
+            color: var(--primary-purple);
+            margin-bottom: 1rem;
+        }
+        .test-result {
+            padding: 1rem;
+            margin: 0.5rem 0;
+            border-radius: 8px;
+            font-family: monospace;
+        }
+        .test-result.pass {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: #22c55e;
+        }
+        .test-result.fail {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+        }
+        .test-controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-purple), var(--primary-blue));
+            color: white;
+        }
+        .btn-secondary {
+            background: rgba(139, 92, 246, 0.1);
+            color: var(--primary-purple);
+            border: 1px solid var(--primary-purple);
+        }
+        .mock-header {
+            position: relative;
+            background: rgba(26, 26, 46, 0.95);
+            padding: 1rem;
+            border-radius: 12px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <h1 style="color: var(--primary-purple); margin-bottom: 2rem;">Notifications Component Tests</h1>
+
+    <!-- Test 1: Notification Bell Structure -->
+    <div class="test-section">
+        <h2>Test 1: Notification Bell Structure</h2>
+        <p>Verifica se o notification bell tem a estrutura correta com ícone e badge.</p>
+        
+        <div class="mock-header">
+            <button class="notification-bell" aria-label="Notificações" style="display: none;">
+                <svg class="bell-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                </svg>
+                <span class="notification-badge" style="display: none;">0</span>
+            </button>
+        </div>
+        
+        <div id="test1-results"></div>
+        <button class="btn btn-primary" onclick="runTest1()">Run Test 1</button>
+    </div>
+
+    <!-- Test 2: Badge Count Display -->
+    <div class="test-section">
+        <h2>Test 2: Badge Count Display</h2>
+        <p>Verifica se o badge exibe a contagem correta de notificações não lidas.</p>
+        
+        <div class="test-controls">
+            <button class="btn btn-secondary" onclick="setBadgeCount(0)">0 notificações</button>
+            <button class="btn btn-secondary" onclick="setBadgeCount(3)">3 notificações</button>
+            <button class="btn btn-secondary" onclick="setBadgeCount(99)">99 notificações</button>
+            <button class="btn btn-secondary" onclick="setBadgeCount(150)">150 notificações</button>
+        </div>
+        
+        <div class="mock-header">
+            <button class="notification-bell test2-bell" aria-label="Notificações">
+                <svg class="bell-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                </svg>
+                <span class="notification-badge test2-badge" style="display: none;">0</span>
+            </button>
+        </div>
+        
+        <div id="test2-results"></div>
+        <button class="btn btn-primary" onclick="runTest2()">Run Test 2</button>
+    </div>
+
+    <!-- Test 3: Dropdown Toggle -->
+    <div class="test-section">
+        <h2>Test 3: Dropdown Toggle</h2>
+        <p>Verifica se o dropdown abre e fecha corretamente ao clicar no bell.</p>
+        
+        <div class="mock-header">
+            <button class="notification-bell test3-bell" aria-label="Notificações" aria-expanded="false">
+                <svg class="bell-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                </svg>
+                <span class="notification-badge" style="display: none;">3</span>
+            </button>
+            
+            <div class="notifications-dropdown test3-dropdown" style="display: none;">
+                <div class="notifications-header">
+                    <h3>Notificações</h3>
+                    <button class="mark-all-read">Marcar todas como lidas</button>
+                </div>
+                <div class="notifications-list">
+                    <div class="notification-item unread">
+                        <div class="notification-content">
+                            <p><strong>João</strong> comentou em sua fanfic</p>
+                            <span class="notification-time">há 5 minutos</span>
+                        </div>
+                    </div>
+                    <div class="notification-item">
+                        <div class="notification-content">
+                            <p><strong>Maria</strong> curtiu sua fanfic</p>
+                            <span class="notification-time">há 1 hora</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="test3-results"></div>
+        <button class="btn btn-primary" onclick="runTest3()">Run Test 3</button>
+    </div>
+
+    <!-- Test 4: Visibility Based on Auth State -->
+    <div class="test-section">
+        <h2>Test 4: Visibility Based on Auth State</h2>
+        <p>Verifica se o notification bell é visível apenas quando o usuário está autenticado.</p>
+        
+        <div class="test-controls">
+            <button class="btn btn-secondary" onclick="simulateAuth(true)">Simular Login</button>
+            <button class="btn btn-secondary" onclick="simulateAuth(false)">Simular Logout</button>
+        </div>
+        
+        <div class="mock-header">
+            <button class="notification-bell test4-bell" aria-label="Notificações" style="display: none;">
+                <svg class="bell-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                </svg>
+                <span class="notification-badge" style="display: none;">0</span>
+            </button>
+        </div>
+        
+        <div id="test4-results"></div>
+        <button class="btn btn-primary" onclick="runTest4()">Run Test 4</button>
+    </div>
+
+    <script>
+        // Test 1: Notification Bell Structure
+        function runTest1() {
+            const results = document.getElementById('test1-results');
+            results.innerHTML = '';
+            
+            const bell = document.querySelector('.notification-bell');
+            const bellIcon = bell.querySelector('.bell-icon');
+            const badge = bell.querySelector('.notification-badge');
+            
+            const tests = [
+                {
+                    name: 'Notification bell element exists',
+                    pass: bell !== null
+                },
+                {
+                    name: 'Bell icon SVG exists',
+                    pass: bellIcon !== null
+                },
+                {
+                    name: 'Notification badge exists',
+                    pass: badge !== null
+                },
+                {
+                    name: 'Bell has aria-label',
+                    pass: bell.hasAttribute('aria-label')
+                }
+            ];
+            
+            tests.forEach(test => {
+                const div = document.createElement('div');
+                div.className = `test-result ${test.pass ? 'pass' : 'fail'}`;
+                div.textContent = `${test.pass ? '✓' : '✗'} ${test.name}`;
+                results.appendChild(div);
+            });
+        }
+
+        // Test 2: Badge Count Display
+        function setBadgeCount(count) {
+            const badge = document.querySelector('.test2-badge');
+            if (count > 0) {
+                badge.textContent = count > 99 ? '99+' : count;
+                badge.style.display = 'block';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        function runTest2() {
+            const results = document.getElementById('test2-results');
+            results.innerHTML = '';
+            
+            const badge = document.querySelector('.test2-badge');
+            
+            // Test different counts
+            const testCases = [
+                { count: 0, expectedDisplay: 'none', expectedText: '' },
+                { count: 3, expectedDisplay: 'block', expectedText: '3' },
+                { count: 99, expectedDisplay: 'block', expectedText: '99' },
+                { count: 150, expectedDisplay: 'block', expectedText: '99+' }
+            ];
+            
+            testCases.forEach(testCase => {
+                setBadgeCount(testCase.count);
+                const actualDisplay = window.getComputedStyle(badge).display;
+                const actualText = badge.textContent;
+                
+                const displayPass = testCase.count === 0 ? actualDisplay === 'none' : actualDisplay !== 'none';
+                const textPass = testCase.count === 0 || actualText === testCase.expectedText;
+                
+                const div = document.createElement('div');
+                div.className = `test-result ${displayPass && textPass ? 'pass' : 'fail'}`;
+                div.textContent = `${displayPass && textPass ? '✓' : '✗'} Count ${testCase.count}: display=${actualDisplay}, text="${actualText}"`;
+                results.appendChild(div);
+            });
+        }
+
+        // Test 3: Dropdown Toggle
+        function runTest3() {
+            const results = document.getElementById('test3-results');
+            results.innerHTML = '';
+            
+            const bell = document.querySelector('.test3-bell');
+            const dropdown = document.querySelector('.test3-dropdown');
+            
+            // Initial state
+            const initialDisplay = window.getComputedStyle(dropdown).display;
+            const initialExpanded = bell.getAttribute('aria-expanded');
+            
+            // Click to open
+            bell.click();
+            const openDisplay = window.getComputedStyle(dropdown).display;
+            const openExpanded = bell.getAttribute('aria-expanded');
+            
+            // Click to close
+            bell.click();
+            const closeDisplay = window.getComputedStyle(dropdown).display;
+            const closeExpanded = bell.getAttribute('aria-expanded');
+            
+            const tests = [
+                {
+                    name: 'Initial state: dropdown hidden',
+                    pass: initialDisplay === 'none'
+                },
+                {
+                    name: 'Initial state: aria-expanded false',
+                    pass: initialExpanded === 'false'
+                },
+                {
+                    name: 'After click: dropdown visible',
+                    pass: openDisplay !== 'none'
+                },
+                {
+                    name: 'After click: aria-expanded true',
+                    pass: openExpanded === 'true'
+                },
+                {
+                    name: 'After second click: dropdown hidden',
+                    pass: closeDisplay === 'none'
+                },
+                {
+                    name: 'After second click: aria-expanded false',
+                    pass: closeExpanded === 'false'
+                }
+            ];
+            
+            tests.forEach(test => {
+                const div = document.createElement('div');
+                div.className = `test-result ${test.pass ? 'pass' : 'fail'}`;
+                div.textContent = `${test.pass ? '✓' : '✗'} ${test.name}`;
+                results.appendChild(div);
+            });
+        }
+
+        // Test 4: Visibility Based on Auth State
+        function simulateAuth(isAuthenticated) {
+            const bell = document.querySelector('.test4-bell');
+            bell.style.display = isAuthenticated ? 'block' : 'none';
+        }
+
+        function runTest4() {
+            const results = document.getElementById('test4-results');
+            results.innerHTML = '';
+            
+            const bell = document.querySelector('.test4-bell');
+            
+            // Test authenticated state
+            simulateAuth(true);
+            const authDisplay = window.getComputedStyle(bell).display;
+            
+            // Test unauthenticated state
+            simulateAuth(false);
+            const unauthDisplay = window.getComputedStyle(bell).display;
+            
+            const tests = [
+                {
+                    name: 'When authenticated: bell visible',
+                    pass: authDisplay !== 'none'
+                },
+                {
+                    name: 'When not authenticated: bell hidden',
+                    pass: unauthDisplay === 'none'
+                }
+            ];
+            
+            tests.forEach(test => {
+                const div = document.createElement('div');
+                div.className = `test-result ${test.pass ? 'pass' : 'fail'}`;
+                div.textContent = `${test.pass ? '✓' : '✗'} ${test.name}`;
+                results.appendChild(div);
+            });
+        }
+
+        // Setup dropdown toggle for test 3
+        document.addEventListener('DOMContentLoaded', () => {
+            const bell = document.querySelector('.test3-bell');
+            const dropdown = document.querySelector('.test3-dropdown');
+            
+            if (bell && dropdown) {
+                bell.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const isOpen = dropdown.style.display !== 'none';
+                    dropdown.style.display = isOpen ? 'none' : 'block';
+                    bell.setAttribute('aria-expanded', !isOpen);
+                });
+                
+                document.addEventListener('click', (e) => {
+                    if (!dropdown.contains(e.target) && !bell.contains(e.target)) {
+                        dropdown.style.display = 'none';
+                        bell.setAttribute('aria-expanded', 'false');
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

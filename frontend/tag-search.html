@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buscar por Tags - Plataforma de Fanfics Interativas</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <h1 class="logo">Fanfics Interativas</h1>
+            <nav class="nav">
+                <!-- Navigation will be populated by nav.js -->
+            </nav>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <div id="tag-search-root">
+                <!-- Tag search component will be rendered here -->
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 Plataforma de Fanfics Interativas</p>
+        </div>
+    </footer>
+
+    <script src="js/api.js"></script>
+    <script src="js/nav.js"></script>
+    <script src="js/tag-search.js"></script>
+    <script>
+        // Initialize tag search component
+        document.addEventListener('DOMContentLoaded', () => {
+            const tagSearch = new TagSearch('tag-search-root');
+            tagSearch.init();
+
+            // Check if there are tag IDs in URL parameters (for navigation from fanfic detail)
+            const urlParams = new URLSearchParams(window.location.search);
+            const tagIdParam = urlParams.get('tagId');
+            const tagNameParam = urlParams.get('tagName');
+            const tagTypeParam = urlParams.get('tagType');
+
+            if (tagIdParam && tagNameParam && tagTypeParam) {
+                // Add the tag from URL and search
+                const tag = {
+                    id: parseInt(tagIdParam),
+                    name: decodeURIComponent(tagNameParam),
+                    type: tagTypeParam
+                };
+                tagSearch.addTagFilter(tag);
+                tagSearch.searchFanficsByTags();
+            }
+        });
+    </script>
+</body>
+</html>

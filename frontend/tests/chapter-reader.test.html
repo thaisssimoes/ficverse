@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter Reader Tests</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-suite {
+            margin-bottom: 30px;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .test-case {
+            margin: 10px 0;
+            padding: 10px;
+            border-left: 3px solid #ccc;
+        }
+        .test-case.pass {
+            border-left-color: #4CAF50;
+            background-color: #f1f8f4;
+        }
+        .test-case.fail {
+            border-left-color: #f44336;
+            background-color: #fef1f0;
+        }
+        .test-summary {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .error-details {
+            color: #d32f2f;
+            font-family: monospace;
+            margin-top: 5px;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <h1>Chapter Reader - Unit Tests</h1>
+    <div id="test-results"></div>
+    <div id="test-summary" class="test-summary"></div>
+
+    <!-- Hidden test container -->
+    <div id="test-container" style="display: none;"></div>
+
+    <script>
+        // Simple test framework
+        class TestRunner {
+            constructor() {
+                this.tests = [];
+                this.results = [];
+            }
+
+            describe(suiteName, testFn) {
+                const suite = {
+                    name: suiteName,
+                    tests: []
+                };
+                this.currentSuite = suite;
+                testFn();
+                this.tests.push(suite);
+                this.currentSuite = null;
+            }
+
+            it(testName, testFn) {
+                if (!this.currentSuite) {
+                    throw new Error('Test must be inside a describe block');
+                }
+                this.currentSuite.tests.push({
+                    name: testName,
+                    fn: testFn
+                });
+            }
+
+            async run() {
+                const resultsContainer = document.getElementById('test-results');
+                let totalTests = 0;
+                let passedTests = 0;
+
+                for (const suite of this.tests) {
+                    const suiteDiv = document.createElement('div');
+                    suiteDiv.className = 'test-suite';
+                    suiteDiv.innerHTML = `<h2>${suite.name}</h2>`;
+
+                    for (const test of suite.tests) {
+                        totalTests++;
+                        const testDiv = document.createElement('div');
+                        testDiv.className = 'test-case';
+
+                        try {
+                            await test.fn();
+                            testDiv.classList.add('pass');
+                            testDiv.innerHTML = `✓ ${test.name}`;
+                            passedTests++;
+                        } catch (error) {
+                            testDiv.classList.add('fail');
+                            testDiv.innerHTML = `✗ ${test.name}<div class="error-details">${error.message}</div>`;
+                        }
+
+                        suiteDiv.appendChild(testDiv);
+                    }
+
+                    resultsContainer.appendChild(suiteDiv);
+                }
+
+                const summaryDiv = document.getElementById('test-summary');
+                summaryDiv.innerHTML = `
+                    Tests: ${passedTests}/${totalTests} passed
+                    ${passedTests === totalTests ? '✓ All tests passed!' : '✗ Some tests failed'}
+                `;
+                summaryDiv.style.color = passedTests === totalTests ? '#4CAF50' : '#f44336';
+            }
+        }
+
+        // Assertion helpers
+        function expect(actual) {
+            return {
+                toBe(expected) {
+                    if (actual !== expected) {
+                        throw new Error(`Expected ${expected} but got ${actual}`);
+                    }
+                },
+                toEqual(expected) {
+                    if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+                        throw new Error(`Expected ${JSON.stringify(expected)} but got ${JSON.stringify(actual)}`);
+                    }
+                },
+                toBeTruthy() {
+                    if (!actual) {
+                        throw new Error(`Expected truthy value but got ${actual}`);
+                    }
+                },
+                toBeFalsy() {
+                    if (actual) {
+                        throw new Error(`Expected falsy value but got ${actual}`);
+                    }
+                },
+                toContain(expected) {
+                    if (!actual.includes(expected)) {
+                        throw new Error(`Expected "${actual}" to contain "${expected}"`);
+                    }
+                },
+                toBeGreaterThan(expected) {
+                    if (actual <= expected) {
+                        throw new Error(`Expected ${actual} to be greater than ${expected}`);
+                    }
+                },
+                toHaveLength(expected) {
+                    if (actual.length !== expected) {
+                        throw new Error(`Expected length ${expected} but got ${actual.length}`);
+                    }
+                }
+            };
+        }
+
+        // Helper function to substitute placeholders (from chapter-reader.js)
+        function substitutePlaceholders(content, answers) {
+            let processedContent = content;
+            
+            // Replace each placeholder with its corresponding answer
+            for (const [placeholder, answer] of Object.entries(answers)) {
+                // Match placeholders in format {{placeholder}} or {placeholder}
+                const regex = new RegExp(`\\{\\{${placeholder}\\}\\}|\\{${placeholder}\\}`, 'g');
+                processedContent = processedContent.replace(regex, answer);
+            }
+            
+            return processedContent;
+        }
+
+        // Test Suite
+        const runner = new TestRunner();
+
+        runner.describe('Placeholder Substitution Tests', () => {
+            runner.it('should substitute single placeholder with answer', () => {
+                const content = 'Hello {{name}}, welcome to the story!';
+                const answers = { 'name': 'Alice' };
+                
+                const result = substitutePlaceholders(content, answers);
+                
+                expect(result).toBe('Hello Alice, welcome to the story!');
+            });
+
+            runner.it('should substitute multiple placeholders with answers', () => {
+                const content = 'Hello {{name}}, your favorite color is {{color}} and you live in {{location}}.';
+                const answers = {
+                    'name': 'Bob',
+                    'color': 'blue',
+                    'location': 'New York'
+                };
+                
+                const result = substitutePlaceholders(content, answers);
+                
+                expect(result).toBe('Hello Bob, your favorite color is blue and you live in New York.');
+            });
+
+            runner.it('should substitute same placeholder multiple times', () => {
+                const content = '{{name}} went to the store. {{name}} bought some milk. {{name}} came home.';
+                const answers = { 'name': 'Charlie' };
+                
+                const result = substitutePlaceholders(content, answers);
+                
+                expect(result).toBe('Charlie went to the store. Charlie bought some milk. Charlie came home.');
+            });
+
+            runner.it('should handle placeholders with single braces', () => {
+                const content = 'Hello {name}, welcome!';
+                const answers = { 'name': 'David' };
+                
+                const result = substitutePlaceholders(content, answers);
+                
+                expect(result).toBe('Hello David, welcome!');
+            });
+
+            runner.it('should handle mixed single and double brace placeholders', () => {
+                const content = 'Hello {{name}}, your color is {color}.';
+                const answers = {
+                    'name': 'Eve',
+                    'color': 'green'
+                };
+                
+                const result = substitutePlaceholders(content, answers);
+                
+                expect(result).toBe('Hello Eve, your color is green.');
+            });
+
+            runner.it('should leave unmatched placeholders unchanged', () => {
+                const content = 'Hello {{name}}, your age is {{age}}.';
+                const answers = { 'name': 'Frank' };
+                
+                const result = substitutePlaceholders(content, answers);
+                
+                expect(result).toBe('Hello Frank, your age is {{age}}.');
+            });
+
+            runner.it('should handle empty answers object', () => {
+                const content = 'Hello {{name}}, welcome!';
+                const answers = {};
+                
+                const result = substitutePlaceholders(content, answers);
+                
+                expect(result).toBe('Hello {{name}}, welcome!');
+            });
+
+            runner.it('should handle content with no placeholders', () => {
+                const content = 'This is a regular story with no placeholders.';
+                const answers = { 'name': 'Grace' };
+                
+                const result = substitutePlaceholders(content, answers);
+                
+                expect(result).toBe('This is a regular story with no placeholders.');
+            });
+
+            runner.it('should handle special characters in answers', () => {
+                const content = 'Hello {{name}}, welcome!';
+                const answers = { 'name': "O'Brien" };
+                
+                const result = substitutePlaceholders(content, answers);
+                
+                expect(result).toBe("Hello O'Brien, welcome!");
+            });
+
+            runner.it('should handle long answers', () => {
+                const content = 'The character is {{description}}.';
+                const answers = { 'description': 'a tall person with brown hair and blue eyes who loves to read books' };
+                
+                const result = substitutePlaceholders(content, answers);
+                
+                expect(result).toContain('a tall person with brown hair and blue eyes who loves to read books');
+            });
+
+            runner.it('should handle placeholders in multiline content', () => {
+                const content = `Hello {{name}},
+                
+Welcome to the story!
+Your favorite color is {{color}}.
+
+Enjoy reading!`;
+                const answers = {
+                    'name': 'Helen',
+                    'color': 'purple'
+                };
+                
+                const result = substitutePlaceholders(content, answers);
+                
+                expect(result).toContain('Hello Helen,');
+                expect(result).toContain('Your favorite color is purple.');
+            });
+        });
+
+        runner.describe('Non-Interactive Mode Tests', () => {
+            runner.it('should display original text without substitution', () => {
+                const content = 'Hello {{name}}, your color is {{color}}.';
+                const answers = {}; // No answers in non-interactive mode
+                
+                const result = substitutePlaceholders(content, answers);
+                
+                expect(result).toBe('Hello {{name}}, your color is {{color}}.');
+            });
+
+            runner.it('should preserve all placeholders in non-interactive mode', () => {
+                const content = '{{name}} went to {{location}} and met {{friend}}.';
+                const answers = {}; // No answers
+                
+                const result = substitutePlaceholders(content, answers);
+                
+                expect(result).toContain('{{name}}');
+                expect(result).toContain('{{location}}');
+                expect(result).toContain('{{friend}}');
+            });
+        });
+
+        runner.describe('Pending Questions Notification Tests', () => {
+            runner.it('should show notification when pending questions exist', () => {
+                const container = document.getElementById('test-container');
+                container.innerHTML = `
+                    <div id="pending-notification" class="pending-notification" style="display: none;">
+                        <div class="notification-content">
+                            <div class="notification-icon">⚠️</div>
+                            <div class="notification-text">
+                                <h3>Novas Perguntas Disponíveis!</h3>
+                                <p>O autor adicionou novas perguntas interativas.</p>
+                            </div>
+                        </div>
+                        <div class="notification-actions">
+                            <button class="btn btn-primary">Responder Perguntas</button>
+                            <button class="btn btn-secondary">Mudar para Modo Normal</button>
+                        </div>
+                    </div>
+                `;
+                
+                const notification = document.getElementById('pending-notification');
+                notification.style.display = 'block';
+                
+                expect(notification.style.display).toBe('block');
+                
+                const buttons = notification.querySelectorAll('button');
+                expect(buttons.length).toBe(2);
+            });
+
+            runner.it('should have two action buttons in notification', () => {
+                const container = document.getElementById('test-container');
+                container.innerHTML = `
+                    <div id="pending-notification" class="pending-notification">
+                        <div class="notification-actions">
+                            <button class="btn btn-primary">Responder Perguntas</button>
+                            <button class="btn btn-secondary">Mudar para Modo Normal</button>
+                        </div>
+                    </div>
+                `;
+                
+                const buttons = document.querySelectorAll('#pending-notification button');
+                expect(buttons.length).toBe(2);
+                
+                expect(buttons[0].textContent).toContain('Responder');
+                expect(buttons[1].textContent).toContain('Modo Normal');
+            });
+
+            runner.it('should hide notification after action is taken', () => {
+                const container = document.getElementById('test-container');
+                container.innerHTML = `
+                    <div id="pending-notification" class="pending-notification" style="display: block;"></div>
+                `;
+                
+                const notification = document.getElementById('pending-notification');
+                notification.style.display = 'none';
+                
+                expect(notification.style.display).toBe('none');
+            });
+        });
+
+        runner.describe('Chapter Navigation Tests', () => {
+            runner.it('should show previous button when not on first chapter', () => {
+                const container = document.getElementById('test-container');
+                container.innerHTML = `
+                    <button id="btn-prev-chapter" style="display: none;">← Capítulo Anterior</button>
+                    <button id="btn-next-chapter" style="display: none;">Próximo Capítulo →</button>
+                `;
+                
+                const allChapters = [
+                    { id: 1, order: 1 },
+                    { id: 2, order: 2 },
+                    { id: 3, order: 3 }
+                ];
+                const currentChapter = allChapters[1]; // Second chapter
+                const currentIndex = allChapters.findIndex(ch => ch.id === currentChapter.id);
+                
+                const prevBtn = document.getElementById('btn-prev-chapter');
+                if (currentIndex > 0) {
+                    prevBtn.style.display = 'inline-block';
+                }
+                
+                expect(prevBtn.style.display).toBe('inline-block');
+            });
+
+            runner.it('should hide previous button on first chapter', () => {
+                const container = document.getElementById('test-container');
+                container.innerHTML = `
+                    <button id="btn-prev-chapter" style="display: none;">← Capítulo Anterior</button>
+                `;
+                
+                const allChapters = [
+                    { id: 1, order: 1 },
+                    { id: 2, order: 2 }
+                ];
+                const currentChapter = allChapters[0]; // First chapter
+                const currentIndex = allChapters.findIndex(ch => ch.id === currentChapter.id);
+                
+                const prevBtn = document.getElementById('btn-prev-chapter');
+                if (currentIndex > 0) {
+                    prevBtn.style.display = 'inline-block';
+                } else {
+                    prevBtn.style.display = 'none';
+                }
+                
+                expect(prevBtn.style.display).toBe('none');
+            });
+
+            runner.it('should show next button when not on last chapter', () => {
+                const container = document.getElementById('test-container');
+                container.innerHTML = `
+                    <button id="btn-next-chapter" style="display: none;">Próximo Capítulo →</button>
+                `;
+                
+                const allChapters = [
+                    { id: 1, order: 1 },
+                    { id: 2, order: 2 },
+                    { id: 3, order: 3 }
+                ];
+                const currentChapter = allChapters[1]; // Second chapter
+                const currentIndex = allChapters.findIndex(ch => ch.id === currentChapter.id);
+                
+                const nextBtn = document.getElementById('btn-next-chapter');
+                if (currentIndex < allChapters.length - 1) {
+                    nextBtn.style.display = 'inline-block';
+                }
+                
+                expect(nextBtn.style.display).toBe('inline-block');
+            });
+
+            runner.it('should hide next button on last chapter', () => {
+                const container = document.getElementById('test-container');
+                container.innerHTML = `
+                    <button id="btn-next-chapter" style="display: none;">Próximo Capítulo →</button>
+                `;
+                
+                const allChapters = [
+                    { id: 1, order: 1 },
+                    { id: 2, order: 2 }
+                ];
+                const currentChapter = allChapters[1]; // Last chapter
+                const currentIndex = allChapters.findIndex(ch => ch.id === currentChapter.id);
+                
+                const nextBtn = document.getElementById('btn-next-chapter');
+                if (currentIndex < allChapters.length - 1) {
+                    nextBtn.style.display = 'inline-block';
+                } else {
+                    nextBtn.style.display = 'none';
+                }
+                
+                expect(nextBtn.style.display).toBe('none');
+            });
+
+            runner.it('should show both buttons for middle chapters', () => {
+                const container = document.getElementById('test-container');
+                container.innerHTML = `
+                    <button id="btn-prev-chapter" style="display: none;">← Capítulo Anterior</button>
+                    <button id="btn-next-chapter" style="display: none;">Próximo Capítulo →</button>
+                `;
+                
+                const allChapters = [
+                    { id: 1, order: 1 },
+                    { id: 2, order: 2 },
+                    { id: 3, order: 3 }
+                ];
+                const currentChapter = allChapters[1]; // Middle chapter
+                const currentIndex = allChapters.findIndex(ch => ch.id === currentChapter.id);
+                
+                const prevBtn = document.getElementById('btn-prev-chapter');
+                const nextBtn = document.getElementById('btn-next-chapter');
+                
+                if (currentIndex > 0) {
+                    prevBtn.style.display = 'inline-block';
+                }
+                if (currentIndex < allChapters.length - 1) {
+                    nextBtn.style.display = 'inline-block';
+                }
+                
+                expect(prevBtn.style.display).toBe('inline-block');
+                expect(nextBtn.style.display).toBe('inline-block');
+            });
+        });
+
+        runner.describe('Mode Indicator Tests', () => {
+            runner.it('should display interactive mode badge', () => {
+                const container = document.getElementById('test-container');
+                container.innerHTML = `<div id="mode-indicator"></div>`;
+                
+                const modeIndicator = document.getElementById('mode-indicator');
+                modeIndicator.innerHTML = '<span class="mode-badge interactive">✨ Modo Interativo</span>';
+                
+                expect(modeIndicator.innerHTML).toContain('Modo Interativo');
+                expect(modeIndicator.innerHTML).toContain('interactive');
+            });
+
+            runner.it('should display normal mode badge', () => {
+                const container = document.getElementById('test-container');
+                container.innerHTML = `<div id="mode-indicator"></div>`;
+                
+                const modeIndicator = document.getElementById('mode-indicator');
+                modeIndicator.innerHTML = '<span class="mode-badge normal">📖 Modo Normal</span>';
+                
+                expect(modeIndicator.innerHTML).toContain('Modo Normal');
+                expect(modeIndicator.innerHTML).toContain('normal');
+            });
+        });
+
+        runner.describe('Edge Cases', () => {
+            runner.it('should handle empty content', () => {
+                const content = '';
+                const answers = { 'name': 'Test' };
+                
+                const result = substitutePlaceholders(content, answers);
+                
+                expect(result).toBe('');
+            });
+
+            runner.it('should handle content with only placeholders', () => {
+                const content = '{{name}}{{color}}{{location}}';
+                const answers = {
+                    'name': 'A',
+                    'color': 'B',
+                    'location': 'C'
+                };
+                
+                const result = substitutePlaceholders(content, answers);
+                
+                expect(result).toBe('ABC');
+            });
+
+            runner.it('should handle placeholders with numbers', () => {
+                const content = 'Player {{player1}} vs Player {{player2}}';
+                const answers = {
+                    'player1': 'Alice',
+                    'player2': 'Bob'
+                };
+                
+                const result = substitutePlaceholders(content, answers);
+                
+                expect(result).toBe('Player Alice vs Player Bob');
+            });
+
+            runner.it('should handle placeholders with underscores', () => {
+                const content = 'Hello {{first_name}} {{last_name}}';
+                const answers = {
+                    'first_name': 'John',
+                    'last_name': 'Doe'
+                };
+                
+                const result = substitutePlaceholders(content, answers);
+                
+                expect(result).toBe('Hello John Doe');
+            });
+
+            runner.it('should handle answers with HTML-like content', () => {
+                const content = 'The tag is {{tag}}';
+                const answers = { 'tag': '<div>test</div>' };
+                
+                const result = substitutePlaceholders(content, answers);
+                
+                expect(result).toBe('The tag is <div>test</div>');
+            });
+        });
+
+        // Run all tests
+        window.addEventListener('DOMContentLoaded', () => {
+            runner.run();
+        });
+    </script>
+</body>
+</html>

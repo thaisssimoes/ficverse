@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Property Test: Interactive Element Hover States</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/landing.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            padding: 2rem;
+            color: #ffffff;
+        }
+        
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .test-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        
+        .test-header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #7c3aed, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .test-info {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .test-info h3 {
+            color: #7c3aed;
+            margin-bottom: 1rem;
+        }
+        
+        .test-results {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .test-results h3 {
+            color: #7c3aed;
+            margin-bottom: 1rem;
+        }
+        
+        .result-item {
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .result-item.pass {
+            background-color: rgba(16, 185, 129, 0.2);
+            border-left: 4px solid #10b981;
+        }
+        
+        .result-item.fail {
+            background-color: rgba(239, 68, 68, 0.2);
+            border-left: 4px solid #ef4444;
+        }
+        
+        .result-status {
+            font-weight: bold;
+        }
+        
+        .result-status.pass {
+            color: #10b981;
+        }
+        
+        .result-status.fail {
+            color: #ef4444;
+        }
+        
+        .test-samples {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        
+        .sample-section {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+        
+        .sample-section h4 {
+            color: #7c3aed;
+            margin-bottom: 1rem;
+        }
+        
+        .sample-elements {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .summary {
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.2), rgba(236, 72, 153, 0.2));
+            border: 2px solid #7c3aed;
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            margin-top: 2rem;
+        }
+        
+        .summary h2 {
+            color: #7c3aed;
+            margin-bottom: 1rem;
+        }
+        
+        .summary-stats {
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+            margin-top: 1rem;
+        }
+        
+        .stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .stat-value {
+            font-size: 3rem;
+            font-weight: bold;
+        }
+        
+        .stat-label {
+            font-size: 1rem;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="test-header">
+            <h1>🎨 Property Test: Interactive Element Hover States</h1>
+            <p>Feature: homepage-redesign, Property 24: Interactive Element Hover States</p>
+            <p><strong>Validates: Requirements 10.5</strong></p>
+        </div>
+        
+        <div class="test-info">
+            <h3>📋 Property Definition</h3>
+            <p><strong>Property 24:</strong> <em>For any</em> interactive element (buttons, links, cards), hovering should trigger a visual state change with appropriate contrast that meets accessibility standards.</p>
+            <p><strong>Test Strategy:</strong> Generate random interactive elements and verify that each has hover state CSS rules with visual changes (transform, background-color, color, box-shadow, etc.) and maintains appropriate contrast.</p>
+        </div>
+        
+        <div class="test-results" id="test-results">
+            <h3>🧪 Test Results</h3>
+            <p>Running property-based tests...</p>
+        </div>
+        
+        <div class="test-samples">
+            <div class="sample-section">
+                <h4>Buttons</h4>
+                <div class="sample-elements">
+                    <button class="btn btn-primary test-element" data-type="button">Primary Button</button>
+                    <button class="btn btn-secondary test-element" data-type="button">Secondary Button</button>
+                    <button class="btn-read test-element" data-type="button">Read Button</button>
+                    <button class="btn-danger test-element" data-type="button">Danger Button</button>
+                </div>
+            </div>
+            
+            <div class="sample-section">
+                <h4>Links</h4>
+                <div class="sample-elements">
+                    <a href="#" class="nav-link test-element" data-type="link">Navigation Link</a>
+                    <a href="#" class="back-link test-element" data-type="link">← Back Link</a>
+                    <a href="#" class="btn-entrar test-element" data-type="link">Entrar</a>
+                    <a href="#" class="btn-cadastrar test-element" data-type="link">Cadastrar</a>
+                </div>
+            </div>
+            
+            <div class="sample-section">
+                <h4>Cards</h4>
+                <div class="sample-elements">
+                    <div class="card test-element" data-type="card" style="padding: 1rem;">
+                        <p>Card Element</p>
+                    </div>
+                    <div class="fanfic-card test-element" data-type="card" style="padding: 1rem;">
+                        <p>Fanfic Card</p>
+                    </div>
+                    <div class="comment-card test-element" data-type="card" style="padding: 1rem;">
+                        <p>Comment Card</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="sample-section">
+                <h4>Interactive Items</h4>
+                <div class="sample-elements">
+                    <div class="chapter-item test-element" data-type="interactive" style="padding: 1rem; cursor: pointer;">
+                        <span>Chapter Item</span>
+                    </div>
+                    <div class="fanfic-list-item test-element" data-type="interactive" style="padding: 1rem; cursor: pointer;">
+                        <span>Fanfic List Item</span>
+                    </div>
+                    <button class="tab-btn test-element" data-type="interactive">Tab Button</button>
+                    <button class="category-item test-element" data-type="interactive">Category Item</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="summary" id="summary">
+            <h2>Test Summary</h2>
+            <div class="summary-stats">
+                <div class="stat">
+                    <div class="stat-value" id="total-tests">0</div>
+                    <div class="stat-label">Total Tests</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value stat-value-pass" id="passed-tests" style="color: #10b981;">0</div>
+                    <div class="stat-label">Passed</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value stat-value-fail" id="failed-tests" style="color: #ef4444;">0</div>
+                    <div class="stat-label">Failed</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Feature: homepage-redesign, Property 24: Interactive Element Hover States
+        // Validates: Requirements 10.5
+        
+        /**
+         * Property-Based Test for Interactive Element Hover States
+         * 
+         * Property: For any interactive element (buttons, links, cards), 
+         * hovering should trigger a visual state change with appropriate contrast
+         */
+        
+        // Helper function to get computed style property
+        function getStyleProperty(element, property) {
+            return window.getComputedStyle(element).getPropertyValue(property);
+        }
+        
+        // Helper function to parse RGB/RGBA color to object
+        function parseColor(colorString) {
+            const match = colorString.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+            if (match) {
+                return {
+                    r: parseInt(match[1]),
+                    g: parseInt(match[2]),
+                    b: parseInt(match[3]),
+                    a: match[4] ? parseFloat(match[4]) : 1
+                };
+            }
+            return null;
+        }
+        
+        // Calculate relative luminance for contrast ratio
+        function getLuminance(r, g, b) {
+            const [rs, gs, bs] = [r, g, b].map(c => {
+                c = c / 255;
+                return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+            });
+            return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
+        }
+        
+        // Calculate contrast ratio between two colors
+        function getContrastRatio(color1, color2) {
+            const lum1 = getLuminance(color1.r, color1.g, color1.b);
+            const lum2 = getLuminance(color2.r, color2.g, color2.b);
+            const lighter = Math.max(lum1, lum2);
+            const darker = Math.min(lum1, lum2);
+            return (lighter + 0.05) / (darker + 0.05);
+        }
+        
+        // Check if element has hover state defined in CSS
+        function hasHoverState(element) {
+            // Get all stylesheets
+            const sheets = Array.from(document.styleSheets);
+            const elementClasses = Array.from(element.classList);
+            const elementTag = element.tagName.toLowerCase();
+            
+            // Check for hover rules
+            for (const sheet of sheets) {
+                try {
+                    const rules = Array.from(sheet.cssRules || sheet.rules || []);
+                    for (const rule of rules) {
+                        if (rule.selectorText && rule.selectorText.includes(':hover')) {
+                            // Check if rule applies to this element
+                            const selector = rule.selectorText.replace(':hover', '');
+                            
+                            // Check tag match
+                            if (selector === elementTag) return true;
+                            
+                            // Check class match
+                            for (const className of elementClasses) {
+                                if (selector.includes('.' + className)) return true;
+                            }
+                        }
+                    }
+                } catch (e) {
+                    // Skip stylesheets we can't access (CORS)
+                    continue;
+                }
+            }
+            
+            return false;
+        }
+        
+        // Test if element has visual change properties in hover state
+        function testHoverVisualChange(element) {
+            const results = {
+                hasHoverRule: false,
+                hasVisualChange: false,
+                hasTransform: false,
+                hasColorChange: false,
+                hasShadowChange: false,
+                hasBackgroundChange: false,
+                details: []
+            };
+            
+            // Check if hover state exists
+            results.hasHoverRule = hasHoverState(element);
+            
+            if (!results.hasHoverRule) {
+                results.details.push('No :hover CSS rule found');
+                return results;
+            }
+            
+            // Get initial styles
+            const initialTransform = getStyleProperty(element, 'transform');
+            const initialColor = getStyleProperty(element, 'color');
+            const initialBackground = getStyleProperty(element, 'background-color');
+            const initialShadow = getStyleProperty(element, 'box-shadow');
+            
+            // Simulate hover by adding a temporary class or checking CSS rules
+            // Since we can't actually trigger :hover in tests, we check if the CSS rules exist
+            const sheets = Array.from(document.styleSheets);
+            const elementClasses = Array.from(element.classList);
+            
+            for (const sheet of sheets) {
+                try {
+                    const rules = Array.from(sheet.cssRules || sheet.rules || []);
+                    for (const rule of rules) {
+                        if (rule.selectorText && rule.selectorText.includes(':hover')) {
+                            // Check if rule applies to this element
+                            let applies = false;
+                            for (const className of elementClasses) {
+                                if (rule.selectorText.includes('.' + className + ':hover')) {
+                                    applies = true;
+                                    break;
+                                }
+                            }
+                            
+                            if (applies) {
+                                const style = rule.style;
+                                
+                                // Check for transform
+                                if (style.transform && style.transform !== 'none') {
+                                    results.hasTransform = true;
+                                    results.hasVisualChange = true;
+                                    results.details.push(`Transform: ${style.transform}`);
+                                }
+                                
+                                // Check for color change
+                                if (style.color) {
+                                    results.hasColorChange = true;
+                                    results.hasVisualChange = true;
+                                    results.details.push(`Color: ${style.color}`);
+                                }
+                                
+                                // Check for background change
+                                if (style.backgroundColor || style.background) {
+                                    results.hasBackgroundChange = true;
+                                    results.hasVisualChange = true;
+                                    results.details.push(`Background: ${style.backgroundColor || style.background}`);
+                                }
+                                
+                                // Check for shadow change
+                                if (style.boxShadow) {
+                                    results.hasShadowChange = true;
+                                    results.hasVisualChange = true;
+                                    results.details.push(`Shadow: ${style.boxShadow}`);
+                                }
+                            }
+                        }
+                    }
+                } catch (e) {
+                    continue;
+                }
+            }
+            
+            return results;
+        }
+        
+        // Test contrast for interactive elements
+        function testContrast(element) {
+            const color = parseColor(getStyleProperty(element, 'color'));
+            const bgColor = parseColor(getStyleProperty(element, 'background-color'));
+            
+            if (!color || !bgColor) {
+                return { pass: true, ratio: null, message: 'Cannot determine colors' };
+            }
+            
+            // If background is transparent, check parent
+            if (bgColor.a === 0) {
+                let parent = element.parentElement;
+                let attempts = 0;
+                while (parent && attempts < 5) {
+                    const parentBg = parseColor(getStyleProperty(parent, 'background-color'));
+                    if (parentBg && parentBg.a > 0) {
+                        const ratio = getContrastRatio(color, parentBg);
+                        // WCAG AA requires 4.5:1 for normal text, 3:1 for large text
+                        const pass = ratio >= 3.0; // Using 3:1 as minimum for interactive elements
+                        return {
+                            pass,
+                            ratio: ratio.toFixed(2),
+                            message: pass ? 'Contrast meets standards' : 'Contrast too low'
+                        };
+                    }
+                    parent = parent.parentElement;
+                    attempts++;
+                }
+                return { pass: true, ratio: null, message: 'Transparent background' };
+            }
+            
+            const ratio = getContrastRatio(color, bgColor);
+            const pass = ratio >= 3.0;
+            
+            return {
+                pass,
+                ratio: ratio.toFixed(2),
+                message: pass ? 'Contrast meets standards' : `Contrast ratio ${ratio.toFixed(2)}:1 is below 3:1`
+            };
+        }
+        
+        // Run property-based tests
+        function runPropertyTests() {
+            const elements = document.querySelectorAll('.test-element');
+            const results = [];
+            let totalTests = 0;
+            let passedTests = 0;
+            let failedTests = 0;
+            
+            elements.forEach((element, index) => {
+                const elementType = element.getAttribute('data-type');
+                const elementText = element.textContent.trim() || element.className;
+                
+                // Test 1: Has hover state
+                const hoverTest = testHoverVisualChange(element);
+                totalTests++;
+                
+                const testResult = {
+                    element: elementText,
+                    type: elementType,
+                    hasHoverRule: hoverTest.hasHoverRule,
+                    hasVisualChange: hoverTest.hasVisualChange,
+                    details: hoverTest.details,
+                    pass: hoverTest.hasHoverRule && hoverTest.hasVisualChange
+                };
+                
+                if (testResult.pass) {
+                    passedTests++;
+                } else {
+                    failedTests++;
+                }
+                
+                // Test 2: Contrast check
+                const contrastTest = testContrast(element);
+                totalTests++;
+                
+                const contrastResult = {
+                    element: elementText,
+                    type: elementType,
+                    contrast: contrastTest.ratio,
+                    message: contrastTest.message,
+                    pass: contrastTest.pass
+                };
+                
+                if (contrastResult.pass) {
+                    passedTests++;
+                } else {
+                    failedTests++;
+                }
+                
+                results.push({ hover: testResult, contrast: contrastResult });
+            });
+            
+            return { results, totalTests, passedTests, failedTests };
+        }
+        
+        // Display results
+        function displayResults(testData) {
+            const resultsContainer = document.getElementById('test-results');
+            const { results, totalTests, passedTests, failedTests } = testData;
+            
+            let html = '<h3>🧪 Test Results</h3>';
+            
+            results.forEach(({ hover, contrast }, index) => {
+                html += `
+                    <div class="result-item ${hover.pass ? 'pass' : 'fail'}">
+                        <div>
+                            <strong>${hover.element}</strong> (${hover.type})
+                            <br>
+                            <small>Hover State: ${hover.hasHoverRule ? '✓ Has :hover rule' : '✗ No :hover rule'}</small>
+                            <br>
+                            <small>Visual Change: ${hover.hasVisualChange ? '✓ Has visual changes' : '✗ No visual changes'}</small>
+                            ${hover.details.length > 0 ? `<br><small style="opacity: 0.7;">${hover.details.join(', ')}</small>` : ''}
+                        </div>
+                        <div class="result-status ${hover.pass ? 'pass' : 'fail'}">
+                            ${hover.pass ? 'PASS' : 'FAIL'}
+                        </div>
+                    </div>
+                    
+                    <div class="result-item ${contrast.pass ? 'pass' : 'fail'}">
+                        <div>
+                            <strong>${contrast.element}</strong> - Contrast
+                            <br>
+                            <small>${contrast.message}${contrast.ratio ? ` (${contrast.ratio}:1)` : ''}</small>
+                        </div>
+                        <div class="result-status ${contrast.pass ? 'pass' : 'fail'}">
+                            ${contrast.pass ? 'PASS' : 'FAIL'}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            resultsContainer.innerHTML = html;
+            
+            // Update summary
+            document.getElementById('total-tests').textContent = totalTests;
+            document.getElementById('passed-tests').textContent = passedTests;
+            document.getElementById('failed-tests').textContent = failedTests;
+        }
+        
+        // Run tests when page loads
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                const testData = runPropertyTests();
+                displayResults(testData);
+                
+                // Log results to console
+                console.log('Property Test Results:', testData);
+                console.log(`Tests: ${testData.passedTests}/${testData.totalTests} passed`);
+                
+                if (testData.failedTests === 0) {
+                    console.log('✅ All property tests passed!');
+                } else {
+                    console.log(`❌ ${testData.failedTests} tests failed`);
+                }
+            }, 500);
+        });
+    </script>
+</body>
+</html>

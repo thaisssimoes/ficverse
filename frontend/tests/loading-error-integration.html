@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loading & Error States - Integration Test</title>
+    <link rel="stylesheet" href="../css/landing.css">
+    <style>
+        body {
+            padding: 2rem;
+        }
+        
+        .demo-section {
+            margin-bottom: 3rem;
+        }
+        
+        .demo-section h2 {
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+        
+        .demo-container {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 2rem;
+            min-height: 400px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .controls button {
+            padding: 0.75rem 1.5rem;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+        
+        .controls button:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+        }
+        
+        .fanfic-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+        
+        .status-indicator {
+            padding: 1rem;
+            background: var(--bg-primary);
+            border-radius: 8px;
+            margin-top: 1rem;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <h1>Loading & Error States - Integration Test</h1>
+    <p>Demonstrating loading spinners, error messages with retry, and image fallbacks in realistic scenarios</p>
+
+    <!-- Hero Section Demo -->
+    <div class="demo-section">
+        <h2>1. Hero Section States</h2>
+        <div class="controls">
+            <button onclick="heroDemo.showLoading()">Show Loading</button>
+            <button onclick="heroDemo.showError()">Show Error</button>
+            <button onclick="heroDemo.showSuccess()">Show Success</button>
+            <button onclick="heroDemo.showEmpty()">Show Empty</button>
+        </div>
+        <div class="demo-container">
+            <section class="hero-section" style="height: 400px; position: relative;">
+                <div class="hero-background">
+                    <img id="hero-bg" src="" alt="Hero Background" style="width: 100%; height: 100%; object-fit: cover;">
+                    <div class="hero-overlay"></div>
+                </div>
+                <div class="hero-content" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; z-index: 2;">
+                    <div class="hero-info">
+                        <span id="hero-badge" class="interactive-badge">✨ DESTAQUE</span>
+                        <h1 id="hero-title" class="hero-title">Título da Fanfic</h1>
+                        <p id="hero-subtitle" class="hero-subtitle">Descrição da fanfic</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+        <div class="status-indicator" id="hero-status">Status: Ready</div>
+    </div>
+
+    <!-- Trending Section Demo -->
+    <div class="demo-section">
+        <h2>2. Trending Section States</h2>
+        <div class="controls">
+            <button onclick="trendingDemo.showLoading()">Show Loading</button>
+            <button onclick="trendingDemo.showError()">Show Error</button>
+            <button onclick="trendingDemo.showSuccess()">Show Success</button>
+            <button onclick="trendingDemo.showEmpty()">Show Empty</button>
+        </div>
+        <div class="demo-container">
+            <div id="trending-grid" class="fanfic-grid"></div>
+        </div>
+        <div class="status-indicator" id="trending-status">Status: Ready</div>
+    </div>
+
+    <!-- Image Fallback Demo -->
+    <div class="demo-section">
+        <h2>3. Image Fallback Demo</h2>
+        <div class="controls">
+            <button onclick="imageDemo.testBrokenImage()">Test Broken Image</button>
+            <button onclick="imageDemo.testValidImage()">Test Valid Image</button>
+            <button onclick="imageDemo.testMultipleImages()">Test Multiple Images</button>
+        </div>
+        <div class="demo-container">
+            <div id="image-test-container" class="fanfic-grid"></div>
+        </div>
+        <div class="status-indicator" id="image-status">Status: Ready</div>
+    </div>
+
+    <script src="../js/ui-utils.js"></script>
+    <script>
+        // Hero Section Demo
+        const heroDemo = {
+            showLoading() {
+                document.getElementById('hero-title').textContent = 'Carregando...';
+                document.getElementById('hero-subtitle').innerHTML = `
+                    <div class="loading-container">
+                        <div class="loading-spinner"></div>
+                        <p class="loading-text">Buscando fanfics em destaque</p>
+                    </div>
+                `;
+                document.getElementById('hero-bg').src = '';
+                document.getElementById('hero-status').textContent = 'Status: Loading...';
+            },
+            
+            showError() {
+                document.getElementById('hero-title').textContent = 'Erro ao carregar';
+                document.getElementById('hero-subtitle').innerHTML = `
+                    <div class="error-container">
+                        <div class="error-icon">⚠️</div>
+                        <p class="error-message">Não foi possível carregar as fanfics em destaque</p>
+                        <button class="btn-retry" onclick="heroDemo.showLoading(); setTimeout(() => heroDemo.showSuccess(), 1500)">Tentar Novamente</button>
+                    </div>
+                `;
+                document.getElementById('hero-bg').src = 'https://via.placeholder.com/1920x500?text=Erro';
+                document.getElementById('hero-status').textContent = 'Status: Error - Retry button available';
+            },
+            
+            showSuccess() {
+                document.getElementById('hero-title').textContent = 'A Escolha do Dragão';
+                document.getElementById('hero-subtitle').textContent = 'Sua aventura interativa. Você decide o destino.';
+                document.getElementById('hero-bg').src = 'https://via.placeholder.com/1920x500?text=Featured+Fanfic';
+                document.getElementById('hero-status').textContent = 'Status: Success - Content loaded';
+            },
+            
+            showEmpty() {
+                document.getElementById('hero-title').textContent = 'Nenhuma fanfic em destaque';
+                document.getElementById('hero-subtitle').innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">📚</div>
+                        <p class="empty-message">Volte em breve para descobrir novas histórias!</p>
+                    </div>
+                `;
+                document.getElementById('hero-bg').src = '';
+                document.getElementById('hero-status').textContent = 'Status: Empty - No featured fanfics';
+            }
+        };
+
+        // Trending Section Demo
+        const trendingDemo = {
+            showLoading() {
+                const grid = document.getElementById('trending-grid');
+                grid.innerHTML = `
+                    <div class="loading-container" style="grid-column: 1 / -1;">
+                        <div class="loading-spinner"></div>
+                        <p class="loading-text">Carregando histórias...</p>
+                    </div>
+                `;
+                document.getElementById('trending-status').textContent = 'Status: Loading...';
+            },
+            
+            showError() {
+                const grid = document.getElementById('trending-grid');
+                grid.innerHTML = `
+                    <div class="error-container" style="grid-column: 1 / -1;">
+                        <div class="error-icon">⚠️</div>
+                        <p class="error-message">Não foi possível carregar as fanfics. Por favor, tente novamente.</p>
+                        <button class="btn-retry" onclick="trendingDemo.showLoading(); setTimeout(() => trendingDemo.showSuccess(), 1500)">Tentar Novamente</button>
+                    </div>
+                `;
+                document.getElementById('trending-status').textContent = 'Status: Error - Retry button available';
+            },
+            
+            showSuccess() {
+                const grid = document.getElementById('trending-grid');
+                grid.innerHTML = `
+                    <div class="fanfic-card">
+                        <div class="fanfic-cover">
+                            <img src="https://via.placeholder.com/300x450?text=Fanfic+1" alt="Fanfic 1" loading="lazy">
+                            <span class="fanfic-badge interactive">⚡ INTERATIVO</span>
+                        </div>
+                        <div class="fanfic-info">
+                            <h3 class="fanfic-title">Título da Fanfic 1</h3>
+                            <p class="fanfic-author">Por @autor1</p>
+                        </div>
+                    </div>
+                    <div class="fanfic-card">
+                        <div class="fanfic-cover">
+                            <img src="https://via.placeholder.com/300x450?text=Fanfic+2" alt="Fanfic 2" loading="lazy">
+                            <span class="fanfic-badge reading">📖 LEITURA</span>
+                        </div>
+                        <div class="fanfic-info">
+                            <h3 class="fanfic-title">Título da Fanfic 2</h3>
+                            <p class="fanfic-author">Por @autor2</p>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('trending-status').textContent = 'Status: Success - 2 fanfics loaded';
+            },
+            
+            showEmpty() {
+                const grid = document.getElementById('trending-grid');
+                grid.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1 / -1;">
+                        <div class="empty-icon">📚</div>
+                        <p class="empty-message">Nenhuma fanfic encontrada. Tente outro filtro!</p>
+                    </div>
+                `;
+                document.getElementById('trending-status').textContent = 'Status: Empty - No fanfics found';
+            }
+        };
+
+        // Image Fallback Demo
+        const imageDemo = {
+            testBrokenImage() {
+                const container = document.getElementById('image-test-container');
+                container.innerHTML = `
+                    <div class="fanfic-card">
+                        <div class="fanfic-cover">
+                            <img src="https://invalid-url.com/broken.jpg" 
+                                 alt="Broken Image" 
+                                 loading="lazy"
+                                 onerror="this.onerror=null; this.src='https://via.placeholder.com/300x450?text=Sem+Imagem'; this.classList.add('image-fallback');">
+                            <span class="fanfic-badge reading">📖 LEITURA</span>
+                        </div>
+                        <div class="fanfic-info">
+                            <h3 class="fanfic-title">Broken Image Test</h3>
+                            <p class="fanfic-author">Should show fallback</p>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('image-status').textContent = 'Status: Testing broken image - should show fallback';
+            },
+            
+            testValidImage() {
+                const container = document.getElementById('image-test-container');
+                container.innerHTML = `
+                    <div class="fanfic-card">
+                        <div class="fanfic-cover">
+                            <img src="https://via.placeholder.com/300x450?text=Valid+Image" 
+                                 alt="Valid Image" 
+                                 loading="lazy"
+                                 onerror="this.onerror=null; this.src='https://via.placeholder.com/300x450?text=Sem+Imagem'; this.classList.add('image-fallback');">
+                            <span class="fanfic-badge interactive">⚡ INTERATIVO</span>
+                        </div>
+                        <div class="fanfic-info">
+                            <h3 class="fanfic-title">Valid Image Test</h3>
+                            <p class="fanfic-author">Should load normally</p>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('image-status').textContent = 'Status: Testing valid image - should load normally';
+            },
+            
+            testMultipleImages() {
+                const container = document.getElementById('image-test-container');
+                container.innerHTML = `
+                    <div class="fanfic-card">
+                        <div class="fanfic-cover">
+                            <img src="https://via.placeholder.com/300x450?text=Image+1" 
+                                 alt="Image 1" 
+                                 loading="lazy"
+                                 onerror="this.onerror=null; this.src='https://via.placeholder.com/300x450?text=Sem+Imagem'; this.classList.add('image-fallback');">
+                        </div>
+                    </div>
+                    <div class="fanfic-card">
+                        <div class="fanfic-cover">
+                            <img src="https://broken-url.com/image2.jpg" 
+                                 alt="Image 2" 
+                                 loading="lazy"
+                                 onerror="this.onerror=null; this.src='https://via.placeholder.com/300x450?text=Sem+Imagem'; this.classList.add('image-fallback');">
+                        </div>
+                    </div>
+                    <div class="fanfic-card">
+                        <div class="fanfic-cover">
+                            <img src="https://via.placeholder.com/300x450?text=Image+3" 
+                                 alt="Image 3" 
+                                 loading="lazy"
+                                 onerror="this.onerror=null; this.src='https://via.placeholder.com/300x450?text=Sem+Imagem'; this.classList.add('image-fallback');">
+                        </div>
+                    </div>
+                `;
+                document.getElementById('image-status').textContent = 'Status: Testing multiple images - mix of valid and broken';
+            }
+        };
+
+        // Initialize with loading state
+        window.addEventListener('load', () => {
+            heroDemo.showSuccess();
+            trendingDemo.showSuccess();
+            imageDemo.testValidImage();
+        });
+    </script>
+</body>
+</html>

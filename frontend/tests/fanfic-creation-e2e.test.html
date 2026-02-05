@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste E2E - Criação de Fanfic</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: #0f0f1e;
+            color: #fff;
+        }
+        
+        .test-section {
+            background: #1a1a2e;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border-radius: 12px;
+            border: 1px solid #333;
+        }
+        
+        .test-result {
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 8px;
+            border-left: 4px solid;
+        }
+        
+        .test-result.pass {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: #10b981;
+        }
+        
+        .test-result.fail {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: #ef4444;
+        }
+        
+        .test-result.pending {
+            background: rgba(251, 191, 36, 0.1);
+            border-color: #fbbf24;
+        }
+        
+        button {
+            padding: 0.75rem 1.5rem;
+            background: #8b5cf6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-right: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        button:hover {
+            background: #7c3aed;
+        }
+        
+        button:disabled {
+            background: #555;
+            cursor: not-allowed;
+        }
+        
+        pre {
+            background: #0a0a14;
+            padding: 1rem;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 0.9rem;
+        }
+        
+        .progress {
+            margin: 1rem 0;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #333;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #8b5cf6, #3b82f6);
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Teste End-to-End - Sistema de Fanfics</h1>
+    
+    <div class="test-section">
+        <h2>Status da Autenticação</h2>
+        <div id="auth-status"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Testes Disponíveis</h2>
+        <button onclick="runAllTests()">▶️ Executar Todos os Testes</button>
+        <button onclick="runTest('createFanfic')">1. Criar Fanfic</button>
+        <button onclick="runTest('createChapter')">2. Criar Capítulo</button>
+        <button onclick="runTest('publishFanfic')">3. Publicar Fanfic</button>
+        <button onclick="runTest('fullFlow')">4. Fluxo Completo</button>
+        <button onclick="clearResults()">🗑️ Limpar Resultados</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>Progresso</h2>
+        <div class="progress">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+            </div>
+            <p id="progress-text">Aguardando início dos testes...</p>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Resultados dos Testes</h2>
+        <div id="test-results"></div>
+    </div>
+    
+    <script src="../js/api.js"></script>
+    <script>
+        let testResults = [];
+        let createdFanficId = null;
+        let createdChapterId = null;
+        
+        // Check authentication on load
+        window.addEventListener('load', () => {
+            const authStatus = document.getElementById('auth-status');
+            if (!api.isAuthenticated()) {
+                authStatus.innerHTML = `
+                    <div class="test-result fail">
+                        <h3>❌ Não Autenticado</h3>
+                        <p>Você precisa fazer login primeiro.</p>
+                        <p><a href="../login.html" style="color: #8b5cf6;">Ir para Login</a></p>
+                    </div>
+                `;
+            } else {
+                authStatus.innerHTML = `
+                    <div class="test-result pass">
+                        <h3>✅ Autenticado</h3>
+                        <p>Token presente. Pronto para executar testes.</p>
+                    </div>
+                `;
+            }
+        });
+        
+        function updateProgress(percent, text) {
+            document.getElementById('progress-fill').style.width = percent + '%';
+            document.getElementById('progress-text').textContent = text;
+        }
+        
+        function addTestResult(name, status, message, details = null) {
+            const result = { name, status, message, details, timestamp: new Date().toISOString() };
+            testResults.push(result);
+            
+            const resultsDiv = document.getElementById('test-results');
+            const resultHtml = `
+                <div class="test-result ${status}">
+                    <h3>${status === 'pass' ? '✅' : status === 'fail' ? '❌' : '⏳'} ${name}</h3>
+                    <p>${message}</p>
+                    ${details ? `<pre>${JSON.stringify(details, null, 2)}</pre>` : ''}
+                    <small>Timestamp: ${result.timestamp}</small>
+                </div>
+            `;
+            resultsDiv.insertAdjacentHTML('afterbegin', resultHtml);
+        }
+        
+        async function runTest(testName) {
+            if (!api.isAuthenticated()) {
+                alert('Por favor, faça login primeiro!');
+                return;
+            }
+            
+            try {
+                switch(testName) {
+                    case 'createFanfic':
+                        await testCreateFanfic();
+                        break;
+                    case 'createChapter':
+                        await testCreateChapter();
+                        break;
+                    case 'publishFanfic':
+                        await testPublishFanfic();
+                        break;
+                    case 'fullFlow':
+                        await testFullFlow();
+                        break;
+                }
+            } catch (error) {
+                addTestResult(testName, 'fail', 'Erro ao executar teste: ' + error.message, { error: error.toString() });
+            }
+        }
+        
+        async function testCreateFanfic() {
+            updateProgress(10, 'Teste 1/4: Criando fanfic...');
+            
+            try {
+                const formData = new FormData();
+                formData.append('title', 'Fanfic de Teste E2E - ' + Date.now());
+                formData.append('category', 'Romance');
+                formData.append('synopsis', 'Esta é uma fanfic criada automaticamente pelo teste E2E.');
+                formData.append('disclaimer', 'Teste automatizado');
+                formData.append('trigger_warnings', '');
+                formData.append('is_adult_content', 'false');
+                formData.append('interactive_mode', 'false');
+                formData.append('is_draft', 'true');
+                
+                const url = 'http://localhost:8080/api/fanfics';
+                const headers = {};
+                if (api.token) {
+                    headers['Authorization'] = `Bearer ${api.token}`;
+                }
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers,
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json().catch(() => ({}));
+                    throw new Error(error.message || error.error?.message || `HTTP ${response.status}`);
+                }
+                
+                const result = await response.json();
+                createdFanficId = result.id;
+                
+                addTestResult(
+                    'Criar Fanfic',
+                    'pass',
+                    `Fanfic criada com sucesso! ID: ${result.id}`,
+                    result
+                );
+                
+                updateProgress(25, 'Teste 1/4: Fanfic criada com sucesso!');
+                return result;
+                
+            } catch (error) {
+                addTestResult(
+                    'Criar Fanfic',
+                    'fail',
+                    'Falha ao criar fanfic: ' + error.message,
+                    { error: error.toString() }
+                );
+                updateProgress(25, 'Teste 1/4: FALHOU');
+                throw error;
+            }
+        }
+        
+        async function testCreateChapter() {
+            updateProgress(35, 'Teste 2/4: Criando capítulo...');
+            
+            if (!createdFanficId) {
+                throw new Error('Nenhuma fanfic criada. Execute o teste "Criar Fanfic" primeiro.');
+            }
+            
+            try {
+                const chapterData = {
+                    title: 'Capítulo 1 - Teste',
+                    content: '<p>Este é o conteúdo do capítulo de teste.</p>',
+                    chapter_number: 1,
+                    is_draft: true
+                };
+                
+                const url = `http://localhost:8080/api/fanfics/${createdFanficId}/chapters`;
+                const headers = {
+                    'Content-Type': 'application/json'
+                };
+                if (api.token) {
+                    headers['Authorization'] = `Bearer ${api.token}`;
+                }
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify(chapterData)
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json().catch(() => ({}));
+                    throw new Error(error.message || error.error?.message || `HTTP ${response.status}`);
+                }
+                
+                const result = await response.json();
+                createdChapterId = result.id;
+                
+                addTestResult(
+                    'Criar Capítulo',
+                    'pass',
+                    `Capítulo criado com sucesso! ID: ${result.id}`,
+                    result
+                );
+                
+                updateProgress(50, 'Teste 2/4: Capítulo criado com sucesso!');
+                return result;
+                
+            } catch (error) {
+                addTestResult(
+                    'Criar Capítulo',
+                    'fail',
+                    'Falha ao criar capítulo: ' + error.message,
+                    { error: error.toString() }
+                );
+                updateProgress(50, 'Teste 2/4: FALHOU');
+                throw error;
+            }
+        }
+        
+        async function testPublishFanfic() {
+            updateProgress(60, 'Teste 3/4: Publicando fanfic...');
+            
+            if (!createdFanficId) {
+                throw new Error('Nenhuma fanfic criada. Execute o teste "Criar Fanfic" primeiro.');
+            }
+            
+            try {
+                const url = `http://localhost:8080/api/fanfics/${createdFanficId}/publish`;
+                const headers = {};
+                if (api.token) {
+                    headers['Authorization'] = `Bearer ${api.token}`;
+                }
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json().catch(() => ({}));
+                    throw new Error(error.message || error.error?.message || `HTTP ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                addTestResult(
+                    'Publicar Fanfic',
+                    'pass',
+                    'Fanfic publicada com sucesso!',
+                    result
+                );
+                
+                updateProgress(75, 'Teste 3/4: Fanfic publicada com sucesso!');
+                return result;
+                
+            } catch (error) {
+                addTestResult(
+                    'Publicar Fanfic',
+                    'fail',
+                    'Falha ao publicar fanfic: ' + error.message,
+                    { error: error.toString() }
+                );
+                updateProgress(75, 'Teste 3/4: FALHOU');
+                throw error;
+            }
+        }
+        
+        async function testFullFlow() {
+            updateProgress(0, 'Iniciando fluxo completo...');
+            
+            try {
+                // 1. Criar fanfic
+                await testCreateFanfic();
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // 2. Criar capítulo
+                await testCreateChapter();
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // 3. Publicar fanfic
+                await testPublishFanfic();
+                
+                updateProgress(100, '✅ Fluxo completo executado com sucesso!');
+                
+                addTestResult(
+                    'Fluxo Completo',
+                    'pass',
+                    'Todos os testes passaram! Sistema funcionando corretamente.',
+                    {
+                        fanficId: createdFanficId,
+                        chapterId: createdChapterId
+                    }
+                );
+                
+            } catch (error) {
+                updateProgress(100, '❌ Fluxo completo falhou');
+                addTestResult(
+                    'Fluxo Completo',
+                    'fail',
+                    'O fluxo completo falhou em algum ponto.',
+                    { error: error.toString() }
+                );
+            }
+        }
+        
+        async function runAllTests() {
+            clearResults();
+            await testFullFlow();
+        }
+        
+        function clearResults() {
+            document.getElementById('test-results').innerHTML = '';
+            testResults = [];
+            createdFanficId = null;
+            createdChapterId = null;
+            updateProgress(0, 'Resultados limpos. Pronto para novos testes.');
+        }
+        
+        console.log('='.repeat(50));
+        console.log('TESTE E2E - SISTEMA DE FANFICS');
+        console.log('='.repeat(50));
+        console.log('Use os botões acima para executar os testes.');
+        console.log('='.repeat(50));
+    </script>
+</body>
+</html>
