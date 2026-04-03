@@ -37,7 +37,7 @@ func TestProperty_ValidCredentialsCreateSessions(t *testing.T) {
 		func(username, email, password string) bool {
 			// Setup fresh database for each test
 			db := setupTestDB(t)
-			authService := NewAuthService(db, "test-secret-key")
+			authService := NewAuthService(db, "test-secret-key", nil, "")
 
 			// Register user
 			user, err := authService.Register(username, email, password)
@@ -115,7 +115,7 @@ func TestProperty_InvalidCredentialsAreRejected(t *testing.T) {
 		func(username, email, password, wrongPassword string) bool {
 			// Setup fresh database for each test
 			db := setupTestDB(t)
-			authService := NewAuthService(db, "test-secret-key")
+			authService := NewAuthService(db, "test-secret-key", nil, "")
 
 			// Register user with valid credentials
 			_, err := authService.Register(username, email, password)
@@ -167,7 +167,7 @@ func TestProperty_InvalidCredentialsAreRejected(t *testing.T) {
 		func(email, password string) bool {
 			// Setup fresh database for each test
 			db := setupTestDB(t)
-			authService := NewAuthService(db, "test-secret-key")
+			authService := NewAuthService(db, "test-secret-key", nil, "")
 
 			// Attempt login with non-existent email
 			token, user, err := authService.Login(email, password)
@@ -208,7 +208,7 @@ func TestProperty_RegistrationCreatesUniqueUsers(t *testing.T) {
 		func(username1, email1, password1, username2, email2, password2 string) bool {
 			// Setup fresh database for each test
 			db := setupTestDB(t)
-			authService := NewAuthService(db, "test-secret-key")
+			authService := NewAuthService(db, "test-secret-key", nil, "")
 
 			// Register first user
 			user1, err := authService.Register(username1, email1, password1)
@@ -262,7 +262,7 @@ func TestProperty_RegistrationCreatesUniqueUsers(t *testing.T) {
 		func(username1, username2, email, password1, password2 string) bool {
 			// Setup fresh database for each test
 			db := setupTestDB(t)
-			authService := NewAuthService(db, "test-secret-key")
+			authService := NewAuthService(db, "test-secret-key", nil, "")
 
 			// Register first user
 			_, err := authService.Register(username1, email, password1)
@@ -312,7 +312,7 @@ func TestProperty_LogoutTerminatesSessions(t *testing.T) {
 		func(username, email, password string) bool {
 			// Setup fresh database for each test
 			db := setupTestDB(t)
-			authService := NewAuthService(db, "test-secret-key")
+			authService := NewAuthService(db, "test-secret-key", nil, "")
 
 			// Register and login user
 			_, err := authService.Register(username, email, password)

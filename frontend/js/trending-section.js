@@ -138,7 +138,7 @@ class TrendingSection {
     }
     
     renderFanficCard(fanfic) {
-        const coverUrl = fanfic.cover_url || 'https://via.placeholder.com/300x450?text=No+Cover';
+        const coverUrl = api.getAssetUrl(fanfic.cover_url) || 'https://via.placeholder.com/300x450?text=No+Cover';
         const isInteractive = fanfic.is_interactive || false;
         const badge = isInteractive ? '⚡ INTERATIVO' : '📖 LEITURA';
         const badgeClass = isInteractive ? 'interactive' : 'reading';

@@ -77,7 +77,7 @@ async function checkPendingQuestionsAndAnswers() {
         if (api.token) {
             try {
                 const pendingResponse = await api.request(`/fanfics/${currentChapter.fanfic_id}/pending-questions`);
-                pendingQuestions = pendingResponse.pending_questions || [];
+                pendingQuestions = pendingResponse.questions || [];
                 
                 // If there are pending questions, show notification
                 if (pendingQuestions.length > 0) {
@@ -92,7 +92,7 @@ async function checkPendingQuestionsAndAnswers() {
             try {
                 userAnswers = await api.getAnswers(currentChapter.fanfic_id);
             } catch (error) {
-                console.log('No existing answers found');
+                console.error('Erro ao carregar respostas:', error);
                 userAnswers = {};
             }
         } else {
@@ -140,28 +140,34 @@ function displayChapter() {
 
     // Process and display chapter content
     const chapterTextEl = document.getElementById('chapter-text');
-    let content = currentChapter.content;
+    let content = currentChapter.content || '';
 
     // Substitute placeholders in interactive mode
     if (readingMode === 'interactive' && Object.keys(userAnswers).length > 0) {
         content = substitutePlaceholders(content, userAnswers);
     }
 
-    // Convert line breaks to paragraphs for better readability
-    const paragraphs = content.split('\n\n').filter(p => p.trim() !== '');
-    chapterTextEl.innerHTML = paragraphs.map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`).join('');
+    // Chapter content is stored as HTML from the rich text editor.
+    // Sanitize and render directly instead of treating as plain text.
+    chapterTextEl.innerHTML = DOMPurify.sanitize(content);
 }
 
 function substitutePlaceholders(content, answers) {
     let processedContent = content;
-    
+
+    // Escape special regex characters in placeholder names to prevent errors
+    function escapeRegex(str) {
+        return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
     // Replace each placeholder with its corresponding answer
     for (const [placeholder, answer] of Object.entries(answers)) {
+        const escaped = escapeRegex(placeholder);
         // Match placeholders in format {{placeholder}} or {placeholder}
-        const regex = new RegExp(`\\{\\{${placeholder}\\}\\}|\\{${placeholder}\\}`, 'g');
+        const regex = new RegExp(`\\{\\{${escaped}\\}\\}|\\{${escaped}\\}`, 'g');
         processedContent = processedContent.replace(regex, answer);
     }
-    
+
     return processedContent;
 }
 

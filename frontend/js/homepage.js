@@ -73,7 +73,7 @@ function renderFanficsByCategory(fanficsByCategory) {
 
 // Render a single fanfic card
 function renderFanficCard(fanfic) {
-    const coverUrl = fanfic.cover_url || 'https://via.placeholder.com/300x450?text=No+Cover';
+    const coverUrl = api.getAssetUrl(fanfic.cover_url) || 'https://via.placeholder.com/300x450?text=No+Cover';
     
     // Build badges HTML
     let badgesHtml = '';
@@ -197,7 +197,7 @@ function renderReadingListSection(readingList) {
 
 // Render individual reading list card
 function renderReadingListCard(item) {
-    const coverUrl = item.fanfic_cover_url || 'https://via.placeholder.com/300x450?text=No+Cover';
+    const coverUrl = api.getAssetUrl(item.fanfic_cover_url) || 'https://via.placeholder.com/300x450?text=No+Cover';
     const progress = item.progress_percentage || 0;
     const currentChapter = item.last_chapter_read || 0;
     const totalChapters = item.total_chapters || 0;

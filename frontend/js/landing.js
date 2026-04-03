@@ -82,7 +82,7 @@ function renderReadingListSection(readingList) {
 
 // Render individual reading list card
 function renderReadingListCard(item) {
-    const coverUrl = item.fanfic_cover_url || 'https://via.placeholder.com/300x450?text=No+Cover';
+    const coverUrl = api.getAssetUrl(item.fanfic_cover_url) || 'https://via.placeholder.com/300x450?text=No+Cover';
     const progress = item.progress_percentage || 0;
     const currentChapter = item.last_chapter_read || 0;
     const totalChapters = item.total_chapters || 0;
@@ -237,8 +237,8 @@ function renderStoryCard(fanfic, isFeatured = false) {
     ];
     
     const randomGradient = gradients[Math.floor(Math.random() * gradients.length)];
-    const coverStyle = fanfic.cover_url 
-        ? `background-image: url('${fanfic.cover_url}'); background-size: cover; background-position: center;`
+    const coverStyle = fanfic.cover_url
+        ? `background-image: url('${api.getAssetUrl(fanfic.cover_url)}'); background-size: cover; background-position: center;`
         : `background: ${randomGradient};`;
     
     const featuredClass = isFeatured ? 'featured' : '';

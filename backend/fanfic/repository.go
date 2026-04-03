@@ -222,16 +222,17 @@ func (r *FanficRepository) SaveCoverImage(filename string, data []byte) (string,
 	// Generate unique filename
 	ext := filepath.Ext(filename)
 	uniqueFilename := fmt.Sprintf("%d%s", generateUniqueID(), ext)
-	filePath := filepath.Join(UploadDir, uniqueFilename)
+
+	// Use filepath.Join only for the disk path (OS-specific separators)
+	diskPath := filepath.Join(UploadDir, uniqueFilename)
 
 	// Write file
-	if err := os.WriteFile(filePath, data, 0644); err != nil {
+	if err := os.WriteFile(diskPath, data, 0644); err != nil {
 		return "", fmt.Errorf("failed to write image file: %w", err)
 	}
 
-	// Return URL path (convert backslashes to forward slashes for URLs)
-	urlPath := strings.ReplaceAll(filePath, "\\", "/")
-	return "/" + urlPath, nil
+	// Always return a clean URL path with forward slashes, independent of OS
+	return "/uploads/covers/" + uniqueFilename, nil
 }
 
 // DeleteCoverImage deletes a cover image from disk

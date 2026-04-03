@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/interactive-fanfic-platform/auth"
+	"github.com/interactive-fanfic-platform/config"
 	"gorm.io/gorm"
 )
 
@@ -62,7 +63,7 @@ func CORSMiddleware() gin.HandlerFunc {
 }
 
 // Setup configures all routes and middleware
-func Setup(router *gin.Engine, db *gorm.DB) {
+func Setup(router *gin.Engine, db *gorm.DB, cfg *config.Config) {
 	// Add CORS middleware
 	router.Use(CORSMiddleware())
 	
@@ -78,7 +79,8 @@ func Setup(router *gin.Engine, db *gorm.DB) {
 	})
 
 	// Initialize services
-	authService := auth.NewAuthService(db, getJWTSecret())
+	emailService := auth.NewEmailService(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUser, cfg.SMTPPassword)
+	authService := auth.NewAuthService(db, cfg.JWTSecret, emailService, cfg.FrontendURL)
 	
 	// Create handlers
 	authHandler := NewAuthHandler(authService)
@@ -100,6 +102,8 @@ func Setup(router *gin.Engine, db *gorm.DB) {
 			authGroup.POST("/register", authHandler.Register)
 			authGroup.POST("/login", authHandler.Login)
 			authGroup.POST("/logout", authHandler.Logout)
+			authGroup.POST("/forgot-password", authHandler.ForgotPassword)
+			authGroup.POST("/reset-password", authHandler.ResetPassword)
 		}
 
 		// Fanfic routes
@@ -201,8 +205,3 @@ func Setup(router *gin.Engine, db *gorm.DB) {
 	}
 }
 
-// getJWTSecret retrieves JWT secret from environment or uses default
-func getJWTSecret() string {
-	// This should match the config loading logic
-	return "your-secret-key-change-in-production"
-}

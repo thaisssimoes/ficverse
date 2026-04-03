@@ -28,7 +28,7 @@ func main() {
 
 	// Setup router
 	router := gin.Default()
-	routes.Setup(router, db)
+	routes.Setup(router, db, cfg)
 
 	// Start server
 	log.Printf("Server starting on port %s", cfg.Port)

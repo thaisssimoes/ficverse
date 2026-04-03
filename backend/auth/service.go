@@ -1,6 +1,9 @@
 package auth
 
 import (
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"sync"
@@ -35,16 +38,20 @@ type AuthService struct {
 	tokenDuration  time.Duration
 	invalidTokens  map[string]bool
 	invalidTokenMu sync.RWMutex
+	email          *EmailService
+	frontendURL    string
 }
 
 // NewAuthService creates a new authentication service
-func NewAuthService(db *gorm.DB, jwtSecret string) *AuthService {
+func NewAuthService(db *gorm.DB, jwtSecret string, email *EmailService, frontendURL string) *AuthService {
 	return &AuthService{
 		repo:           NewUserRepository(db),
 		jwtSecret:      []byte(jwtSecret),
-		tokenDuration:  24 * time.Hour, // 24 hours
+		tokenDuration:  24 * time.Hour,
 		invalidTokens:  make(map[string]bool),
 		invalidTokenMu: sync.RWMutex{},
+		email:          email,
+		frontendURL:    frontendURL,
 	}
 }
 
@@ -138,6 +145,62 @@ func (s *AuthService) Logout(tokenString string) error {
 	s.invalidTokenMu.Unlock()
 
 	return nil
+}
+
+// ForgotPassword generates a reset token and sends a recovery email.
+// Always returns nil to prevent user enumeration.
+func (s *AuthService) ForgotPassword(email string) error {
+	user, err := s.repo.GetByEmail(email)
+	if err != nil {
+		// Don't reveal if email exists
+		return nil
+	}
+
+	// Generate a secure random token
+	rawBytes := make([]byte, 32)
+	if _, err := rand.Read(rawBytes); err != nil {
+		return fmt.Errorf("failed to generate token: %w", err)
+	}
+	rawToken := hex.EncodeToString(rawBytes)
+
+	// Store hashed version
+	hash := sha256.Sum256([]byte(rawToken))
+	tokenHash := hex.EncodeToString(hash[:])
+	expiresAt := time.Now().Add(1 * time.Hour)
+
+	if err := s.repo.CreateResetToken(user.ID, tokenHash, expiresAt); err != nil {
+		return fmt.Errorf("failed to store reset token: %w", err)
+	}
+
+	if s.email != nil && s.email.IsConfigured() {
+		resetURL := fmt.Sprintf("%s/reset-password.html?token=%s", s.frontendURL, rawToken)
+		if err := s.email.SendPasswordReset(user.Email, user.Username, resetURL); err != nil {
+			return fmt.Errorf("failed to send email: %w", err)
+		}
+	}
+
+	return nil
+}
+
+// ResetPassword validates the token and updates the user's password
+func (s *AuthService) ResetPassword(rawToken, newPassword string) error {
+	if len(newPassword) < 8 {
+		return ErrPasswordTooShort
+	}
+
+	hash := sha256.Sum256([]byte(rawToken))
+	tokenHash := hex.EncodeToString(hash[:])
+
+	resetToken, err := s.repo.GetValidResetToken(tokenHash)
+	if err != nil {
+		return err
+	}
+
+	if err := s.repo.UpdatePassword(resetToken.UserID, newPassword); err != nil {
+		return err
+	}
+
+	return s.repo.MarkResetTokenUsed(resetToken.ID)
 }
 
 // generateToken creates a JWT token for a user

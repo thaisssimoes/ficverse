@@ -122,6 +122,20 @@ class APIClient {
         this.clearToken();
     }
 
+    async forgotPassword(email) {
+        return await this.request('/auth/forgot-password', {
+            method: 'POST',
+            body: JSON.stringify({ email }),
+        });
+    }
+
+    async resetPassword(token, password) {
+        return await this.request('/auth/reset-password', {
+            method: 'POST',
+            body: JSON.stringify({ token, password }),
+        });
+    }
+
     setToken(token) {
         this.token = token;
         localStorage.setItem('auth_token', token);
@@ -138,6 +152,15 @@ class APIClient {
 
     getToken() {
         return this.token;
+    }
+
+    // Returns the full URL for a backend asset (e.g. cover images).
+    // Handles relative paths like /uploads/covers/file.jpg and already-absolute URLs.
+    getAssetUrl(path) {
+        if (!path) return null;
+        if (path.startsWith('http')) return path;
+        const backendBase = API_BASE_URL.replace('/api', '');
+        return backendBase + path;
     }
 
     // Fanfic methods

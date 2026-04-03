@@ -337,8 +337,8 @@ class Dashboard {
                     <h3>Imagem de Capa</h3>
                     <div class="cover-upload-container">
                         <div class="cover-preview">
-                            ${fanfic.cover_url ? 
-                                `<img src="${fanfic.cover_url}" alt="Capa" class="cover-preview-img" id="cover-preview">` :
+                            ${fanfic.cover_url ?
+                                `<img src="${api.getAssetUrl(fanfic.cover_url)}" alt="Capa" class="cover-preview-img" id="cover-preview">` :
                                 `<div class="cover-preview-placeholder" id="cover-preview">📖</div>`
                             }
                         </div>

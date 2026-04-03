@@ -561,7 +561,7 @@ class FanficForm {
                 const coverPreview = document.getElementById('current-cover-preview');
                 const coverImage = document.getElementById('current-cover-image');
                 if (coverPreview && coverImage) {
-                    coverImage.src = `http://localhost:8080${fanfic.cover_url}`;
+                    coverImage.src = api.getAssetUrl(fanfic.cover_url);
                     coverPreview.style.display = 'block';
                 }
             }

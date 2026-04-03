@@ -68,9 +68,7 @@ class ContinueReadingSection {
 
     renderCard(item) {
         const progressPercent = Math.round(item.progress || 0);
-        const coverUrl = item.fanfic.cover_url 
-            ? `http://localhost:8080${item.fanfic.cover_url}` 
-            : 'https://via.placeholder.com/300x450/667eea/ffffff?text=No+Cover';
+        const coverUrl = api.getAssetUrl(item.fanfic.cover_url) || 'https://via.placeholder.com/300x450/667eea/ffffff?text=No+Cover';
 
         return `
             <div class="fanfic-card continue-reading-card" data-fanfic-id="${item.fanfic.id}">

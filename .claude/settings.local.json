@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls -d \"c:\\\\Users\\\\tsuba\\\\GolandProjects\\\\Lollipopfics/backend\"/*/)",
+      "Bash(go build:*)",
+      "Bash(go test:*)"
+    ]
+  }
+}

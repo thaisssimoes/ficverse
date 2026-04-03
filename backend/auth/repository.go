@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/interactive-fanfic-platform/models"
 	"golang.org/x/crypto/bcrypt"
@@ -126,4 +127,49 @@ func (r *UserRepository) Delete(id int) error {
 func (r *UserRepository) VerifyPassword(user *models.User, password string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password))
 	return err == nil
+}
+
+// UpdatePassword sets a new hashed password for the user
+func (r *UserRepository) UpdatePassword(userID int, newPassword string) error {
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return fmt.Errorf("failed to hash password: %w", err)
+	}
+
+	result := r.db.Model(&models.User{}).Where("id = ?", userID).Update("password_hash", string(hashedPassword))
+	if result.Error != nil {
+		return fmt.Errorf("failed to update password: %w", result.Error)
+	}
+	return nil
+}
+
+// CreateResetToken stores a hashed reset token for a user
+func (r *UserRepository) CreateResetToken(userID int, tokenHash string, expiresAt time.Time) error {
+	token := &models.PasswordResetToken{
+		UserID:    userID,
+		TokenHash: tokenHash,
+		ExpiresAt: expiresAt,
+		Used:      false,
+	}
+	result := r.db.Create(token)
+	return result.Error
+}
+
+// GetValidResetToken retrieves a valid (unused, non-expired) reset token by its hash
+func (r *UserRepository) GetValidResetToken(tokenHash string) (*models.PasswordResetToken, error) {
+	var token models.PasswordResetToken
+	result := r.db.Where("token_hash = ? AND used = false AND expires_at > ?", tokenHash, time.Now()).First(&token)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return nil, errors.New("token inválido ou expirado")
+		}
+		return nil, result.Error
+	}
+	return &token, nil
+}
+
+// MarkResetTokenUsed marks a reset token as used
+func (r *UserRepository) MarkResetTokenUsed(tokenID int) error {
+	result := r.db.Model(&models.PasswordResetToken{}).Where("id = ?", tokenID).Update("used", true)
+	return result.Error
 }

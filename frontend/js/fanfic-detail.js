@@ -85,7 +85,7 @@ async function displayFanficContent() {
 function displayFanficDetails() {
     // Set cover image
     const coverEl = document.getElementById('fanfic-cover');
-    coverEl.src = currentFanfic.cover_url || 'https://via.placeholder.com/300x450?text=Sem+Capa';
+    coverEl.src = api.getAssetUrl(currentFanfic.cover_url) || 'https://via.placeholder.com/300x450?text=Sem+Capa';
     coverEl.alt = `Capa de ${currentFanfic.title}`;
 
     // Set title
@@ -95,8 +95,8 @@ function displayFanficDetails() {
     const categoryEl = document.getElementById('fanfic-category');
     categoryEl.textContent = `Categoria: ${currentFanfic.category}`;
 
-    // Set synopsis
-    document.getElementById('fanfic-synopsis').textContent = currentFanfic.synopsis;
+    // Set synopsis (sanitized HTML from rich text editor)
+    document.getElementById('fanfic-synopsis').innerHTML = DOMPurify.sanitize(currentFanfic.synopsis);
 
     // Display tags if present
     if (currentFanfic.tags && currentFanfic.tags.length > 0) {
@@ -107,7 +107,7 @@ function displayFanficDetails() {
     if (currentFanfic.disclaimer && currentFanfic.disclaimer.trim() !== '') {
         const disclaimerSection = document.getElementById('disclaimer-section');
         const disclaimerText = document.getElementById('fanfic-disclaimer');
-        disclaimerText.textContent = currentFanfic.disclaimer;
+        disclaimerText.innerHTML = DOMPurify.sanitize(currentFanfic.disclaimer);
         disclaimerSection.style.display = 'block';
     }
 }

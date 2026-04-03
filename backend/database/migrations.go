@@ -23,6 +23,7 @@ func Migrate(db *gorm.DB) error {
 		&models.PendingQuestion{},
 		&models.Notification{},
 		&models.ReadingProgress{},
+		&models.PasswordResetToken{},
 	)
 	if err != nil {
 		return fmt.Errorf("failed to run auto-migration: %w", err)

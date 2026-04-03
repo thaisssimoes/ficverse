@@ -118,7 +118,7 @@ class HeroSection {
             
             // Update background image
             if (this.heroBgImage) {
-                const coverUrl = fanfic.cover_url || 'https://via.placeholder.com/1920x500?text=Featured+Fanfic';
+                const coverUrl = api.getAssetUrl(fanfic.cover_url) || 'https://via.placeholder.com/1920x500?text=Featured+Fanfic';
                 this.heroBgImage.src = coverUrl;
                 this.heroBgImage.alt = fanfic.title || 'Featured Fanfic';
                 

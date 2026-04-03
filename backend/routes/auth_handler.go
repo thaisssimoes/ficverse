@@ -162,6 +162,68 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	})
 }
 
+// ForgotPasswordRequest represents forgot password request body
+type ForgotPasswordRequest struct {
+	Email string `json:"email" binding:"required"`
+}
+
+// ResetPasswordRequest represents reset password request body
+type ResetPasswordRequest struct {
+	Token    string `json:"token" binding:"required"`
+	Password string `json:"password" binding:"required"`
+}
+
+// ForgotPassword handles password recovery requests
+func (h *AuthHandler) ForgotPassword(c *gin.Context) {
+	var req ForgotPasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, ErrorResponse{
+			Error: ErrorDetail{
+				Code:    "VALIDATION_ERROR",
+				Message: "Email é obrigatório",
+			},
+		})
+		return
+	}
+
+	// Always return success to prevent user enumeration
+	_ = h.authService.ForgotPassword(req.Email)
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Se este email estiver cadastrado, você receberá as instruções em breve.",
+	})
+}
+
+// ResetPassword handles password reset with token
+func (h *AuthHandler) ResetPassword(c *gin.Context) {
+	var req ResetPasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, ErrorResponse{
+			Error: ErrorDetail{
+				Code:    "VALIDATION_ERROR",
+				Message: "Token e nova senha são obrigatórios",
+			},
+		})
+		return
+	}
+
+	if err := h.authService.ResetPassword(req.Token, req.Password); err != nil {
+		statusCode := http.StatusBadRequest
+		message := err.Error()
+		c.JSON(statusCode, ErrorResponse{
+			Error: ErrorDetail{
+				Code:    "RESET_ERROR",
+				Message: message,
+			},
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Senha redefinida com sucesso.",
+	})
+}
+
 // Logout handles user logout
 func (h *AuthHandler) Logout(c *gin.Context) {
 	// Get token from Authorization header

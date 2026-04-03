@@ -26,7 +26,7 @@ func setupTestDBForUnit(t *testing.T) *gorm.DB {
 // Test duplicate email registration
 func TestDuplicateEmailRegistration(t *testing.T) {
 	db := setupTestDBForUnit(t)
-	authService := NewAuthService(db, "test-secret-key")
+	authService := NewAuthService(db, "test-secret-key", nil, "")
 
 	// Register first user
 	_, err := authService.Register("user1", "test@example.com", "password123")
@@ -48,7 +48,7 @@ func TestDuplicateEmailRegistration(t *testing.T) {
 // Test password validation - too short
 func TestPasswordTooShort(t *testing.T) {
 	db := setupTestDBForUnit(t)
-	authService := NewAuthService(db, "test-secret-key")
+	authService := NewAuthService(db, "test-secret-key", nil, "")
 
 	// Attempt to register with short password
 	_, err := authService.Register("user1", "test@example.com", "short")
@@ -64,7 +64,7 @@ func TestPasswordTooShort(t *testing.T) {
 // Test password validation - minimum length
 func TestPasswordMinimumLength(t *testing.T) {
 	db := setupTestDBForUnit(t)
-	authService := NewAuthService(db, "test-secret-key")
+	authService := NewAuthService(db, "test-secret-key", nil, "")
 
 	// Register with exactly 8 characters (minimum)
 	user, err := authService.Register("user1", "test@example.com", "12345678")
@@ -80,7 +80,7 @@ func TestPasswordMinimumLength(t *testing.T) {
 // Test invalid email format
 func TestInvalidEmailFormat(t *testing.T) {
 	db := setupTestDBForUnit(t)
-	authService := NewAuthService(db, "test-secret-key")
+	authService := NewAuthService(db, "test-secret-key", nil, "")
 
 	testCases := []struct {
 		name  string
@@ -119,7 +119,7 @@ func TestValidEmailFormats(t *testing.T) {
 	for _, email := range testCases {
 		t.Run(email, func(t *testing.T) {
 			db := setupTestDBForUnit(t)
-			authService := NewAuthService(db, "test-secret-key")
+			authService := NewAuthService(db, "test-secret-key", nil, "")
 
 			user, err := authService.Register("user1", email, "password123")
 			if err != nil {
@@ -136,7 +136,7 @@ func TestValidEmailFormats(t *testing.T) {
 // Test empty username
 func TestEmptyUsername(t *testing.T) {
 	db := setupTestDBForUnit(t)
-	authService := NewAuthService(db, "test-secret-key")
+	authService := NewAuthService(db, "test-secret-key", nil, "")
 
 	_, err := authService.Register("", "test@example.com", "password123")
 	if err == nil {
@@ -151,7 +151,7 @@ func TestEmptyUsername(t *testing.T) {
 // Test token expiration (simulated)
 func TestTokenValidation(t *testing.T) {
 	db := setupTestDBForUnit(t)
-	authService := NewAuthService(db, "test-secret-key")
+	authService := NewAuthService(db, "test-secret-key", nil, "")
 
 	// Register and login
 	_, err := authService.Register("user1", "test@example.com", "password123")
@@ -182,7 +182,7 @@ func TestTokenValidation(t *testing.T) {
 // Test invalid token format
 func TestInvalidTokenFormat(t *testing.T) {
 	db := setupTestDBForUnit(t)
-	authService := NewAuthService(db, "test-secret-key")
+	authService := NewAuthService(db, "test-secret-key", nil, "")
 
 	testCases := []string{
 		"invalid-token",

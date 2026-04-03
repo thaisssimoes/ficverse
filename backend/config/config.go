@@ -7,9 +7,14 @@ import (
 )
 
 type Config struct {
-	DatabaseURL string
-	JWTSecret   string
-	Port        string
+	DatabaseURL  string
+	JWTSecret    string
+	Port         string
+	SMTPHost     string
+	SMTPPort     string
+	SMTPUser     string
+	SMTPPassword string
+	FrontendURL  string
 }
 
 func Load() *Config {
@@ -24,6 +29,11 @@ func Load() *Config {
 	viper.SetDefault("DATABASE_URL", "postgres://postgres:postgres@localhost:5432/fanfic_platform?sslmode=disable")
 	viper.SetDefault("JWT_SECRET", "your-secret-key-change-in-production")
 	viper.SetDefault("PORT", "8080")
+	viper.SetDefault("SMTP_HOST", "smtp.gmail.com")
+	viper.SetDefault("SMTP_PORT", "587")
+	viper.SetDefault("SMTP_USER", "")
+	viper.SetDefault("SMTP_PASSWORD", "")
+	viper.SetDefault("FRONTEND_URL", "http://localhost:3000")
 
 	// Enable reading from environment variables
 	viper.AutomaticEnv()
@@ -37,8 +47,13 @@ func Load() *Config {
 	}
 
 	return &Config{
-		DatabaseURL: viper.GetString("DATABASE_URL"),
-		JWTSecret:   viper.GetString("JWT_SECRET"),
-		Port:        viper.GetString("PORT"),
+		DatabaseURL:  viper.GetString("DATABASE_URL"),
+		JWTSecret:    viper.GetString("JWT_SECRET"),
+		Port:         viper.GetString("PORT"),
+		SMTPHost:     viper.GetString("SMTP_HOST"),
+		SMTPPort:     viper.GetString("SMTP_PORT"),
+		SMTPUser:     viper.GetString("SMTP_USER"),
+		SMTPPassword: viper.GetString("SMTP_PASSWORD"),
+		FrontendURL:  viper.GetString("FRONTEND_URL"),
 	}
 }

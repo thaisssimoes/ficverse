@@ -391,7 +391,7 @@ class TagSearch {
      * Create a fanfic card HTML
      */
     createFanficCard(fanfic) {
-        const coverUrl = fanfic.cover_url || 'https://via.placeholder.com/250x350?text=Sem+Capa';
+        const coverUrl = api.getAssetUrl(fanfic.cover_url) || 'https://via.placeholder.com/250x350?text=Sem+Capa';
         const synopsis = fanfic.synopsis || 'Sem sinopse disponível';
         const truncatedSynopsis = synopsis.length > 150 ? synopsis.substring(0, 150) + '...' : synopsis;
 
