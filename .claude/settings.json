@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(sed -i 's/<h1 class=\"logo\">Fanfics Interativas<\\\\/h1>/<a href=\"index.html\" class=\"logo\">Fanfics Interativas<\\\\/a>/g' edit-fanfic.html dashboard.html fanfic-detail.html forgot-password.html profile.html login.html register.html reset-password.html tag-search.html)",
+      "Bash(sed -i 's/<div class=\"logo\">FicVerse<\\\\/div>/<a href=\"index.html\" class=\"logo\">FicVerse<\\\\/a>/g' explore.html landing.html)",
+      "Bash(grep -n \"^a,\\\\|^a {\" \"C:/Users/tsuba/GolandProjects/Lollipopfics/frontend/css/styles.css\")",
+      "Bash(xargs grep:*)"
+    ]
+  }
+}

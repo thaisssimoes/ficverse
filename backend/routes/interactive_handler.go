@@ -30,6 +30,8 @@ func NewInteractiveHandler(db *gorm.DB) *InteractiveHandler {
 type CreateQuestionRequest struct {
 	QuestionText string `json:"question_text" binding:"required"`
 	Placeholder  string `json:"placeholder" binding:"required"`
+	VariableType string `json:"variable_type"` // "standard" or "custom"
+	StandardKey  string `json:"standard_key"`  // only when variable_type == "standard"
 }
 
 // UpdateQuestionRequest represents question update request
@@ -152,7 +154,7 @@ func (h *InteractiveHandler) CreateQuestion(c *gin.Context) {
 	}
 
 	// Create question
-	question, err := h.service.CreateQuestion(fanficID, req.QuestionText, req.Placeholder)
+	question, err := h.service.CreateQuestion(fanficID, req.QuestionText, req.Placeholder, req.VariableType, req.StandardKey)
 	if err != nil {
 		statusCode := http.StatusBadRequest
 		code := "CREATION_ERROR"

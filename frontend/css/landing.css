@@ -800,18 +800,13 @@ body {
 
 /* Categories Dropdown */
 .categories-dropdown {
-    position: absolute;
-    top: calc(100% + 10px);
-    left: 0;
-    right: 0;
-    max-width: 1400px;
-    margin: 0 auto;
+    position: fixed;
     background: var(--card-bg);
     border: 1px solid rgba(139, 92, 246, 0.2);
     border-radius: 12px;
     padding: 1rem;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-    z-index: 1001;
+    z-index: 9999;
 }
 
 .categories-list {
@@ -1744,12 +1739,9 @@ body {
         height: 38px;
     }
 
-    /* Dropdowns - Full width on mobile */
+    /* Dropdowns - Full width on mobile (JS sets coordinates) */
     .categories-dropdown {
-        left: 0;
-        right: 0;
         border-radius: 0;
-        max-width: none;
     }
 
     .categories-list {

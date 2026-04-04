@@ -393,6 +393,29 @@ class APIClient {
         return await this.request('/reading-list');
     }
 
+    // Reader profile methods
+    async getStandardVariables() {
+        return await this.request('/profile/standard-variables');
+    }
+
+    async getReaderProfile() {
+        return await this.request('/profile/reader-profile');
+    }
+
+    async updateReaderProfile(profileData) {
+        return await this.request('/profile/reader-profile', {
+            method: 'PUT',
+            body: JSON.stringify(profileData),
+        });
+    }
+
+    async updateReadingProgress(fanficId, lastChapterRead) {
+        return await this.request('/reading-progress', {
+            method: 'POST',
+            body: JSON.stringify({ fanfic_id: fanficId, last_chapter_read: lastChapterRead }),
+        });
+    }
+
     // Search methods
     async searchSuggestions(query) {
         return await this.request(`/search/suggestions?q=${encodeURIComponent(query)}`);
@@ -460,6 +483,21 @@ class APIClient {
         return await this.request(`/chapters/${chapterId}/publish`, {
             method: 'POST',
         });
+    }
+
+    // Favorite methods
+    async getFavoriteStatus(fanficId) {
+        return await this.request(`/fanfics/${fanficId}/favorite`);
+    }
+
+    async toggleFavorite(fanficId) {
+        return await this.request(`/fanfics/${fanficId}/favorite`, {
+            method: 'POST',
+        });
+    }
+
+    async getUserFavorites() {
+        return await this.request('/favorites');
     }
 }
 

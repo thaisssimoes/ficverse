@@ -82,6 +82,8 @@ body {
     font-weight: 700;
     color: var(--intense-purple);
     transition: transform 0.3s ease, color 0.3s ease;
+    text-decoration: none;
+    cursor: pointer;
 }
 
 .logo:hover {
@@ -1772,6 +1774,30 @@ body {
 .fanfic-list-info {
     flex: 1;
     min-width: 0;
+}
+
+.fanfic-list-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex-shrink: 0;
+}
+
+.btn-view-fanfic {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    line-height: 1;
+}
+
+.btn-view-fanfic:hover {
+    background-color: rgba(124, 58, 237, 0.1);
+    transform: scale(1.1);
 }
 
 .btn-edit-fanfic {
@@ -3879,9 +3905,7 @@ body {
 
 /* User Dropdown */
 .user-dropdown {
-    position: absolute;
-    top: calc(100% + 10px);
-    right: 0;
+    position: fixed;
     min-width: 220px;
     background-color: rgba(17, 24, 39, 0.98);
     backdrop-filter: blur(12px);
@@ -4421,8 +4445,7 @@ input[type="radio"]:hover {
     }
 
     .user-dropdown {
-        right: 1rem;
-        top: 60px; /* Adjust for mobile header height */
+        min-width: 180px;
     }
 }
 
@@ -5586,4 +5609,155 @@ img[loading="lazy"] {
     background-color: #E65100;
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(245, 127, 23, 0.3);
+}
+
+/* ============================================
+   Explore Page
+   ============================================ */
+
+.explore-header {
+    background: var(--darker-bg, #0d1117);
+    padding: 6rem 2rem 3rem;
+    text-align: center;
+    border-bottom: 1px solid rgba(139, 92, 246, 0.1);
+}
+
+.explore-header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, var(--primary-purple, #7c3aed), var(--primary-blue, #3b82f6));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.explore-header p {
+    color: var(--text-secondary, #9ca3af);
+    font-size: 1.2rem;
+}
+
+.explore-content {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 3rem 2rem;
+}
+
+.explore-content .category-section {
+    margin-bottom: 4rem;
+}
+
+.explore-content .category-title {
+    font-size: 2rem;
+    margin-bottom: 2rem;
+    color: var(--text-primary, #f9fafb);
+    border-left: 4px solid var(--primary-purple, #7c3aed);
+    padding-left: 1rem;
+}
+
+.explore-content .fanfics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1.5rem;
+}
+
+/* Dark-theme card overrides for explore page */
+.explore-content .fanfic-card {
+    background: var(--card-bg, #1f2937);
+    border: 1px solid rgba(139, 92, 246, 0.1);
+    border-radius: 16px;
+}
+
+.explore-content .fanfic-card:hover {
+    box-shadow: 0 20px 40px rgba(139, 92, 246, 0.3);
+}
+
+.explore-content .fanfic-card-cover-container {
+    height: auto;
+    aspect-ratio: 2/3;
+}
+
+.explore-content .fanfic-card-title {
+    color: var(--text-primary, #f9fafb);
+}
+
+/* Mobile responsiveness for explore page */
+@media (max-width: 768px) {
+    .explore-header {
+        padding: 5rem 1.5rem 2rem;
+    }
+
+    .explore-header h1 {
+        font-size: 1.8rem;
+    }
+
+    .explore-header p {
+        font-size: 1rem;
+    }
+
+    .explore-content {
+        padding: 2rem 1rem;
+    }
+
+    .explore-content .category-title {
+        font-size: 1.5rem;
+    }
+
+    .explore-content .fanfics-grid {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .explore-content .fanfics-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+    }
+}
+
+/* ============================================
+   Favorite Button
+   ============================================ */
+
+.favorite-btn-container {
+    margin-top: 1rem;
+}
+
+.btn-favorite {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1.2rem;
+    border: 2px solid var(--intense-pink, #EC4899);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--intense-pink, #EC4899);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-favorite:hover {
+    background: var(--pastel-pink, #FDE2E4);
+}
+
+.btn-favorite.favorited {
+    background: var(--intense-pink, #EC4899);
+    color: var(--white, #fff);
+}
+
+.btn-favorite.favorited:hover {
+    background: #d63384;
+    border-color: #d63384;
+}
+
+.btn-favorite:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.favorite-icon {
+    font-size: 1.2rem;
+    line-height: 1;
 }

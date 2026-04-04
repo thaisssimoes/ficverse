@@ -108,9 +108,16 @@ class Dashboard {
                             }
                         </div>
                     </div>
-                    <button class="btn-edit-fanfic" data-id="${fanfic.id}" title="Editar fanfic">
-                        ✏️
-                    </button>
+                    <div class="fanfic-list-actions">
+                        ${!fanfic.is_draft ? `
+                            <a href="fanfic-detail.html?id=${fanfic.id}" class="btn-view-fanfic" title="Ver fanfic" onclick="event.stopPropagation()">
+                                👁️
+                            </a>
+                        ` : ''}
+                        <button class="btn-edit-fanfic" data-id="${fanfic.id}" title="Editar fanfic">
+                            ✏️
+                        </button>
+                    </div>
                 </div>
             `).join('');
 
@@ -120,8 +127,8 @@ class Dashboard {
             // Add click listeners to fanfic items
             document.querySelectorAll('.fanfic-list-item').forEach(item => {
                 item.addEventListener('click', (e) => {
-                    // Don't select if clicking the edit button
-                    if (!e.target.classList.contains('btn-edit-fanfic')) {
+                    // Don't select if clicking the edit button or the view link
+                    if (!e.target.closest('.btn-edit-fanfic') && !e.target.closest('.btn-view-fanfic')) {
                         this.selectFanfic(parseInt(item.dataset.id));
                     }
                 });
@@ -795,31 +802,86 @@ class Dashboard {
 
     async loadQuestionsTab(container) {
         try {
-            const questions = await api.getQuestions(this.currentFanfic.id);
-            
+            const [questions, standardVars] = await Promise.all([
+                api.getQuestions(this.currentFanfic.id),
+                api.getStandardVariables(),
+            ]);
+
+            // Keys already used by this fanfic
+            const usedStandardKeys = new Set(
+                questions.filter(q => q.variable_type === 'standard').map(q => q.standard_key)
+            );
+
+            const standardVarsOptions = standardVars
+                .filter(v => !usedStandardKeys.has(v.key))
+                .map(v => `<option value="${v.key}">${v.label} ({{${v.key}}})</option>`)
+                .join('');
+
             container.innerHTML = `
                 <div class="questions-manager">
                     <div class="questions-header">
-                        <h3>Perguntas Interativas</h3>
-                        <button class="btn btn-primary" id="add-question-btn">+ Nova Pergunta</button>
+                        <h3>Variáveis da História</h3>
                     </div>
                     <div class="info-box" style="background-color: var(--pastel-blue); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
                         <p style="margin: 0; color: var(--dark-gray);">
-                            <strong>💡 Dica:</strong> Use placeholders como {{nome}}, {{lugar}}, {{objeto}} no texto dos capítulos. 
-                            As respostas dos leitores substituirão esses placeholders durante a leitura interativa.
+                            <strong>💡 Como funciona:</strong> Declare aqui quais variáveis sua história usa.
+                            Use <code>{{nome_da_variavel}}</code> nos capítulos. Antes de ler, o sistema pedirá ao leitor
+                            que preencha o que estiver faltando.
                         </p>
                     </div>
+
+                    <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+                        ${standardVarsOptions ? `
+                        <div style="flex: 1; min-width: 200px;">
+                            <label class="form-label">Adicionar variável padrão do perfil</label>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <select id="standard-var-select" class="form-input" style="flex:1;">
+                                    <option value="">Selecione...</option>
+                                    ${standardVarsOptions}
+                                </select>
+                                <button class="btn btn-primary" id="add-standard-var-btn">+ Adicionar</button>
+                            </div>
+                        </div>
+                        ` : '<p style="color: var(--medium-gray); font-size:0.9rem;">Todas as variáveis padrão já estão adicionadas.</p>'}
+                        <div style="flex: 1; min-width: 200px; display: flex; align-items: flex-end;">
+                            <button class="btn btn-secondary" id="add-custom-question-btn" style="width:100%;">+ Nova variável customizada</button>
+                        </div>
+                    </div>
+
                     <div id="questions-list">
-                        ${questions.length === 0 ? 
-                            '<div class="placeholder-text">Nenhuma pergunta ainda. Clique em "Nova Pergunta" para adicionar.</div>' :
-                            questions.map(question => this.renderQuestionCard(question)).join('')
+                        ${questions.length === 0 ?
+                            '<div class="placeholder-text">Nenhuma variável ainda. Adicione variáveis padrão ou crie customizadas.</div>' :
+                            questions.map(q => this.renderQuestionCard(q)).join('')
                         }
                     </div>
                 </div>
             `;
 
-            // Setup event listeners
-            document.getElementById('add-question-btn').addEventListener('click', () => {
+            // Add standard variable
+            const addStandardBtn = document.getElementById('add-standard-var-btn');
+            if (addStandardBtn) {
+                addStandardBtn.addEventListener('click', async () => {
+                    const select = document.getElementById('standard-var-select');
+                    const key = select.value;
+                    if (!key) return;
+                    const varDef = standardVars.find(v => v.key === key);
+                    if (!varDef) return;
+                    try {
+                        await api.createQuestion(this.currentFanfic.id, {
+                            question_text: varDef.label,
+                            placeholder: varDef.key,
+                            variable_type: 'standard',
+                            standard_key: varDef.key,
+                        });
+                        await this.loadTabContent('questions');
+                    } catch (e) {
+                        alert('Erro ao adicionar variável: ' + e.message);
+                    }
+                });
+            }
+
+            // Add custom question
+            document.getElementById('add-custom-question-btn').addEventListener('click', () => {
                 this.showQuestionForm();
             });
 
@@ -827,39 +889,33 @@ class Dashboard {
             questions.forEach(question => {
                 const editBtn = document.getElementById(`edit-question-${question.id}`);
                 const deleteBtn = document.getElementById(`delete-question-${question.id}`);
-
-                if (editBtn) {
-                    editBtn.addEventListener('click', () => this.editQuestion(question));
-                }
-                if (deleteBtn) {
-                    deleteBtn.addEventListener('click', () => this.deleteQuestion(question.id));
-                }
+                if (editBtn) editBtn.addEventListener('click', () => this.editQuestion(question));
+                if (deleteBtn) deleteBtn.addEventListener('click', () => this.deleteQuestion(question.id));
             });
 
         } catch (error) {
             console.error('Error loading questions:', error);
-            container.innerHTML = `
-                <div class="error-message">
-                    Erro ao carregar perguntas: ${error.message}
-                </div>
-            `;
+            container.innerHTML = `<div class="error-message">Erro ao carregar variáveis: ${error.message}</div>`;
         }
     }
 
     renderQuestionCard(question) {
+        const isStandard = question.variable_type === 'standard';
+        const badge = isStandard
+            ? `<span style="background:var(--pastel-blue);color:var(--intense-blue);padding:0.2rem 0.5rem;border-radius:4px;font-size:0.75rem;font-weight:600;">PADRÃO</span>`
+            : `<span style="background:var(--pastel-purple);color:var(--intense-purple);padding:0.2rem 0.5rem;border-radius:4px;font-size:0.75rem;font-weight:600;">CUSTOM</span>`;
         return `
             <div class="question-card" data-question-id="${question.id}">
                 <div class="question-card-info">
-                    <div class="question-card-text">${this.escapeHtml(question.question_text)}</div>
-                    <div class="question-card-placeholder">Placeholder: {{${this.escapeHtml(question.placeholder)}}}</div>
+                    <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.25rem;">
+                        ${badge}
+                        <div class="question-card-text">${this.escapeHtml(question.question_text)}</div>
+                    </div>
+                    <div class="question-card-placeholder">Placeholder: <code>{{${this.escapeHtml(question.placeholder)}}}</code></div>
                 </div>
                 <div class="question-card-actions">
-                    <button class="btn btn-secondary btn-icon" id="edit-question-${question.id}">
-                        ✏️ Editar
-                    </button>
-                    <button class="btn btn-danger btn-icon" id="delete-question-${question.id}">
-                        🗑️ Excluir
-                    </button>
+                    ${!isStandard ? `<button class="btn btn-secondary btn-icon" id="edit-question-${question.id}">✏️ Editar</button>` : ''}
+                    <button class="btn btn-danger btn-icon" id="delete-question-${question.id}">🗑️ Remover</button>
                 </div>
             </div>
         `;
@@ -872,40 +928,33 @@ class Dashboard {
                 <div class="modal-overlay"></div>
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h2>${isEdit ? 'Editar Pergunta' : 'Nova Pergunta'}</h2>
+                        <h2>${isEdit ? 'Editar Variável Customizada' : 'Nova Variável Customizada'}</h2>
                         <button class="modal-close" id="close-question-modal">&times;</button>
                     </div>
                     <div class="modal-body">
                         <form id="question-form">
                             <div class="form-group">
-                                <label class="form-label" for="question-text">Pergunta</label>
-                                <input type="text" id="question-text" class="form-input" 
-                                       value="${isEdit ? this.escapeHtml(question.question_text) : ''}" 
-                                       placeholder="Ex: Qual é o seu nome?" required>
+                                <label class="form-label" for="question-text">Pergunta para o leitor</label>
+                                <input type="text" id="question-text" class="form-input"
+                                       value="${isEdit ? this.escapeHtml(question.question_text) : ''}"
+                                       placeholder="Ex: Qual o nome da sua espada mágica?" required>
                             </div>
                             <div class="form-group">
-                                <label class="form-label" for="question-placeholder">Placeholder</label>
-                                <input type="text" id="question-placeholder" class="form-input" 
-                                       value="${isEdit ? this.escapeHtml(question.placeholder) : ''}" 
-                                       placeholder="Ex: nome (sem chaves)" required>
+                                <label class="form-label" for="question-placeholder">Nome da variável (placeholder)</label>
+                                <input type="text" id="question-placeholder" class="form-input"
+                                       value="${isEdit ? this.escapeHtml(question.placeholder) : ''}"
+                                       placeholder="Ex: espada_magica"
+                                       ${isEdit ? 'readonly' : ''} required>
                                 <small style="color: var(--medium-gray);">
-                                    Use apenas letras, números e underscores. Não inclua {{ }}
+                                    Apenas letras, números e underscores. Use no capítulo como <code>{{espada_magica}}</code>
                                 </small>
-                            </div>
-                            <div class="info-box" style="background-color: var(--pastel-purple); padding: 1rem; border-radius: 8px; margin-top: 1rem;">
-                                <p style="margin: 0; color: var(--dark-gray); font-size: 0.9rem;">
-                                    <strong>Exemplo:</strong><br>
-                                    Pergunta: "Qual é o seu nome?"<br>
-                                    Placeholder: "nome"<br>
-                                    No capítulo: "Olá, {{nome}}! Bem-vindo à história."
-                                </p>
                             </div>
                         </form>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" id="cancel-question-btn">Cancelar</button>
                         <button type="button" class="btn btn-primary" id="save-question-btn">
-                            ${isEdit ? 'Salvar Alterações' : 'Criar Pergunta'}
+                            ${isEdit ? 'Salvar' : 'Criar Variável'}
                         </button>
                     </div>
                 </div>
@@ -914,15 +963,12 @@ class Dashboard {
 
         document.body.insertAdjacentHTML('beforeend', modalHtml);
 
-        // Setup event listeners
         document.getElementById('close-question-modal').addEventListener('click', () => {
             document.getElementById('question-modal').remove();
         });
-
         document.getElementById('cancel-question-btn').addEventListener('click', () => {
             document.getElementById('question-modal').remove();
         });
-
         document.getElementById('save-question-btn').addEventListener('click', async () => {
             await this.saveQuestion(question);
         });
@@ -936,36 +982,26 @@ class Dashboard {
             alert('Por favor, preencha todos os campos');
             return;
         }
-
-        // Validate placeholder format (alphanumeric and underscores only)
         if (!/^[a-zA-Z0-9_]+$/.test(placeholder)) {
             alert('O placeholder deve conter apenas letras, números e underscores');
             return;
         }
 
         try {
-            const questionData = {
-                question_text: questionText,
-                placeholder: placeholder
-            };
-
             if (existingQuestion) {
-                // Update existing question
-                await api.updateQuestion(existingQuestion.id, questionData);
+                await api.updateQuestion(existingQuestion.id, { question_text: questionText });
             } else {
-                // Create new question
-                await api.createQuestion(this.currentFanfic.id, questionData);
+                await api.createQuestion(this.currentFanfic.id, {
+                    question_text: questionText,
+                    placeholder: placeholder,
+                    variable_type: 'custom',
+                });
             }
-
-            // Close modal
             document.getElementById('question-modal').remove();
-
-            // Reload questions tab
             await this.loadTabContent('questions');
-
         } catch (error) {
             console.error('Error saving question:', error);
-            alert('Erro ao salvar pergunta: ' + error.message);
+            alert('Erro ao salvar variável: ' + error.message);
         }
     }
 
@@ -974,19 +1010,15 @@ class Dashboard {
     }
 
     async deleteQuestion(questionId) {
-        if (!confirm('Tem certeza que deseja excluir esta pergunta? Isso afetará a experiência interativa dos leitores.')) {
+        if (!confirm('Tem certeza que deseja remover esta variável? Leitores com respostas existentes podem ser afetados.')) {
             return;
         }
-
         try {
             await api.deleteQuestion(questionId);
-
-            // Reload questions tab
             await this.loadTabContent('questions');
-
         } catch (error) {
             console.error('Error deleting question:', error);
-            alert('Erro ao excluir pergunta: ' + error.message);
+            alert('Erro ao excluir variável: ' + error.message);
         }
     }
 

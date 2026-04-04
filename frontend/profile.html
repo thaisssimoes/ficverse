@@ -9,7 +9,7 @@
 <body>
     <header class="header">
         <div class="container">
-            <h1 class="logo">Fanfics Interativas</h1>
+            <a href="index.html" class="logo">Fanfics Interativas</a>
             <nav class="nav">
                 <!-- Navigation will be populated by nav.js -->
             </nav>
@@ -41,6 +41,50 @@
                         <div id="recent-fanfics">
                             <div class="loading">Carregando...</div>
                         </div>
+                    </div>
+
+                    <!-- Reader Profile -->
+                    <div class="profile-section" style="margin-top: 2rem;">
+                        <h3 style="color: var(--intense-purple); margin-bottom: 0.5rem;">Perfil de Leitor</h3>
+                        <p style="color: var(--medium-gray); font-size: 0.9rem; margin-bottom: 1.5rem;">
+                            Preencha suas informações aqui e elas serão usadas automaticamente em histórias interativas que utilizam essas variáveis.
+                        </p>
+                        <form id="reader-profile-form">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                <div class="form-group">
+                                    <label class="form-label" for="rp-first_name">Primeiro Nome</label>
+                                    <input type="text" id="rp-first_name" class="form-input" placeholder="ex: Ana">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="rp-last_name">Sobrenome</label>
+                                    <input type="text" id="rp-last_name" class="form-input" placeholder="ex: Silva">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="rp-nickname">Apelido</label>
+                                    <input type="text" id="rp-nickname" class="form-input" placeholder="ex: Ani">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="rp-eye_color">Cor dos Olhos</label>
+                                    <input type="text" id="rp-eye_color" class="form-input" placeholder="ex: castanhos">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="rp-hair_color">Cor do Cabelo</label>
+                                    <input type="text" id="rp-hair_color" class="form-input" placeholder="ex: preto">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="rp-favorite_color">Cor Favorita</label>
+                                    <input type="text" id="rp-favorite_color" class="form-input" placeholder="ex: roxo">
+                                </div>
+                                <div class="form-group" style="grid-column: 1 / -1;">
+                                    <label class="form-label" for="rp-favorite_food">Comida Favorita</label>
+                                    <input type="text" id="rp-favorite_food" class="form-input" placeholder="ex: pizza">
+                                </div>
+                            </div>
+                            <div style="margin-top: 1rem; display: flex; align-items: center; gap: 1rem;">
+                                <button type="submit" class="btn btn-primary">Salvar Perfil de Leitor</button>
+                                <span id="reader-profile-status" style="font-size: 0.9rem; color: var(--medium-gray);"></span>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>

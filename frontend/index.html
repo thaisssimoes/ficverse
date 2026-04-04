@@ -62,35 +62,36 @@
             </div>
         </div>
         
-        <!-- Categories Dropdown Menu -->
-        <div class="categories-dropdown" style="display: none;" role="menu">
-            <div class="categories-list">
-                <button class="category-item active" data-category="all" role="menuitem">Todos</button>
-                <button class="category-item" data-category="interactive" role="menuitem">
-                    <span class="category-icon">⚡</span> Interativos
-                </button>
-                <button class="category-item" data-category="romance" role="menuitem">💕 Romance</button>
-                <button class="category-item" data-category="aventura" role="menuitem">⚔️ Aventura</button>
-                <button class="category-item" data-category="drama" role="menuitem">🎭 Drama</button>
-                <button class="category-item" data-category="comedia" role="menuitem">😄 Comédia</button>
-                <button class="category-item" data-category="ficcao-cientifica" role="menuitem">🚀 Ficção Científica</button>
-                <button class="category-item" data-category="fantasia" role="menuitem">🔮 Fantasia</button>
-                <button class="category-item" data-category="terror" role="menuitem">👻 Terror</button>
-                <button class="category-item" data-category="misterio" role="menuitem">🔍 Mistério</button>
-            </div>
-        </div>
-        
-        <!-- Notifications Dropdown (hidden by default) -->
-        <div class="notifications-dropdown" style="display: none;" role="menu">
-            <div class="notifications-header">
-                <h3>Notificações</h3>
-                <button class="mark-all-read" aria-label="Marcar todas como lidas">Marcar todas como lidas</button>
-            </div>
-            <div class="notifications-list">
-                <p class="no-notifications">Nenhuma notificação</p>
-            </div>
-        </div>
     </header>
+
+    <!-- Categories Dropdown Menu (outside header to avoid backdrop-filter stacking context) -->
+    <div class="categories-dropdown" style="display: none;" role="menu">
+        <div class="categories-list">
+            <button class="category-item active" data-category="all" role="menuitem">Todos</button>
+            <button class="category-item" data-category="interactive" role="menuitem">
+                <span class="category-icon">⚡</span> Interativos
+            </button>
+            <button class="category-item" data-category="romance" role="menuitem">💕 Romance</button>
+            <button class="category-item" data-category="aventura" role="menuitem">⚔️ Aventura</button>
+            <button class="category-item" data-category="drama" role="menuitem">🎭 Drama</button>
+            <button class="category-item" data-category="comedia" role="menuitem">😄 Comédia</button>
+            <button class="category-item" data-category="ficcao-cientifica" role="menuitem">🚀 Ficção Científica</button>
+            <button class="category-item" data-category="fantasia" role="menuitem">🔮 Fantasia</button>
+            <button class="category-item" data-category="terror" role="menuitem">👻 Terror</button>
+            <button class="category-item" data-category="misterio" role="menuitem">🔍 Mistério</button>
+        </div>
+    </div>
+
+    <!-- Notifications Dropdown (outside header) -->
+    <div class="notifications-dropdown" style="display: none;" role="menu">
+        <div class="notifications-header">
+            <h3>Notificações</h3>
+            <button class="mark-all-read" aria-label="Marcar todas como lidas">Marcar todas como lidas</button>
+        </div>
+        <div class="notifications-list">
+            <p class="no-notifications">Nenhuma notificação</p>
+        </div>
+    </div>
 
 
 
@@ -99,7 +100,7 @@
     <div class="user-dropdown" style="display: none;" role="menu">
         <a href="profile.html" class="user-dropdown-item" role="menuitem">Meu Perfil</a>
         <a href="dashboard.html" class="user-dropdown-item" role="menuitem">Minhas Fanfics</a>
-        <a href="#settings" class="user-dropdown-item" role="menuitem">Configurações</a>
+        <a href="favorites.html" class="user-dropdown-item" role="menuitem">Meus Favoritos</a>
         <button class="user-dropdown-item logout-btn" role="menuitem">Sair</button>
     </div>
     

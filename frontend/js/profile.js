@@ -25,6 +25,7 @@ class Profile {
         await this.loadProfile();
         await this.loadStats();
         await this.loadRecentFanfics();
+        await this.loadReaderProfile();
     }
 
     getUserFromToken() {
@@ -172,6 +173,49 @@ class Profile {
             day: '2-digit',
             month: 'short',
             year: 'numeric'
+        });
+    }
+
+    async loadReaderProfile() {
+        const form = document.getElementById('reader-profile-form');
+        const status = document.getElementById('reader-profile-status');
+        if (!form) return;
+
+        const fieldMap = {
+            first_name: 'rp-first_name',
+            last_name: 'rp-last_name',
+            nickname: 'rp-nickname',
+            eye_color: 'rp-eye_color',
+            hair_color: 'rp-hair_color',
+            favorite_color: 'rp-favorite_color',
+            favorite_food: 'rp-favorite_food',
+        };
+
+        // Pre-fill from backend
+        try {
+            const profile = await api.getReaderProfile();
+            Object.entries(fieldMap).forEach(([key, inputId]) => {
+                const el = document.getElementById(inputId);
+                if (el && profile[key]) el.value = profile[key];
+            });
+        } catch (e) { /* no profile yet */ }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            status.textContent = 'Salvando...';
+            const data = {};
+            Object.entries(fieldMap).forEach(([key, inputId]) => {
+                const el = document.getElementById(inputId);
+                if (el) data[key] = el.value.trim();
+            });
+            try {
+                await api.updateReaderProfile(data);
+                status.textContent = 'Salvo!';
+                setTimeout(() => { status.textContent = ''; }, 2500);
+            } catch (err) {
+                status.textContent = 'Erro ao salvar.';
+                console.error(err);
+            }
         });
     }
 

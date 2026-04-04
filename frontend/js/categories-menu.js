@@ -80,9 +80,23 @@ class CategoriesMenu {
     // Open categories dropdown menu
     openCategoriesMenu() {
         if (this.categoriesDropdown) {
+            // Position below the header using fixed coordinates
+            if (this.categoriesBtn) {
+                const headerEl = document.querySelector('.main-header');
+                const headerBottom = headerEl
+                    ? headerEl.getBoundingClientRect().bottom
+                    : this.categoriesBtn.getBoundingClientRect().bottom + 10;
+                this.categoriesDropdown.style.position = 'fixed';
+                this.categoriesDropdown.style.top = (headerBottom + 4) + 'px';
+                this.categoriesDropdown.style.left = '1rem';
+                this.categoriesDropdown.style.right = '1rem';
+                this.categoriesDropdown.style.maxWidth = '1400px';
+                this.categoriesDropdown.style.margin = '0 auto';
+            }
+
             this.categoriesDropdown.style.display = 'block';
             this.isCategoriesMenuOpen = true;
-            
+
             if (this.categoriesBtn) {
                 this.categoriesBtn.setAttribute('aria-expanded', 'true');
             }
@@ -105,7 +119,7 @@ class CategoriesMenu {
     // Requirement 2.3: Filter fanfics when category is selected
     selectCategory(category) {
         this.selectedCategory = category;
-        
+
         // Update active state on category items
         this.categoryItems.forEach(item => {
             if (item.dataset.category === category) {
@@ -114,6 +128,11 @@ class CategoriesMenu {
                 item.classList.remove('active');
             }
         });
+
+        // Dispatch event so TrendingSection and other components can react
+        document.dispatchEvent(new CustomEvent('categoryFilterChanged', {
+            detail: { category }
+        }));
 
         // Trigger callback if set
         if (this.onCategoryChangeCallback) {

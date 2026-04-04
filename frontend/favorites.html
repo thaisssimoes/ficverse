@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meus Favoritos - Lollipopfics</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="index.html" class="logo">Fanfics Interativas</a>
+            <nav class="nav">
+                <a href="index.html" class="nav-link">Início</a>
+                <a href="dashboard.html" class="nav-link">Dashboard</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <h2 style="margin-bottom: 1.5rem; color: var(--intense-purple);">Meus Favoritos ♥</h2>
+
+            <div id="loading" class="loading">
+                <p>Carregando favoritos...</p>
+            </div>
+
+            <div id="not-authenticated" style="display: none;">
+                <div class="card" style="text-align: center; padding: 2rem;">
+                    <p style="margin-bottom: 1rem;">Faça login para ver seus favoritos.</p>
+                    <a href="login.html" class="btn btn-primary">Entrar</a>
+                </div>
+            </div>
+
+            <div id="empty-state" style="display: none;">
+                <div class="card" style="text-align: center; padding: 2rem;">
+                    <p style="margin-bottom: 1rem; font-size: 1.1rem;">Você ainda não favoritou nenhuma fanfic.</p>
+                    <a href="index.html" class="btn btn-primary">Explorar Fanfics</a>
+                </div>
+            </div>
+
+            <div id="favorites-grid" class="fanfics-grid" style="display: none;"></div>
+        </div>
+    </main>
+
+    <script src="js/api.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const loadingEl = document.getElementById('loading');
+            const notAuthEl = document.getElementById('not-authenticated');
+            const emptyEl = document.getElementById('empty-state');
+            const gridEl = document.getElementById('favorites-grid');
+
+            if (!api.isAuthenticated()) {
+                loadingEl.style.display = 'none';
+                notAuthEl.style.display = 'block';
+                return;
+            }
+
+            try {
+                const fanfics = await api.getUserFavorites();
+                loadingEl.style.display = 'none';
+
+                if (!fanfics || fanfics.length === 0) {
+                    emptyEl.style.display = 'block';
+                    return;
+                }
+
+                gridEl.style.display = 'grid';
+                gridEl.innerHTML = fanfics.map(f => `
+                    <div class="fanfic-card" onclick="window.location.href='fanfic-detail.html?id=${f.id}'" style="cursor:pointer;">
+                        <div class="fanfic-card-cover-container">
+                            <img src="${api.getAssetUrl(f.cover_url) || 'https://via.placeholder.com/300x450?text=Sem+Capa'}"
+                                alt="${escapeHtml(f.title)}" class="fanfic-card-cover">
+                        </div>
+                        <div class="fanfic-card-info">
+                            ${f.category ? `<span class="fanfic-badge badge-category">${escapeHtml(f.category)}</span>` : ''}
+                            <h3 class="fanfic-card-title">${escapeHtml(f.title)}</h3>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                loadingEl.style.display = 'none';
+                console.error('Erro ao carregar favoritos:', error);
+                emptyEl.style.display = 'block';
+            }
+        });
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text || '';
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>

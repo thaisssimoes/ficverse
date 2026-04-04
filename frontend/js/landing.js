@@ -1,23 +1,8 @@
 // Landing page functionality - loads real fanfics from API
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // Load reading list first (for authenticated users)
+    // Load reading list for authenticated users
     await loadReadingList();
-    
-    await loadTrendingStories();
-    
-    // Set up category filter if categories menu is available
-    if (typeof categoriesMenu !== 'undefined') {
-        categoriesMenu.onCategoryChange((category) => {
-            filterTrendingStories(category);
-        });
-    }
-    
-    // Listen to quick filter changes
-    document.addEventListener('categoryFilterChanged', (event) => {
-        const category = event.detail.category;
-        filterTrendingStories(category);
-    });
 });
 
 // Store all fanfics for filtering

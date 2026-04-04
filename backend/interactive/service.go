@@ -31,7 +31,7 @@ func NewInteractiveService(db *gorm.DB) *InteractiveService {
 }
 
 // CreateQuestion creates a new question and marks existing readers as having pending questions
-func (s *InteractiveService) CreateQuestion(fanficID int, questionText, placeholder string) (*models.Question, error) {
+func (s *InteractiveService) CreateQuestion(fanficID int, questionText, placeholder, variableType, standardKey string) (*models.Question, error) {
 	// Validate input
 	if strings.TrimSpace(questionText) == "" {
 		return nil, ErrQuestionTextRequired
@@ -42,6 +42,9 @@ func (s *InteractiveService) CreateQuestion(fanficID int, questionText, placehol
 	if fanficID <= 0 {
 		return nil, ErrInvalidFanfic
 	}
+	if variableType == "" {
+		variableType = "custom"
+	}
 
 	// Use transaction to ensure atomicity
 	var question *models.Question
@@ -51,6 +54,8 @@ func (s *InteractiveService) CreateQuestion(fanficID int, questionText, placehol
 			FanficID:     fanficID,
 			QuestionText: strings.TrimSpace(questionText),
 			Placeholder:  strings.TrimSpace(placeholder),
+			VariableType: variableType,
+			StandardKey:  standardKey,
 		}
 
 		txRepo := NewInteractiveRepository(tx)

@@ -56,6 +56,12 @@ async function loadChapter(chapterId) {
         displayChapter();
         setupNavigation();
 
+        // Save reading progress (fire and forget)
+        if (api.isAuthenticated() && currentChapter && currentFanfic) {
+            const chapterOrder = currentChapter.order || allChapters.findIndex(c => c.id === currentChapter.id) + 1;
+            api.updateReadingProgress(currentFanfic.id, chapterOrder).catch(() => {});
+        }
+
         // Load comments for this chapter
         await loadComments(chapterId);
 

@@ -95,3 +95,48 @@ func (h *ReadingListHandler) GetReadingList(c *gin.Context) {
 
 	c.JSON(http.StatusOK, readingList)
 }
+
+// UpdateProgressRequest represents the reading progress update payload
+type UpdateProgressRequest struct {
+	FanficID        int `json:"fanfic_id" binding:"required"`
+	LastChapterRead int `json:"last_chapter_read" binding:"required"`
+}
+
+// UpdateProgress saves or updates reading progress for a fanfic
+func (h *ReadingListHandler) UpdateProgress(c *gin.Context) {
+	user, exists := auth.GetCurrentUser(c)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, ErrorResponse{Error: ErrorDetail{Code: "UNAUTHORIZED", Message: "Authentication required"}})
+		return
+	}
+
+	var req UpdateProgressRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: ErrorDetail{Code: "INVALID_REQUEST", Message: err.Error()}})
+		return
+	}
+
+	var progress models.ReadingProgress
+	result := h.db.Where("user_id = ? AND fanfic_id = ?", user.ID, req.FanficID).First(&progress)
+
+	if result.Error != nil {
+		// Create new record
+		progress = models.ReadingProgress{
+			UserID:          user.ID,
+			FanficID:        req.FanficID,
+			LastChapterRead: req.LastChapterRead,
+		}
+		if err := h.db.Create(&progress).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, ErrorResponse{Error: ErrorDetail{Code: "DATABASE_ERROR", Message: "Failed to save progress"}})
+			return
+		}
+	} else {
+		// Update only if new chapter is further along
+		if req.LastChapterRead > progress.LastChapterRead {
+			progress.LastChapterRead = req.LastChapterRead
+			h.db.Save(&progress)
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"ok": true})
+}

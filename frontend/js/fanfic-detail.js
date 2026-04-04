@@ -110,6 +110,59 @@ function displayFanficDetails() {
         disclaimerText.innerHTML = DOMPurify.sanitize(currentFanfic.disclaimer);
         disclaimerSection.style.display = 'block';
     }
+
+    // Load and render favorite button
+    loadFavoriteButton(currentFanfic.id);
+}
+
+async function loadFavoriteButton(fanficId) {
+    let favoriteContainer = document.getElementById('favorite-btn-container');
+    if (!favoriteContainer) {
+        favoriteContainer = document.createElement('div');
+        favoriteContainer.id = 'favorite-btn-container';
+        favoriteContainer.className = 'favorite-btn-container';
+        const fanficInfo = document.querySelector('.fanfic-info');
+        if (fanficInfo) fanficInfo.appendChild(favoriteContainer);
+    }
+
+    let favorited = false;
+    let count = 0;
+    try {
+        const status = await api.getFavoriteStatus(fanficId);
+        favorited = status.favorited;
+        count = status.favorites_count;
+    } catch (e) { /* not logged in or error, defaults to false */ }
+
+    renderFavoriteButton(favoriteContainer, fanficId, favorited, count);
+}
+
+function renderFavoriteButton(container, fanficId, favorited, count) {
+    const isAuth = api.isAuthenticated();
+    container.innerHTML = `
+        <button id="favorite-btn" class="btn-favorite ${favorited ? 'favorited' : ''}"
+            ${!isAuth ? 'onclick="window.location.href=\'login.html\'"' : `onclick="handleToggleFavorite(${fanficId})"`}
+            title="${!isAuth ? 'Faça login para favoritar' : (favorited ? 'Remover dos favoritos' : 'Adicionar aos favoritos')}">
+            <span class="favorite-icon">${favorited ? '♥' : '♡'}</span>
+            <span class="favorite-count">${count}</span>
+        </button>
+    `;
+}
+
+async function handleToggleFavorite(fanficId) {
+    const btn = document.getElementById('favorite-btn');
+    if (!btn) return;
+    btn.disabled = true;
+
+    try {
+        const result = await api.toggleFavorite(fanficId);
+        const container = document.getElementById('favorite-btn-container');
+        renderFavoriteButton(container, fanficId, result.favorited, result.favorites_count);
+    } catch (e) {
+        console.error('Erro ao favoritar:', e);
+    } finally {
+        const btn2 = document.getElementById('favorite-btn');
+        if (btn2) btn2.disabled = false;
+    }
 }
 
 function displayTags(tags) {
@@ -295,71 +348,121 @@ function showModeConfirmation(mode) {
     }, 3000);
 }
 
+// pendingQuestionsForModal: questions that still need input from the user
+let pendingQuestionsForModal = [];
+// readerProfile: profile loaded from backend (or empty object)
+let readerProfile = {};
+
 async function openQuestionsModal() {
     const modal = document.getElementById('questions-modal');
     const questionsContainer = document.getElementById('questions-container');
     const validationMessage = document.getElementById('validation-message');
-    
-    // Hide validation message
     validationMessage.style.display = 'none';
-    
-    // Try to load existing answers if user is authenticated
+
+    // Load existing answers
     try {
-        if (api.token) {
+        if (api.isAuthenticated()) {
             existingAnswers = await api.getAnswers(currentFanfic.id);
         }
-    } catch (error) {
-        console.log('No existing answers found or user not authenticated');
+    } catch (e) {
         existingAnswers = {};
     }
-    
-    // Render questions
-    questionsContainer.innerHTML = questions.map((question, index) => {
-        const existingAnswer = existingAnswers[question.placeholder] || '';
+
+    // Load reader profile for standard variable pre-fill
+    try {
+        if (api.isAuthenticated()) {
+            readerProfile = await api.getReaderProfile();
+        }
+    } catch (e) {
+        readerProfile = {};
+    }
+
+    // Determine which questions still need input:
+    // - standard variable: need input only if profile field is empty AND no existing answer
+    // - custom variable: need input if no existing answer
+    pendingQuestionsForModal = questions.filter(q => {
+        if (existingAnswers[q.placeholder]) return false; // already answered
+        if (q.variable_type === 'standard' && readerProfile[q.standard_key]) return false; // profile has it
+        return true;
+    });
+
+    if (pendingQuestionsForModal.length === 0) {
+        // All variables are pre-filled from profile/answers — just proceed
+        await _finalizeAnswersFromProfile();
+        closeQuestionsModal();
+        showModeConfirmation('interactive');
+        if (api.isAuthenticated()) displayAnswerEditor();
+        return;
+    }
+
+    // Render only pending questions, noting where values come from
+    questionsContainer.innerHTML = pendingQuestionsForModal.map((question, index) => {
+        const profileValue = question.variable_type === 'standard' ? (readerProfile[question.standard_key] || '') : '';
         return `
-            <div class="question-item">
+            <div class="question-item" data-variable-type="${question.variable_type}" data-standard-key="${question.standard_key || ''}">
                 <label class="question-label" for="question-${question.id}">
-                    ${index + 1}. ${question.question_text}
+                    ${index + 1}. ${escapeHtml(question.question_text)}
+                    ${question.variable_type === 'standard' ? '<span style="font-size:0.8rem;color:var(--medium-gray);"> (variável do perfil)</span>' : ''}
                 </label>
-                <input 
-                    type="text" 
-                    id="question-${question.id}" 
-                    class="question-input" 
+                <input
+                    type="text"
+                    id="question-${question.id}"
+                    class="question-input"
                     data-placeholder="${question.placeholder}"
-                    value="${existingAnswer}"
+                    data-variable-type="${question.variable_type}"
+                    data-standard-key="${question.standard_key || ''}"
+                    value="${escapeHtml(profileValue)}"
                     placeholder="Digite sua resposta..."
                     required
                 />
+                ${question.variable_type === 'standard' ? `
+                <div class="save-to-profile-option" style="margin-top:0.4rem;">
+                    <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.9rem;color:var(--dark-gray);cursor:pointer;">
+                        <input type="checkbox" class="save-to-profile-cb" data-standard-key="${question.standard_key}" checked>
+                        Salvar no meu perfil para futuras histórias
+                    </label>
+                </div>` : ''}
             </div>
         `;
     }).join('');
-    
-    // Show modal
+
     modal.style.display = 'flex';
-    
-    // Focus first input
     setTimeout(() => {
         const firstInput = questionsContainer.querySelector('.question-input');
-        if (firstInput) {
-            firstInput.focus();
-        }
+        if (firstInput) firstInput.focus();
     }, 100);
+}
+
+// Merge profile values + existing answers into a combined answers object and save
+async function _finalizeAnswersFromProfile() {
+    const merged = { ...existingAnswers };
+    questions.forEach(q => {
+        if (!merged[q.placeholder] && q.variable_type === 'standard' && readerProfile[q.standard_key]) {
+            merged[q.placeholder] = readerProfile[q.standard_key];
+        }
+    });
+    if (api.isAuthenticated() && Object.keys(merged).length > 0) {
+        try {
+            await api.saveAnswers(currentFanfic.id, merged);
+        } catch (e) { /* ignore */ }
+    } else {
+        sessionStorage.setItem(`fanfic_${currentFanfic.id}_answers`, JSON.stringify(merged));
+    }
+    existingAnswers = merged;
 }
 
 function closeQuestionsModal() {
     const modal = document.getElementById('questions-modal');
     modal.style.display = 'none';
-    
-    // Reset selected mode if no answers were submitted
+
     const hasAnswers = Object.keys(existingAnswers).length > 0;
     if (!hasAnswers) {
         selectedMode = null;
         sessionStorage.removeItem(`fanfic_${currentFanfic.id}_mode`);
-        
         const interactiveBtn = document.getElementById('btn-interactive');
         const nonInteractiveBtn = document.getElementById('btn-non-interactive');
-        interactiveBtn.classList.remove('selected');
-        nonInteractiveBtn.classList.remove('selected');
+        if (interactiveBtn) interactiveBtn.classList.remove('selected');
+        if (nonInteractiveBtn) nonInteractiveBtn.classList.remove('selected');
     }
 }
 
@@ -367,62 +470,76 @@ async function submitAnswers() {
     const questionsContainer = document.getElementById('questions-container');
     const inputs = questionsContainer.querySelectorAll('.question-input');
     const validationMessage = document.getElementById('validation-message');
-    
-    // Collect answers
-    const answers = {};
+
+    const newAnswers = {};
     let allAnswered = true;
-    
+
     inputs.forEach(input => {
-        const placeholder = input.dataset.placeholder;
         const value = input.value.trim();
-        
         if (value === '') {
             allAnswered = false;
             input.classList.add('error');
         } else {
             input.classList.remove('error');
-            answers[placeholder] = value;
+            newAnswers[input.dataset.placeholder] = value;
         }
     });
-    
-    // Validate all questions are answered
+
     if (!allAnswered) {
         validationMessage.style.display = 'block';
         return;
     }
-    
-    // Hide validation message
     validationMessage.style.display = 'none';
-    
+
     try {
-        // Save answers to backend if user is authenticated
-        if (api.token) {
-            console.log('Saving answers:', answers);
-            await api.saveAnswers(currentFanfic.id, answers);
-            console.log('Answers saved successfully');
+        // Merge with profile + existing answers
+        const merged = { ...existingAnswers, ...newAnswers };
+        // Also fill any standard vars already in profile that were not in pending
+        questions.forEach(q => {
+            if (!merged[q.placeholder] && q.variable_type === 'standard' && readerProfile[q.standard_key]) {
+                merged[q.placeholder] = readerProfile[q.standard_key];
+            }
+        });
+
+        if (api.isAuthenticated()) {
+            await api.saveAnswers(currentFanfic.id, merged);
+
+            // Save standard variables back to profile if checkbox is checked
+            const profileUpdates = { ...readerProfile };
+            let hasProfileUpdate = false;
+            questionsContainer.querySelectorAll('.save-to-profile-cb').forEach(cb => {
+                if (cb.checked) {
+                    const key = cb.dataset.standardKey;
+                    const input = questionsContainer.querySelector(`[data-standard-key="${key}"].question-input`);
+                    if (input && input.value.trim()) {
+                        profileUpdates[key] = input.value.trim();
+                        hasProfileUpdate = true;
+                    }
+                }
+            });
+            if (hasProfileUpdate) {
+                await api.updateReaderProfile(profileUpdates);
+                readerProfile = profileUpdates;
+            }
         } else {
-            // Store answers in sessionStorage for non-authenticated users
-            sessionStorage.setItem(`fanfic_${currentFanfic.id}_answers`, JSON.stringify(answers));
+            sessionStorage.setItem(`fanfic_${currentFanfic.id}_answers`, JSON.stringify(merged));
         }
-        
-        // Update existing answers
-        existingAnswers = answers;
-        
-        // Close modal
+
+        existingAnswers = merged;
         closeQuestionsModal();
-        
-        // Show success confirmation
         showModeConfirmation('interactive');
-        
-        // Display answer editor if user is authenticated
-        if (api.token) {
-            displayAnswerEditor();
-        }
-        
+        if (api.isAuthenticated()) displayAnswerEditor();
+
     } catch (error) {
         console.error('Error saving answers:', error);
         alert('Erro ao salvar respostas. Por favor, tente novamente.');
     }
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text || '';
+    return div.innerHTML;
 }
 
 function readChapter(chapterId) {

@@ -185,9 +185,20 @@ class AuthArea {
     openUserMenu() {
         if (this.userDropdown) {
             console.log('Opening user menu');
+
+            // Position dropdown below the avatar button using fixed coordinates
+            if (this.userAvatarBtn) {
+                const rect = this.userAvatarBtn.getBoundingClientRect();
+                const dropdownWidth = 220;
+                const rightEdge = window.innerWidth - rect.right;
+                this.userDropdown.style.top = (rect.bottom + 10) + 'px';
+                this.userDropdown.style.right = Math.max(8, rightEdge) + 'px';
+                this.userDropdown.style.left = 'auto';
+            }
+
             this.userDropdown.style.display = 'block';
             this.isUserMenuOpen = true;
-            
+
             if (this.userAvatarBtn) {
                 this.userAvatarBtn.setAttribute('aria-expanded', 'true');
             }

@@ -3,7 +3,9 @@
     "allow": [
       "Bash(ls -d \"c:\\\\Users\\\\tsuba\\\\GolandProjects\\\\Lollipopfics/backend\"/*/)",
       "Bash(go build:*)",
-      "Bash(go test:*)"
+      "Bash(go test:*)",
+      "Bash(grep -n \"favorite\\\\|like\\\\|bookmark\" /c/Users/tsuba/GolandProjects/Lollipopfics/backend/models/*.go)",
+      "Bash(grep -E \"\\\\.go$\")"
     ]
   }
 }

@@ -24,6 +24,8 @@ func Migrate(db *gorm.DB) error {
 		&models.Notification{},
 		&models.ReadingProgress{},
 		&models.PasswordResetToken{},
+		&models.FanficFavorite{},
+		&models.ReaderProfile{},
 	)
 	if err != nil {
 		return fmt.Errorf("failed to run auto-migration: %w", err)

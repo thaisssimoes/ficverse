@@ -92,6 +92,8 @@ func Setup(router *gin.Engine, db *gorm.DB, cfg *config.Config) {
 	notificationHandler := NewNotificationHandler(db)
 	readingListHandler := NewReadingListHandler(db)
 	tagHandler := NewTagHandler(db)
+	favoriteHandler := NewFavoriteHandler(db)
+	readerProfileHandler := NewReaderProfileHandler(db)
 
 	// API routes
 	api := router.Group("/api")
@@ -141,7 +143,14 @@ func Setup(router *gin.Engine, db *gorm.DB, cfg *config.Config) {
 			// Comment routes for fanfics
 			fanfics.GET("/:id/comments", commentHandler.ListFanficComments)
 			fanfics.POST("/:id/comments", auth.AuthMiddleware(authService), commentHandler.CreateFanficComment)
+
+			// Favorite routes
+			fanfics.GET("/:id/favorite", favoriteHandler.GetFavoriteStatus)
+			fanfics.POST("/:id/favorite", auth.AuthMiddleware(authService), favoriteHandler.ToggleFavorite)
 		}
+
+		// Favorites list (authenticated)
+		api.GET("/favorites", auth.AuthMiddleware(authService), favoriteHandler.GetUserFavorites)
 
 		// User routes
 		users := api.Group("/users")
@@ -194,6 +203,7 @@ func Setup(router *gin.Engine, db *gorm.DB, cfg *config.Config) {
 
 		// Reading list routes
 		api.GET("/reading-list", auth.AuthMiddleware(authService), readingListHandler.GetReadingList)
+		api.POST("/reading-progress", auth.AuthMiddleware(authService), readingListHandler.UpdateProgress)
 
 		// Tag routes
 		tags := api.Group("/tags")
@@ -201,6 +211,14 @@ func Setup(router *gin.Engine, db *gorm.DB, cfg *config.Config) {
 			tags.POST("", auth.AuthMiddleware(authService), tagHandler.CreateTag)
 			tags.GET("", tagHandler.ListTagsByType)
 			tags.GET("/search", tagHandler.SearchTags)
+		}
+
+		// Reader profile routes
+		profile := api.Group("/profile")
+		{
+			profile.GET("/standard-variables", readerProfileHandler.GetStandardVariables)
+			profile.GET("/reader-profile", auth.AuthMiddleware(authService), readerProfileHandler.GetReaderProfile)
+			profile.PUT("/reader-profile", auth.AuthMiddleware(authService), readerProfileHandler.UpdateReaderProfile)
 		}
 	}
 }
