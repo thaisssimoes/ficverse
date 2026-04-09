@@ -84,10 +84,13 @@ func (r *FanficRepository) GetByAuthorIDWithDraftFilter(authorID int, includeDra
 	return fanfics, nil
 }
 
-// GetAll retrieves all published fanfics (excludes drafts)
+// hasChaptersClause is the EXISTS subquery that ensures a fanfic has at least one published chapter.
+const hasChaptersClause = "EXISTS (SELECT 1 FROM chapters WHERE chapters.fanfic_id = fanfics.id AND chapters.is_draft = false)"
+
+// GetAll retrieves all published fanfics that have at least one published chapter.
 func (r *FanficRepository) GetAll() ([]models.Fanfic, error) {
 	var fanfics []models.Fanfic
-	result := r.db.Where("is_draft = ?", false).
+	result := r.db.Where("is_draft = ? AND "+hasChaptersClause, false).
 		Preload("Author").
 		Order("created_at DESC").
 		Find(&fanfics)
@@ -97,10 +100,10 @@ func (r *FanficRepository) GetAll() ([]models.Fanfic, error) {
 	return fanfics, nil
 }
 
-// GetByCategory retrieves all published fanfics in a specific category (excludes drafts)
+// GetByCategory retrieves all published fanfics in a specific category with at least one published chapter.
 func (r *FanficRepository) GetByCategory(category string) ([]models.Fanfic, error) {
 	var fanfics []models.Fanfic
-	result := r.db.Where("category = ? AND is_draft = ?", category, false).
+	result := r.db.Where("category = ? AND is_draft = ? AND "+hasChaptersClause, category, false).
 		Preload("Author").
 		Order("created_at DESC").
 		Find(&fanfics)
@@ -115,7 +118,7 @@ func (r *FanficRepository) SearchByTitle(query string, limit int) ([]models.Fanf
 	var fanfics []models.Fanfic
 	searchPattern := "%" + strings.ToLower(query) + "%"
 	
-	result := r.db.Where("LOWER(title) LIKE ? AND is_draft = ?", searchPattern, false).
+	result := r.db.Where("LOWER(title) LIKE ? AND is_draft = ? AND "+hasChaptersClause, searchPattern, false).
 		Preload("Author").
 		Order("created_at DESC").
 		Limit(limit).
@@ -132,7 +135,7 @@ func (r *FanficRepository) GetFeatured(limit int) ([]models.Fanfic, error) {
 	var fanfics []models.Fanfic
 	
 	// Get published fanfics with covers, ordered by creation date
-	result := r.db.Where("cover_url != '' AND is_draft = ?", false).
+	result := r.db.Where("cover_url != '' AND is_draft = ? AND "+hasChaptersClause, false).
 		Preload("Author").
 		Order("created_at DESC").
 		Limit(limit).
@@ -150,12 +153,12 @@ func (r *FanficRepository) GetTrending(limit int) ([]models.Fanfic, error) {
 	
 	// For now, trending is based on most recent published fanfics
 	// In the future, this could be based on views, likes, comments, etc.
-	result := r.db.Where("is_draft = ?", false).
+	result := r.db.Where("is_draft = ? AND "+hasChaptersClause, false).
 		Preload("Author").
 		Order("created_at DESC").
 		Limit(limit).
 		Find(&fanfics)
-	
+
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to get trending fanfics: %w", result.Error)
 	}
@@ -166,12 +169,12 @@ func (r *FanficRepository) GetTrending(limit int) ([]models.Fanfic, error) {
 func (r *FanficRepository) GetTrendingByCategory(category string, limit int) ([]models.Fanfic, error) {
 	var fanfics []models.Fanfic
 	
-	result := r.db.Where("category = ? AND is_draft = ?", category, false).
+	result := r.db.Where("category = ? AND is_draft = ? AND "+hasChaptersClause, category, false).
 		Preload("Author").
 		Order("created_at DESC").
 		Limit(limit).
 		Find(&fanfics)
-	
+
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to get trending fanfics by category: %w", result.Error)
 	}

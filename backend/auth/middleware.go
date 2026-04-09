@@ -65,6 +65,25 @@ func AuthMiddleware(authService TokenValidator) gin.HandlerFunc {
 	}
 }
 
+// OptionalAuthMiddleware reads the JWT token if present and sets the user in context,
+// but does NOT abort if the token is missing or invalid — for public routes that
+// behave differently for authenticated users (e.g. showing drafts to their author).
+func OptionalAuthMiddleware(authService TokenValidator) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		authHeader := c.GetHeader("Authorization")
+		if authHeader != "" {
+			parts := strings.SplitN(authHeader, " ", 2)
+			if len(parts) == 2 && parts[0] == "Bearer" {
+				if user, err := authService.ValidateToken(parts[1]); err == nil {
+					c.Set("user", user)
+					c.Set("user_id", user.ID)
+				}
+			}
+		}
+		c.Next()
+	}
+}
+
 // GetCurrentUser retrieves the authenticated user from the context
 func GetCurrentUser(c *gin.Context) (*models.User, bool) {
 	user, exists := c.Get("user")

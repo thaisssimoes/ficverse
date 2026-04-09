@@ -1,0 +1,628 @@
+/* ============================================
+   DashboardPage — Design editorial premium
+   Anti-padrão genérico de IA:
+   ✗ sem roxo, ✗ sem gradiente em títulos,
+   ✗ sem emojis como ícone estrutural,
+   ✓ espaçamento generoso, ✓ acento teal
+   ============================================ */
+
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--space-8) 0 var(--space-16);
+}
+
+.pageTitle {
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  margin-bottom: var(--space-8);
+  color: var(--text-primary);
+  letter-spacing: var(--tracking-tight);
+}
+
+/* ── Layout ───────────────────────────── */
+.layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: var(--space-6);
+  align-items: flex-start;
+}
+
+/* ── Sidebar ──────────────────────────── */
+.sidebar {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  position: sticky;
+  top: 80px;
+}
+
+.sidebarHeader {
+  padding: var(--space-5);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.newBtn {
+  width: 100%;
+  justify-content: center;
+}
+
+.filterBar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.filterBtn {
+  width: 100%;
+  padding: 0.4rem 0.75rem;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+  font-family: var(--font-family);
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.filterBtn:hover {
+  background: var(--input-bg);
+  color: var(--text-primary);
+}
+
+.filterActive {
+  background: rgba(0, 88, 113, 0.1);
+  color: var(--color-accent-brand);
+  font-weight: 500;
+}
+
+.fanficList {
+  max-height: calc(100vh - 280px);
+  overflow-y: auto;
+}
+
+.fanficItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 0.75rem var(--space-5);
+  border-bottom: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.fanficItem:last-child { border-bottom: none; }
+.fanficItem:hover { background: var(--input-bg); }
+
+.fanficItemActive {
+  background: rgba(0, 88, 113, 0.06);
+  border-left: 2px solid var(--color-accent-brand);
+}
+
+.fanficItemInfo { flex: 1; min-width: 0; }
+
+.fanficItemTitle {
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 0.2rem;
+}
+
+.fanficItemMeta { display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; }
+
+.fanficItemActions { display: flex; gap: 0.25rem; flex-shrink: 0; }
+
+.iconBtn {
+  background: none;
+  border: none;
+  padding: 0.25rem;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color var(--transition-fast), background var(--transition-fast);
+  line-height: 1;
+}
+
+.iconBtn:hover {
+  color: var(--text-primary);
+  background: var(--input-bg);
+}
+
+/* Badges */
+.badgeDraft {
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: var(--color-warning);
+  background: rgba(245, 158, 11, 0.1);
+  padding: 0.1rem 0.4rem;
+  border-radius: var(--radius-sm);
+}
+
+.badgePublished {
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: var(--color-success);
+  background: rgba(16, 185, 129, 0.1);
+  padding: 0.1rem 0.4rem;
+  border-radius: var(--radius-sm);
+}
+
+.emptyList {
+  padding: 2rem var(--space-5);
+  text-align: center;
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+}
+
+/* ── Editor area ─────────────────────── */
+.editorArea {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  min-height: 520px;
+}
+
+.noSelection {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  height: 520px;
+  padding: var(--space-10) var(--space-12);
+  gap: var(--space-3);
+}
+
+.noSelectionIcon {
+  width: 40px;
+  height: 40px;
+  color: var(--text-muted);
+  opacity: 0.4;
+}
+
+.noSelectionTitle {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.noSelectionText {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+
+/* ── Tab bar ─────────────────────────── */
+.tabBar {
+  display: flex;
+  border-bottom: 1px solid var(--border-color);
+  padding: 0 var(--space-6);
+  gap: var(--space-1);
+}
+
+.tabBtn {
+  padding: 0.875rem var(--space-4);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+  font-family: var(--font-family);
+  font-weight: 500;
+  cursor: pointer;
+  transition: color var(--transition-fast), border-color var(--transition-fast);
+  margin-bottom: -1px;
+  white-space: nowrap;
+}
+
+.tabBtn:hover { color: var(--text-primary); }
+
+.tabActive {
+  border-bottom-color: var(--color-accent-brand);
+  color: var(--color-accent-brand);
+}
+
+.tabContent { padding: var(--space-6); }
+
+/* ── Status banner ───────────────────── */
+.statusBanner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-6);
+}
+
+.statusBannerDraft {
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.statusBannerPublished {
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.statusBannerTitle {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  margin-bottom: 0.2rem;
+}
+
+.statusBannerDraft .statusBannerTitle { color: var(--color-warning); }
+.statusBannerPublished .statusBannerTitle { color: var(--color-success); }
+
+.statusBannerSub {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+/* ── Forms ───────────────────────────── */
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-5);
+  margin-bottom: var(--space-5);
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: var(--space-5);
+}
+
+.formLabel {
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.formInput {
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 0.625rem 0.875rem;
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  font-family: var(--font-family);
+  outline: none;
+  transition: border-color var(--transition-fast);
+  width: 100%;
+}
+
+.formInput:focus { border-color: var(--color-accent-brand); }
+.formInput::placeholder { color: var(--text-muted); }
+
+.formHint {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+}
+
+.checkboxGroup {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.checkboxGroup input[type="checkbox"] {
+  accent-color: var(--color-accent-brand);
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+
+.formActions {
+  display: flex;
+  gap: var(--space-3);
+  justify-content: flex-end;
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--border-color);
+  margin-top: var(--space-5);
+}
+
+/* ── Cover upload ─────────────────────── */
+.coverUpload { display: flex; gap: var(--space-5); align-items: flex-start; }
+
+.coverPreview {
+  width: 100px;
+  height: 150px;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid var(--border-color);
+}
+
+.coverPlaceholder {
+  width: 100px;
+  height: 150px;
+  background: var(--input-bg);
+  border: 1px dashed var(--border-color);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+/* ── Chapters tab ────────────────────── */
+.chaptersHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-5);
+}
+
+.chaptersHeader h3 {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.chaptersList { display: flex; flex-direction: column; gap: var(--space-3); }
+
+.chapterCard {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: var(--space-4) var(--space-5);
+  transition: border-color var(--transition-fast);
+}
+
+.chapterCard:hover { border-color: var(--border-color-hover); }
+
+.chapterNum {
+  color: var(--text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  min-width: 52px;
+  flex-shrink: 0;
+}
+
+.chapterInfo { flex: 1; display: flex; align-items: center; gap: var(--space-3); min-width: 0; }
+
+.chapterTitle {
+  font-weight: 500;
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chapterActions { display: flex; gap: var(--space-2); flex-shrink: 0; }
+
+/* ── Questions tab ───────────────────── */
+.infoBox {
+  background: rgba(59, 130, 246, 0.06);
+  border: 1px solid rgba(59, 130, 246, 0.18);
+  border-radius: var(--radius-md);
+  padding: var(--space-4) var(--space-5);
+  margin-bottom: var(--space-6);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.questionActions {
+  display: flex;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+  flex-wrap: wrap;
+}
+
+.standardVarRow {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  flex: 1;
+  min-width: 200px;
+}
+
+.standardVarRow .formInput { flex: 1; }
+
+.questionsList { display: flex; flex-direction: column; gap: var(--space-3); }
+
+.questionCard {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: var(--space-4) var(--space-5);
+}
+
+.questionCardInfo { flex: 1; min-width: 0; }
+.questionCardTop { display: flex; gap: var(--space-2); align-items: center; margin-bottom: 0.25rem; flex-wrap: wrap; }
+.questionCardText { font-size: var(--font-size-sm); font-weight: 500; }
+
+.questionCardPlaceholder {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+.questionCardPlaceholder code {
+  color: var(--color-accent-brand);
+  background: rgba(0, 88, 113, 0.08);
+  padding: 0.1rem 0.4rem;
+  border-radius: var(--radius-sm);
+  font-family: monospace;
+}
+
+.questionCardActions { display: flex; gap: var(--space-2); flex-shrink: 0; }
+
+.badgeStandard {
+  font-size: 0.65rem;
+  font-weight: 600;
+  background: rgba(59, 130, 246, 0.12);
+  color: var(--color-info);
+  padding: 0.1rem 0.5rem;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+
+.badgeCustom {
+  font-size: 0.65rem;
+  font-weight: 600;
+  background: rgba(0, 88, 113, 0.12);
+  color: var(--color-accent-brand);
+  padding: 0.1rem 0.5rem;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+
+/* ── Comments tab ────────────────────── */
+.commentsGroup { margin-bottom: var(--space-8); }
+
+.commentsGroupTitle {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  margin-bottom: var(--space-3);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.commentCard {
+  display: flex;
+  gap: var(--space-4);
+  align-items: flex-start;
+  padding: var(--space-4) var(--space-5);
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-2);
+}
+
+.commentCardContent { flex: 1; min-width: 0; }
+
+.commentAuthor {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.15rem;
+}
+
+.commentDate {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  margin-bottom: var(--space-2);
+}
+
+.commentText {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* ── Modal tags / warnings ───────────── */
+.tagsSection {
+  background: rgba(0, 88, 113, 0.04);
+  border: 1px solid rgba(0, 88, 113, 0.15);
+  border-radius: var(--radius-md);
+  padding: var(--space-5);
+  margin-bottom: var(--space-5);
+}
+
+.tagsSectionTitle {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-accent-brand);
+  margin-bottom: var(--space-4);
+}
+
+.tagInputRow { display: flex; gap: var(--space-2); align-items: center; }
+.tagInputRow .formInput { flex: 1; }
+
+.tagChips { display: flex; flex-wrap: wrap; gap: var(--space-1); margin-top: var(--space-2); }
+
+.tagChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.6rem;
+  background: var(--tag-fandom-bg);
+  color: var(--tag-fandom-color);
+  border: 1px solid var(--tag-fandom-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+}
+
+.tagChipRemove {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+  font-size: 0.875rem;
+  opacity: 0.6;
+  line-height: 1;
+}
+
+.tagChipRemove:hover { opacity: 1; }
+
+.warningSection {
+  background: rgba(239, 68, 68, 0.04);
+  border: 1px solid rgba(239, 68, 68, 0.18);
+  border-radius: var(--radius-md);
+  padding: var(--space-5);
+  margin-bottom: var(--space-5);
+}
+
+.warningSectionTitle {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-error);
+  margin-bottom: var(--space-4);
+}
+
+.emptyState {
+  text-align: center;
+  padding: 3rem var(--space-5);
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+  line-height: 1.6;
+}
+
+.modalFooterMulti {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.editorHint {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  margin-top: var(--space-2);
+}
+
+@media (max-width: 768px) {
+  .layout { grid-template-columns: 1fr; }
+  .sidebar { position: static; }
+  .fanficList { max-height: 240px; }
+  .formGrid { grid-template-columns: 1fr; }
+  .tabBar { padding: 0 var(--space-4); overflow-x: auto; }
+}

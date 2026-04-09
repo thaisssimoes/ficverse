@@ -1,0 +1,126 @@
+/* ============================================
+   ExplorePage — catálogo exploratório
+   ============================================ */
+
+.page {
+  min-height: 60vh;
+}
+
+/* Header editorial — alinhado à esquerda (padrão F de leitura) */
+.header {
+  padding: var(--space-8) 0 var(--space-6);
+}
+
+.header h1 {
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  font-weight: 400;
+  color: var(--color-text-primary);
+  letter-spacing: var(--tracking-tight);
+  margin-bottom: var(--space-2);
+  text-align: left;
+}
+
+.header p {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-6);
+  text-align: left;
+}
+
+/* Barra de busca — integrada no fluxo */
+.searchForm {
+  display: flex;
+  gap: var(--space-3);
+  max-width: 560px;
+}
+
+.searchInput {
+  flex: 1;
+  background-color: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  outline: none;
+  min-height: 44px;
+  transition: border-color var(--transition-fast);
+}
+
+.searchInput:focus {
+  border-color: var(--color-accent-brand);
+}
+
+.searchInput::placeholder {
+  color: var(--color-text-muted);
+}
+
+.searchBtn {
+  padding: var(--space-3) var(--space-6);
+  background-color: var(--color-accent-brand);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  min-height: 44px;
+  white-space: nowrap;
+  transition: background-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.searchBtn:hover {
+  background-color: var(--color-accent-hover);
+  transform: translateY(-1px);
+}
+
+/* Filtros de categoria — pills discretas */
+.categories {
+  display: flex;
+  gap: var(--space-2);
+  padding: var(--space-4) 0;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--color-border-subtle);
+  margin-bottom: var(--space-8);
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.categories::-webkit-scrollbar {
+  display: none;
+}
+
+.catBtn {
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-subtle);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  min-height: 36px;
+  transition: border-color var(--transition-fast), background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.catBtn:hover {
+  border-color: var(--color-text-primary);
+  color: var(--color-text-primary);
+}
+
+.active {
+  background-color: var(--color-text-primary);
+  border-color: var(--color-text-primary);
+  color: var(--color-bg-base);
+}
+
+/* Resultados */
+.content {
+  /* O grid não precisa de padding extra — o PageLayout já cuida */
+}

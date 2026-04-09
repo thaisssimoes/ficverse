@@ -1,0 +1,27 @@
+/* ============================================
+   UserProfileLayout — container do hub social
+   ============================================ */
+
+.layout {
+  max-width: 860px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.tabsSection {
+  margin-top: var(--space-2);
+}
+
+.tabContent {
+  /* Transição suave entre abas */
+}
+
+.panel {
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

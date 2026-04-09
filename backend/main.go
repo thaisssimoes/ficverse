@@ -21,9 +21,16 @@ func main() {
 
 	log.Println("Database connected successfully!")
 
-	// Run migrations
-	if err := database.Migrate(db); err != nil {
-		log.Fatalf("Failed to run migrations: %v", err)
+	// Run migrations only when AUTO_MIGRATE=true
+	// Em produção ou execuções normais, mantenha AUTO_MIGRATE=false para startup rápido.
+	// Ative apenas ao adicionar novos modelos ou colunas ao schema.
+	if cfg.AutoMigrate {
+		log.Println("AUTO_MIGRATE=true: executando migrations...")
+		if err := database.Migrate(db); err != nil {
+			log.Fatalf("Failed to run migrations: %v", err)
+		}
+	} else {
+		log.Println("AUTO_MIGRATE=false: migrations ignoradas.")
 	}
 
 	// Setup router

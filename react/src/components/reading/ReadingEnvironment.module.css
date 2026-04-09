@@ -1,0 +1,37 @@
+/* ============================================
+   ReadingEnvironment — santuário de leitura (Medium)
+   Responsabilidade única: geometria perfeita para
+   50-75 caracteres por linha e foco absoluto no texto.
+   ============================================ */
+
+.environment {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  background-color: var(--color-bg-base);
+  padding: var(--space-8) var(--space-4);
+  transition: background-color var(--transition-base);
+}
+
+/* A coluna de texto — o contêiner físico da leitura */
+.column {
+  width: 100%;
+  /* 68ch ≈ 680px — sweet spot ergonômico de 50-75 chars/linha */
+  max-width: var(--reading-max-width);
+}
+
+/* Desktop: respiro generoso nas laterais */
+@media (min-width: 768px) {
+  .environment {
+    padding: var(--space-16) var(--space-6);
+  }
+}
+
+/* ── Quando sidebar está presente, compensar o offset ── */
+@media (min-width: 1024px) {
+  .environment {
+    /* A sidebar tem 240px, então compensamos para centralizar na área de conteúdo */
+    padding-left: calc(var(--space-6) + var(--nav-sidebar-width));
+  }
+}

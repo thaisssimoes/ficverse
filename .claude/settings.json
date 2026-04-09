@@ -4,7 +4,34 @@
       "Bash(sed -i 's/<h1 class=\"logo\">Fanfics Interativas<\\\\/h1>/<a href=\"index.html\" class=\"logo\">Fanfics Interativas<\\\\/a>/g' edit-fanfic.html dashboard.html fanfic-detail.html forgot-password.html profile.html login.html register.html reset-password.html tag-search.html)",
       "Bash(sed -i 's/<div class=\"logo\">FicVerse<\\\\/div>/<a href=\"index.html\" class=\"logo\">FicVerse<\\\\/a>/g' explore.html landing.html)",
       "Bash(grep -n \"^a,\\\\|^a {\" \"C:/Users/tsuba/GolandProjects/Lollipopfics/frontend/css/styles.css\")",
-      "Bash(xargs grep:*)"
+      "Bash(xargs grep:*)",
+      "Bash(wc -l /c/Users/tsuba/GolandProjects/Lollipopfics/frontend/js/*.js)",
+      "Bash(wc -l /c/Users/tsuba/GolandProjects/Lollipopfics/frontend/css/*.css)",
+      "Bash(wc -l /c/Users/tsuba/GolandProjects/Lollipopfics/frontend/*.html)",
+      "Bash(wc -l /c/Users/tsuba/GolandProjects/Lollipopfics/backend/routes/*.go)",
+      "Bash(ls -1 /c/Users/tsuba/GolandProjects/Lollipopfics/backend/routes/*.go)",
+      "Bash(wc -l /c/Users/tsuba/GolandProjects/Lollipopfics/backend/models/*.go)",
+      "Bash(npm create:*)",
+      "Bash(npm install:*)",
+      "Bash(mkdir -p src/styles src/services src/contexts src/hooks src/components/layout src/components/ui src/components/fanfic src/components/editor src/components/reader src/components/notifications src/pages src/utils)",
+      "Bash(rm -f src/App.css src/index.css)",
+      "Bash(npm run:*)",
+      "Bash(grep -n \"ForgotPassword\\\\|forgot\" /c/Users/tsuba/GolandProjects/Lollipopfics/backend/auth/*.go)",
+      "Bash(grep -n \"func.*Login\\\\|func.*Register\\\\|func.*ForgotPassword\" /c/Users/tsuba/GolandProjects/Lollipopfics/backend/routes/*.go)",
+      "Bash(netstat -ano)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8080/api/auth/login -X POST -H \"Content-Type: application/json\" -d '{\"email\":\"test@test.com\",\"password\":\"test\"}')",
+      "Bash(ls /c/Users/tsuba/GolandProjects/Lollipopfics/react/vite.config.*)",
+      "Bash(curl -s -w \"\\\\nHTTP:%{http_code}\" http://localhost:5173/api/auth/login -X POST -H \"Content-Type: application/json\" -d '{\"email\":\"test@test.com\",\"password\":\"test\"}')",
+      "Bash(curl -s http://localhost:5173/api/auth/login -X POST -H \"Content-Type: application/json\" -d '{\"email\":\"t@t.com\",\"password\":\"t\"}')",
+      "Bash(curl -v http://localhost:5173/api/auth/login -X POST -H \"Content-Type: application/json\" -d '{\"email\":\"t@t.com\",\"password\":\"t\"}')",
+      "Bash(tasklist /fi \"PID eq 7256\")",
+      "Bash(curl -s http://localhost:5173/)",
+      "Bash(xargs wc:*)",
+      "Bash(npx vite:*)",
+      "Bash(npx tailwindcss:*)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\tsuba\\.claude\\projects\\c--Users-tsuba-GolandProjects-Lollipopfics\\memory"
     ]
   }
 }

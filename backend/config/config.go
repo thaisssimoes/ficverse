@@ -15,6 +15,7 @@ type Config struct {
 	SMTPUser     string
 	SMTPPassword string
 	FrontendURL  string
+	AutoMigrate  bool
 }
 
 func Load() *Config {
@@ -34,6 +35,7 @@ func Load() *Config {
 	viper.SetDefault("SMTP_USER", "")
 	viper.SetDefault("SMTP_PASSWORD", "")
 	viper.SetDefault("FRONTEND_URL", "http://localhost:3000")
+	viper.SetDefault("AUTO_MIGRATE", false)
 
 	// Enable reading from environment variables
 	viper.AutomaticEnv()
@@ -55,5 +57,6 @@ func Load() *Config {
 		SMTPUser:     viper.GetString("SMTP_USER"),
 		SMTPPassword: viper.GetString("SMTP_PASSWORD"),
 		FrontendURL:  viper.GetString("FRONTEND_URL"),
+		AutoMigrate:  viper.GetBool("AUTO_MIGRATE"),
 	}
 }

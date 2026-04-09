@@ -1,0 +1,36 @@
+/* ============================================
+   CoverGrid — grade magnética de capas (Wattpad)
+   ============================================ */
+
+.grid {
+  display: grid;
+  /* auto-fill: insere o máximo de colunas possível sem quebrar abaixo de 160px */
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  column-gap: var(--space-6); /* 24px */
+  row-gap: var(--space-10);   /* 40px */
+  width: 100%;
+}
+
+/* Grade compacta para sidebars ou seções menores */
+.compact {
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  column-gap: var(--space-4);
+  row-gap: var(--space-6);
+}
+
+/* Grade larga para telas muito grandes */
+@media (min-width: 1280px) {
+  .grid {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  }
+}
+
+/* Estado vazio */
+.empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: var(--space-16) var(--space-4);
+  color: var(--color-text-muted);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+}

@@ -2,8 +2,14 @@ package routes
 
 import (
 	"errors"
+	"fmt"
+	"io"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/interactive-fanfic-platform/auth"
@@ -14,8 +20,9 @@ import (
 
 // ChapterHandler handles chapter endpoints
 type ChapterHandler struct {
-	service        *chapter.ChapterService
-	fanficService  *fanfic.FanficService
+	service       *chapter.ChapterService
+	fanficService *fanfic.FanficService
+	db            *gorm.DB
 }
 
 // NewChapterHandler creates a new chapter handler
@@ -23,6 +30,7 @@ func NewChapterHandler(db *gorm.DB) *ChapterHandler {
 	return &ChapterHandler{
 		service:       chapter.NewChapterService(db),
 		fanficService: fanfic.NewFanficService(db),
+		db:            db,
 	}
 }
 
@@ -589,4 +597,78 @@ func (h *ChapterHandler) Publish(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Chapter published successfully"})
+}
+
+// UploadCover — POST /api/chapters/:id/cover
+func (h *ChapterHandler) UploadCover(c *gin.Context) {
+	user, exists := auth.GetCurrentUser(c)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, ErrorResponse{Error: ErrorDetail{Code: "UNAUTHORIZED", Message: "Authentication required"}})
+		return
+	}
+
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: ErrorDetail{Code: "INVALID_ID", Message: "Invalid chapter ID"}})
+		return
+	}
+
+	chapterData, err := h.service.GetChapter(id, user.ID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, ErrorResponse{Error: ErrorDetail{Code: "NOT_FOUND", Message: "Chapter not found"}})
+		return
+	}
+
+	fanficData, err := h.fanficService.GetFanfic(chapterData.FanficID)
+	if err != nil || fanficData.AuthorID != user.ID {
+		c.JSON(http.StatusForbidden, ErrorResponse{Error: ErrorDetail{Code: "FORBIDDEN", Message: "Sem permissão"}})
+		return
+	}
+
+	file, header, err := c.Request.FormFile("cover")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: ErrorDetail{Code: "UPLOAD_ERROR", Message: "Arquivo não encontrado"}})
+		return
+	}
+	defer file.Close()
+
+	if header.Size > 5*1024*1024 {
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: ErrorDetail{Code: "UPLOAD_ERROR", Message: "Arquivo muito grande (máximo 5MB)"}})
+		return
+	}
+
+	ext := strings.ToLower(filepath.Ext(header.Filename))
+	allowed := map[string]bool{".jpg": true, ".jpeg": true, ".png": true, ".webp": true, ".gif": true}
+	if !allowed[ext] {
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: ErrorDetail{Code: "UPLOAD_ERROR", Message: "Formato não suportado (jpg, png, webp, gif)"}})
+		return
+	}
+
+	dir := "./uploads/chapter-covers"
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: ErrorDetail{Code: "UPLOAD_ERROR", Message: "Erro ao criar diretório"}})
+		return
+	}
+
+	filename := fmt.Sprintf("%d_%d%s", id, time.Now().UnixNano(), ext)
+	dst := filepath.Join(dir, filename)
+	out, err := os.Create(dst)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: ErrorDetail{Code: "UPLOAD_ERROR", Message: "Erro ao salvar arquivo"}})
+		return
+	}
+	defer out.Close()
+
+	if _, err := io.Copy(out, file); err != nil {
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: ErrorDetail{Code: "UPLOAD_ERROR", Message: "Erro ao gravar arquivo"}})
+		return
+	}
+
+	coverURL := "/uploads/chapter-covers/" + filename
+	if err := h.db.Table("chapters").Where("id = ?", id).Update("cover_url", coverURL).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: ErrorDetail{Code: "DB_ERROR", Message: "Erro ao salvar capa"}})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"cover_url": coverURL})
 }

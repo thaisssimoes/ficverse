@@ -11,6 +11,7 @@ const (
 	StandardKeyHairColor     = "hair_color"
 	StandardKeyFavoriteColor = "favorite_color"
 	StandardKeyFavoriteFood  = "favorite_food"
+	StandardKeyAge           = "age"
 )
 
 // StandardVariables is the ordered list of all standard variable definitions
@@ -22,6 +23,7 @@ var StandardVariables = []StandardVariable{
 	{Key: StandardKeyHairColor, Label: "Cor do Cabelo", Placeholder: "ex: preto"},
 	{Key: StandardKeyFavoriteColor, Label: "Cor Favorita", Placeholder: "ex: roxo"},
 	{Key: StandardKeyFavoriteFood, Label: "Comida Favorita", Placeholder: "ex: pizza"},
+	{Key: StandardKeyAge, Label: "Idade", Placeholder: "ex: 22"},
 }
 
 type StandardVariable struct {

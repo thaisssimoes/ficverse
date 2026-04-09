@@ -2,7 +2,6 @@ package routes
 
 import (
 	"errors"
-	"io"
 	"net/http"
 	"strconv"
 
@@ -24,27 +23,28 @@ func NewFanficHandler(db *gorm.DB) *FanficHandler {
 	}
 }
 
-// CreateFanficRequest represents fanfic creation request
+// CreateFanficRequest represents fanfic creation request (JSON body)
 type CreateFanficRequest struct {
-	Title           string `form:"title" binding:"required"`
-	Synopsis        string `form:"synopsis" binding:"required"`
-	Disclaimer      string `form:"disclaimer"`
-	Category        string `form:"category" binding:"required"`
-	InteractiveMode string `form:"interactive_mode"`
-	IsDraft         string `form:"is_draft"`
-	IsAdultContent  string `form:"is_adult_content"`
-	TriggerWarnings string `form:"trigger_warnings"`
+	Title           string `json:"title" binding:"required"`
+	Synopsis        string `json:"synopsis" binding:"required"`
+	Disclaimer      string `json:"disclaimer"`
+	Category        string `json:"category" binding:"required"`
+	InteractiveMode bool   `json:"interactive_mode"`
+	IsDraft         *bool  `json:"is_draft"`
+	IsAdultContent  bool   `json:"adult_content"`
+	TriggerWarnings string `json:"trigger_warnings"`
 }
 
-// UpdateFanficRequest represents fanfic update request
+// UpdateFanficRequest represents fanfic update request (JSON body)
 type UpdateFanficRequest struct {
-	Title           string `form:"title"`
-	Synopsis        string `form:"synopsis"`
-	Disclaimer      string `form:"disclaimer"`
-	Category        string `form:"category"`
-	InteractiveMode string `form:"interactive_mode"`
-	IsAdultContent  string `form:"is_adult_content"`
-	TriggerWarnings string `form:"trigger_warnings"`
+	Title           string  `json:"title"`
+	Synopsis        string  `json:"synopsis"`
+	Disclaimer      string  `json:"disclaimer"`
+	Category        string  `json:"category"`
+	InteractiveMode *bool   `json:"interactive_mode"`
+	IsAdultContent  *bool   `json:"adult_content"`
+	TriggerWarnings string  `json:"trigger_warnings"`
+	CoverURL        string  `json:"cover_url"`
 }
 
 // ListByCategory lists all fanfics grouped by category
@@ -119,117 +119,46 @@ func (h *FanficHandler) GetByID(c *gin.Context) {
 
 // Create creates a new fanfic
 func (h *FanficHandler) Create(c *gin.Context) {
-	// Get authenticated user
 	user, exists := auth.GetCurrentUser(c)
 	if !exists {
 		c.JSON(http.StatusUnauthorized, ErrorResponse{
-			Error: ErrorDetail{
-				Code:    "UNAUTHORIZED",
-				Message: "Authentication required",
-			},
+			Error: ErrorDetail{Code: "UNAUTHORIZED", Message: "Authentication required"},
 		})
 		return
 	}
 
-	// Parse multipart form
-	if err := c.Request.ParseMultipartForm(10 << 20); err != nil { // 10 MB max
+	var req CreateFanficRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, ErrorResponse{
-			Error: ErrorDetail{
-				Code:    "PARSE_ERROR",
-				Message: "Failed to parse form data",
-			},
+			Error: ErrorDetail{Code: "VALIDATION_ERROR", Message: err.Error()},
 		})
 		return
 	}
 
-	// Get form values
-	title := c.PostForm("title")
-	synopsis := c.PostForm("synopsis")
-	disclaimer := c.PostForm("disclaimer")
-	category := c.PostForm("category")
-	interactiveModeStr := c.PostForm("interactive_mode")
-	isDraftStr := c.PostForm("is_draft")
-	isAdultContentStr := c.PostForm("is_adult_content")
-	triggerWarnings := c.PostForm("trigger_warnings")
-
-	// Validate required fields
-	if title == "" || synopsis == "" || category == "" {
-		c.JSON(http.StatusBadRequest, ErrorResponse{
-			Error: ErrorDetail{
-				Code:    "VALIDATION_ERROR",
-				Message: "Title, synopsis, and category are required",
-			},
-		})
-		return
-	}
-
-	// Handle cover image upload
-	var coverData []byte
-	var coverFilename string
-	file, header, err := c.Request.FormFile("cover")
-	if err == nil {
-		defer file.Close()
-		coverFilename = header.Filename
-		coverData, err = io.ReadAll(file)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, ErrorResponse{
-				Error: ErrorDetail{
-					Code:    "FILE_READ_ERROR",
-					Message: "Failed to read cover image",
-				},
-			})
-			return
-		}
-	}
-
-	// Parse interactive mode
-	interactiveMode := interactiveModeStr == "true"
-
-	// Parse is_draft (optional, defaults to true in service)
-	var isDraftPtr *bool
-	if isDraftStr != "" {
-		isDraft := isDraftStr == "true"
-		isDraftPtr = &isDraft
-	}
-
-	// Parse is_adult_content (defaults to false)
-	isAdultContent := isAdultContentStr == "true"
-
-	// Create fanfic
 	newFanfic, err := h.service.CreateFanfic(
 		user.ID,
-		title,
-		synopsis,
-		disclaimer,
-		category,
-		coverFilename,
-		coverData,
-		interactiveMode,
-		isDraftPtr,
-		isAdultContent,
-		triggerWarnings,
+		req.Title,
+		req.Synopsis,
+		req.Disclaimer,
+		req.Category,
+		"", nil, // capa enviada separadamente via /upload/cover
+		req.InteractiveMode,
+		req.IsDraft,
+		req.IsAdultContent,
+		req.TriggerWarnings,
 	)
 	if err != nil {
 		statusCode := http.StatusBadRequest
 		code := "CREATION_ERROR"
-
 		if errors.Is(err, fanfic.ErrTitleRequired) {
 			code = "TITLE_REQUIRED"
 		} else if errors.Is(err, fanfic.ErrSynopsisRequired) {
 			code = "SYNOPSIS_REQUIRED"
 		} else if errors.Is(err, fanfic.ErrCategoryRequired) {
 			code = "CATEGORY_REQUIRED"
-		} else if errors.Is(err, fanfic.ErrInvalidImageFormat) {
-			code = "INVALID_IMAGE_FORMAT"
-		} else if errors.Is(err, fanfic.ErrImageTooLarge) {
-			code = "IMAGE_TOO_LARGE"
 		}
-
 		c.JSON(statusCode, ErrorResponse{
-			Error: ErrorDetail{
-				Code:    code,
-				Message: err.Error(),
-			},
+			Error: ErrorDetail{Code: code, Message: err.Error()},
 		})
 		return
 	}
@@ -239,14 +168,10 @@ func (h *FanficHandler) Create(c *gin.Context) {
 
 // Update updates a fanfic
 func (h *FanficHandler) Update(c *gin.Context) {
-	// Get authenticated user
 	user, exists := auth.GetCurrentUser(c)
 	if !exists {
 		c.JSON(http.StatusUnauthorized, ErrorResponse{
-			Error: ErrorDetail{
-				Code:    "UNAUTHORIZED",
-				Message: "Authentication required",
-			},
+			Error: ErrorDetail{Code: "UNAUTHORIZED", Message: "Authentication required"},
 		})
 		return
 	}
@@ -254,102 +179,43 @@ func (h *FanficHandler) Update(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, ErrorResponse{
-			Error: ErrorDetail{
-				Code:    "INVALID_ID",
-				Message: "Invalid fanfic ID",
-			},
+			Error: ErrorDetail{Code: "INVALID_ID", Message: "Invalid fanfic ID"},
 		})
 		return
 	}
 
-	// Parse multipart form
-	if err := c.Request.ParseMultipartForm(10 << 20); err != nil { // 10 MB max
+	var req UpdateFanficRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, ErrorResponse{
-			Error: ErrorDetail{
-				Code:    "PARSE_ERROR",
-				Message: "Failed to parse form data",
-			},
+			Error: ErrorDetail{Code: "VALIDATION_ERROR", Message: err.Error()},
 		})
 		return
 	}
 
-	// Get form values
-	title := c.PostForm("title")
-	synopsis := c.PostForm("synopsis")
-	disclaimer := c.PostForm("disclaimer")
-	category := c.PostForm("category")
-	interactiveModeStr := c.PostForm("interactive_mode")
-	isAdultContentStr := c.PostForm("is_adult_content")
-	triggerWarnings := c.PostForm("trigger_warnings")
-
-	// Handle cover image upload
-	var coverData []byte
-	var coverFilename string
-	file, header, err := c.Request.FormFile("cover")
-	if err == nil {
-		defer file.Close()
-		coverFilename = header.Filename
-		coverData, err = io.ReadAll(file)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, ErrorResponse{
-				Error: ErrorDetail{
-					Code:    "FILE_READ_ERROR",
-					Message: "Failed to read cover image",
-				},
-			})
-			return
-		}
-	}
-
-	// Parse interactive mode (only update if provided)
-	var interactiveModePtr *bool
-	if interactiveModeStr != "" {
-		interactiveMode := interactiveModeStr == "true"
-		interactiveModePtr = &interactiveMode
-	}
-
-	// Parse is_adult_content (only update if provided)
-	var isAdultContentPtr *bool
-	if isAdultContentStr != "" {
-		isAdultContent := isAdultContentStr == "true"
-		isAdultContentPtr = &isAdultContent
-	}
-
-	// Update fanfic
 	updatedFanfic, err := h.service.UpdateFanfic(
 		id,
 		user.ID,
-		title,
-		synopsis,
-		disclaimer,
-		category,
-		coverFilename,
-		coverData,
-		interactiveModePtr,
-		isAdultContentPtr,
-		triggerWarnings,
+		req.Title,
+		req.Synopsis,
+		req.Disclaimer,
+		req.Category,
+		req.CoverURL,
+		req.InteractiveMode,
+		req.IsAdultContent,
+		req.TriggerWarnings,
 	)
 	if err != nil {
 		statusCode := http.StatusBadRequest
 		code := "UPDATE_ERROR"
-
 		if errors.Is(err, fanfic.ErrFanficNotFound) {
 			statusCode = http.StatusNotFound
 			code = "NOT_FOUND"
 		} else if errors.Is(err, fanfic.ErrUnauthorized) {
 			statusCode = http.StatusForbidden
 			code = "FORBIDDEN"
-		} else if errors.Is(err, fanfic.ErrInvalidImageFormat) {
-			code = "INVALID_IMAGE_FORMAT"
-		} else if errors.Is(err, fanfic.ErrImageTooLarge) {
-			code = "IMAGE_TOO_LARGE"
 		}
-
 		c.JSON(statusCode, ErrorResponse{
-			Error: ErrorDetail{
-				Code:    code,
-				Message: err.Error(),
-			},
+			Error: ErrorDetail{Code: code, Message: err.Error()},
 		})
 		return
 	}

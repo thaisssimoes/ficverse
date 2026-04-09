@@ -89,7 +89,7 @@ func (s *FanficService) CreateFanfic(authorID int, title, synopsis, disclaimer, 
 }
 
 // UpdateFanfic updates fanfic metadata
-func (s *FanficService) UpdateFanfic(fanficID, authorID int, title, synopsis, disclaimer, category string, coverFilename string, coverData []byte, interactiveMode *bool, isAdultContent *bool, triggerWarnings string) (*models.Fanfic, error) {
+func (s *FanficService) UpdateFanfic(fanficID, authorID int, title, synopsis, disclaimer, category string, coverURL string, interactiveMode *bool, isAdultContent *bool, triggerWarnings string) (*models.Fanfic, error) {
 	// Get existing fanfic
 	fanfic, err := s.repo.GetByID(fanficID)
 	if err != nil {
@@ -124,44 +124,29 @@ func (s *FanficService) UpdateFanfic(fanficID, authorID int, title, synopsis, di
 		if strings.TrimSpace(category) == "" {
 			return nil, ErrCategoryRequired
 		}
-		// Validate category is one of the predefined categories
 		if !models.IsValidCategory(strings.TrimSpace(category)) {
 			return nil, ErrInvalidCategory
 		}
 		fanfic.Category = strings.TrimSpace(category)
 	}
 
-	// Update interactive mode if provided
+	// Capa enviada como URL (já salva via /upload/cover)
+	if coverURL != "" {
+		fanfic.CoverURL = coverURL
+	}
+
 	if interactiveMode != nil {
 		fanfic.InteractiveMode = *interactiveMode
 	}
 
-	// Update adult content flag if provided
 	if isAdultContent != nil {
 		fanfic.IsAdultContent = *isAdultContent
 	}
 
-	// Update trigger warnings if provided (empty string clears warnings)
 	if triggerWarnings != "" {
 		fanfic.TriggerWarnings = strings.TrimSpace(triggerWarnings)
 	}
 
-	// Handle cover image update if provided
-	if len(coverData) > 0 && coverFilename != "" {
-		// Delete old cover if exists
-		if fanfic.CoverURL != "" {
-			_ = s.repo.DeleteCoverImage(fanfic.CoverURL)
-		}
-
-		// Upload new cover
-		coverURL, err := s.repo.SaveCoverImage(coverFilename, coverData)
-		if err != nil {
-			return nil, err
-		}
-		fanfic.CoverURL = coverURL
-	}
-
-	// Update fanfic
 	if err := s.repo.Update(fanfic); err != nil {
 		return nil, err
 	}

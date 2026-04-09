@@ -53,7 +53,7 @@ class APIClient {
 
                 if (response.status === 409) {
                     const error = await response.json().catch(() => ({}));
-                    throw new Error(error.message || 'Conflito: o recurso já existe.');
+                    throw new Error(error.message || 'Usuário já existe. Tente recuperar sua senha ou usar outro email.');
                 }
 
                 if (!response.ok) {

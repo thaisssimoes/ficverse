@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/interactive-fanfic-platform/auth"
+	"github.com/interactive-fanfic-platform/chapter"
 	"github.com/interactive-fanfic-platform/comment"
 	"github.com/interactive-fanfic-platform/fanfic"
 	"gorm.io/gorm"
@@ -14,15 +15,17 @@ import (
 
 // CommentHandler handles comment endpoints
 type CommentHandler struct {
-	service       *comment.CommentService
-	fanficService *fanfic.FanficService
+	service        *comment.CommentService
+	fanficService  *fanfic.FanficService
+	chapterService *chapter.ChapterService
 }
 
 // NewCommentHandler creates a new comment handler
 func NewCommentHandler(db *gorm.DB) *CommentHandler {
 	return &CommentHandler{
-		service:       comment.NewCommentService(db),
-		fanficService: fanfic.NewFanficService(db),
+		service:        comment.NewCommentService(db),
+		fanficService:  fanfic.NewFanficService(db),
+		chapterService: chapter.NewChapterService(db),
 	}
 }
 
@@ -185,13 +188,17 @@ func (h *CommentHandler) CreateChapterComment(c *gin.Context) {
 		return
 	}
 
-	// TODO: Get fanfic ID from chapter
-	// For now, we'll need to query the chapter to get the fanfic ID
-	// This is a simplification - in production you'd want to optimize this
-	fanficID := 0 // Placeholder
+	// Busca o capítulo para obter o fanfic_id correto
+	chapterData, err := h.chapterService.GetChapter(chapterID, 0)
+	if err != nil {
+		c.JSON(http.StatusNotFound, ErrorResponse{
+			Error: ErrorDetail{Code: "NOT_FOUND", Message: "Chapter not found"},
+		})
+		return
+	}
 
 	// Create comment
-	newComment, err := h.service.CreateComment(user.ID, fanficID, &chapterID, req.Content)
+	newComment, err := h.service.CreateComment(user.ID, chapterData.FanficID, &chapterID, req.Content)
 	if err != nil {
 		statusCode := http.StatusBadRequest
 		code := "CREATION_ERROR"
@@ -210,6 +217,45 @@ func (h *CommentHandler) CreateChapterComment(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, newComment)
+}
+
+// Update edits the content of a comment (only the comment author can do this)
+func (h *CommentHandler) Update(c *gin.Context) {
+	user, exists := auth.GetCurrentUser(c)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, ErrorResponse{Error: ErrorDetail{Code: "UNAUTHORIZED", Message: "Authentication required"}})
+		return
+	}
+
+	commentID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: ErrorDetail{Code: "INVALID_ID", Message: "Invalid comment ID"}})
+		return
+	}
+
+	var req struct {
+		Content string `json:"content" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: ErrorDetail{Code: "VALIDATION_ERROR", Message: "Content is required"}})
+		return
+	}
+
+	updated, err := h.service.UpdateComment(commentID, user.ID, req.Content)
+	if err != nil {
+		if errors.Is(err, comment.ErrCommentNotFound) {
+			c.JSON(http.StatusNotFound, ErrorResponse{Error: ErrorDetail{Code: "NOT_FOUND", Message: "Comment not found"}})
+			return
+		}
+		if errors.Is(err, comment.ErrNotOwner) {
+			c.JSON(http.StatusForbidden, ErrorResponse{Error: ErrorDetail{Code: "FORBIDDEN", Message: err.Error()}})
+			return
+		}
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: ErrorDetail{Code: "UPDATE_ERROR", Message: err.Error()}})
+		return
+	}
+
+	c.JSON(http.StatusOK, updated)
 }
 
 // Delete deletes a comment

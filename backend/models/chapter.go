@@ -7,6 +7,7 @@ type Chapter struct {
 	FanficID  int       `gorm:"not null;index" json:"fanfic_id"`
 	Title     string    `gorm:"size:500;not null" json:"title"`
 	Content   string    `gorm:"type:text;not null" json:"content"`
+	CoverURL  string    `gorm:"size:512" json:"cover_url"`
 	Order     int       `gorm:"not null;index" json:"order"`
 	IsDraft   bool      `gorm:"not null" json:"is_draft"`
 	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"`

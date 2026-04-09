@@ -173,7 +173,7 @@ func (s *AuthService) ForgotPassword(email string) error {
 	}
 
 	if s.email != nil && s.email.IsConfigured() {
-		resetURL := fmt.Sprintf("%s/reset-password.html?token=%s", s.frontendURL, rawToken)
+		resetURL := fmt.Sprintf("%s/reset-password?token=%s", s.frontendURL, rawToken)
 		if err := s.email.SendPasswordReset(user.Email, user.Username, resetURL); err != nil {
 			return fmt.Errorf("failed to send email: %w", err)
 		}

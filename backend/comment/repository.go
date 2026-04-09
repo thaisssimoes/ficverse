@@ -59,6 +59,17 @@ func (r *CommentRepository) GetByChapterID(chapterID int) ([]models.Comment, err
 	return comments, err
 }
 
+// Update updates the content of a comment and marks it as edited
+func (r *CommentRepository) Update(id int, content string) (*models.Comment, error) {
+	if err := r.db.Model(&models.Comment{}).Where("id = ?", id).Updates(map[string]interface{}{
+		"content": content,
+		"edited":  true,
+	}).Error; err != nil {
+		return nil, err
+	}
+	return r.GetByID(id)
+}
+
 // Delete deletes a comment
 func (r *CommentRepository) Delete(id int) error {
 	return r.db.Delete(&models.Comment{}, id).Error
