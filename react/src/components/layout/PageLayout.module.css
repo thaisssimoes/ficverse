@@ -1,0 +1,42 @@
+/* ============================================
+   PageLayout — novo modelo com sidebar de navegação
+   ============================================ */
+
+.root {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* Área principal — recua para dar espaço à sidebar */
+.main {
+  flex: 1;
+  margin-left: var(--nav-sidebar-width);
+  max-width: calc(var(--max-width-site) + var(--nav-sidebar-width));
+  min-width: 0; /* evita overflow em flex */
+  padding: var(--space-10) var(--space-8) var(--space-16);
+}
+
+/* Sem max-width (páginas de leitura, hero full-width) */
+.fullWidth {
+  padding: 0;
+}
+
+/* Sem nav — ocupa a tela toda (usado em ReadingEnvironment) */
+.noNav .main {
+  margin-left: 0;
+}
+
+/* ── Mobile: margem lateral vira padding top/bottom ── */
+@media (max-width: 1023px) {
+  .main {
+    margin-left: 0;
+    padding-top: calc(var(--top-bar-height) + var(--space-6));
+    padding-bottom: calc(var(--bottom-nav-height) + var(--space-6));
+    padding-left: var(--space-4);
+    padding-right: var(--space-4);
+  }
+
+  .fullWidth {
+    padding: var(--top-bar-height) 0 var(--bottom-nav-height);
+  }
+}

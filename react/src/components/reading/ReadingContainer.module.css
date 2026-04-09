@@ -1,0 +1,17 @@
+/* ============================================
+   ReadingContainer — invólucro de imersão (Medium)
+   Controla os limites físicos da leitura horizontal
+   ============================================ */
+
+.wrapper {
+  width: 100%;
+  max-width: var(--max-width-reading); /* 680px — golden zone de leitura */
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-6); /* padding lateral seguro em mobile */
+}
+
+@media (min-width: 768px) {
+  .wrapper {
+    padding: var(--space-20) 0; /* margens auto assumem no desktop */
+  }
+}

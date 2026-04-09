@@ -1,0 +1,114 @@
+/* ============================================
+   ReadingContent — tipografia de leitura longa (Lora)
+   Trata o HTML rico injetado pelo editor Quill
+   ============================================ */
+
+.content {
+  font-family: var(--font-serif);
+  /* 18-20px fluido — regra de ouro para leitura longa */
+  font-size: clamp(1.0625rem, 1.2vw + 0.8rem, 1.25rem);
+  /* line-height 1.6 — "respiro" do Medium */
+  line-height: 1.6;
+  color: var(--color-text-primary);
+  /* Sem max-width aqui — o ReadingEnvironment/ReadingContainer já controla */
+  text-align: left; /* padrão F de leitura */
+}
+
+/* Parágrafos */
+.content p {
+  margin-bottom: 1.5em;
+}
+
+/* Títulos dentro do conteúdo */
+.content h1 {
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  font-weight: 400;
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tight);
+  margin-top: 2em;
+  margin-bottom: 0.5em;
+}
+
+.content h2 {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 400;
+  line-height: var(--leading-snug);
+  letter-spacing: -0.015em;
+  margin-top: 1.75em;
+  margin-bottom: 0.5em;
+}
+
+.content h3 {
+  font-family: var(--font-serif);
+  font-size: var(--text-xl);
+  font-weight: 600;
+  margin-top: 1.5em;
+  margin-bottom: 0.4em;
+}
+
+/* Ênfase */
+.content strong {
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.content em {
+  font-style: italic;
+}
+
+/* Links dentro do conteúdo */
+.content a {
+  color: var(--color-accent-brand);
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  transition: text-decoration-color var(--transition-fast);
+}
+
+.content a:hover {
+  text-decoration-color: var(--color-accent-brand);
+}
+
+/* Citação em bloco */
+.content blockquote {
+  border-left: 3px solid var(--color-accent-brand);
+  margin: 1.5em 0;
+  padding: 0.5em 0 0.5em 1.25em;
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+/* Listas */
+.content ul,
+.content ol {
+  padding-left: 1.5em;
+  margin-bottom: 1.25em;
+}
+
+.content li {
+  margin-bottom: 0.4em;
+}
+
+/* Imagens */
+.content img {
+  max-width: 100%;
+  border-radius: var(--radius-md);
+  margin: 1.5em 0;
+}
+
+/* Código inline */
+.content code {
+  font-size: 0.9em;
+  background-color: var(--color-bg-elevated);
+  padding: 0.1em 0.35em;
+  border-radius: var(--radius-sm);
+  font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+}
+
+/* Linha horizontal */
+.content hr {
+  border: none;
+  border-top: 1px solid var(--color-border-subtle);
+  margin: 2.5em 0;
+}

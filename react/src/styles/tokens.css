@@ -1,0 +1,231 @@
+/* ============================================
+   Design Tokens — Lollipopfics
+   Sistema editorial: Light Mode (padrão) + Dark Mode
+   Inspirado em Medium × Substack × Wattpad
+   ============================================ */
+
+/* ---------- LIGHT MODE (padrão editorial) ---------- */
+:root {
+  /* Fundos — Bone White editorial (simula papel de alta gramatura) */
+  --color-bg-base:      #F9F8F3;
+  --color-bg-surface:   #FFFFFF;
+  --color-bg-elevated:  #F2F1EC;
+
+  /* Texto */
+  --color-text-primary:   #2B2823;
+  --color-text-secondary: #776B63;
+  --color-text-muted:     #9A9187;
+
+  /* Bordas neutras — sem tint de cor */
+  --color-border-subtle: #EAEAEA;
+  --color-border:        #D4D0C8;
+
+  /* Accent teal editorial — reservado estritamente para interações */
+  --color-accent-brand:  #005871;
+  --color-accent-hover:  #004660;
+  --color-accent-alt:    #0369a1;
+
+  /* Estados */
+  --color-success: #10b981;
+  --color-error:   #ef4444;
+  --color-warning: #f59e0b;
+  --color-info:    #3b82f6;
+
+  /* Tipografia */
+  --font-serif:     'Lora', 'Georgia', serif;
+  --font-display:   'DM Serif Display', 'Georgia', serif;
+  --font-sans:      'Inter', 'DM Sans', system-ui, sans-serif;
+
+  /* Escala tipográfica (usando clamp para fluidez) */
+  --text-xs:   0.75rem;                                    /* 12px — microcopy, labels */
+  --text-sm:   0.875rem;                                   /* 14px — metadados */
+  --text-base: clamp(1.0625rem, 1.2vw + 0.8rem, 1.25rem); /* 17-20px — corpo de leitura */
+  --text-lg:   1.25rem;                                    /* 20px — lead / intro */
+  --text-xl:   1.5rem;                                     /* 24px — H3 */
+  --text-2xl:  clamp(1.75rem, 2vw + 1rem, 2.25rem);       /* H2 */
+  --text-3xl:  clamp(2rem, 3vw + 1rem, 3rem);             /* H1 artigo */
+  --text-4xl:  clamp(2.5rem, 4vw + 1rem, 4rem);           /* H1 display / hero */
+
+  /* Line heights */
+  --leading-tight:    1.15; /* títulos grandes */
+  --leading-snug:     1.25; /* subtítulos */
+  --leading-reading:  1.7;  /* corpo de texto — ergonomia de leitura longa */
+  --leading-ui:       1.4;  /* elementos de interface */
+
+  /* Letter spacing */
+  --tracking-tight:   -0.025em; /* títulos display */
+  --tracking-normal:  0;
+  --tracking-wide:    0.05em;   /* microcopy uppercase */
+  --tracking-wider:   0.1em;    /* labels em caps */
+
+  /* Espaçamento */
+  --space-1:  0.25rem;  /*  4px */
+  --space-2:  0.5rem;   /*  8px */
+  --space-3:  0.75rem;  /* 12px */
+  --space-4:  1rem;     /* 16px */
+  --space-5:  1.25rem;  /* 20px */
+  --space-6:  1.5rem;   /* 24px */
+  --space-8:  2rem;     /* 32px */
+  --space-10: 2.5rem;   /* 40px */
+  --space-12: 3rem;     /* 48px */
+  --space-16: 4rem;     /* 64px */
+  --space-20: 5rem;     /* 80px */
+  --space-24: 6rem;     /* 96px */
+
+  /* Layout */
+  --max-width-reading:   680px;  /* coluna de leitura (Medium) */
+  --max-width-editorial: 1128px; /* layout bifocal (Substack) */
+  --max-width-site:      1280px; /* container global */
+  --sidebar-width:       300px;  /* sidebar de autor */
+  --navbar-height:       64px;   /* legado: altura da navbar horizontal */
+
+  /* Navigation — novo sistema de sidebar */
+  --nav-sidebar-width:   240px;  /* sidebar de navegação desktop */
+  --top-bar-height:      60px;   /* topbar mobile */
+  --bottom-nav-height:   64px;   /* barra de nav inferior mobile */
+  --reading-max-width:   68ch;   /* largura máxima da coluna de leitura (ergonomia) */
+
+  /* Bordas arredondadas */
+  --radius-sm:   4px;
+  --radius-md:   8px;
+  --radius-lg:   12px;
+  --radius-xl:   16px;
+  --radius-full: 9999px;
+
+  /* Sombras em camadas (realistas, anti-IA) — light mode */
+  --shadow-sm:
+    0 1px 2px rgba(0, 0, 0, 0.02),
+    0 2px 4px rgba(0, 0, 0, 0.03);
+  --shadow-md:
+    0 1px 2px rgba(0, 0, 0, 0.02),
+    0 4px 8px rgba(0, 0, 0, 0.03),
+    0 12px 20px rgba(0, 0, 0, 0.04);
+  --shadow-lg:
+    0 1px 2px rgba(0, 0, 0, 0.02),
+    0 4px 8px rgba(0, 0, 0, 0.03),
+    0 16px 32px rgba(0, 0, 0, 0.05),
+    0 32px 48px rgba(0, 0, 0, 0.04);
+  --shadow-card:
+    0 1px 2px rgba(0, 0, 0, 0.02),
+    0 4px 8px rgba(0, 0, 0, 0.02),
+    0 12px 24px rgba(0, 0, 0, 0.03);
+
+  /* Transições */
+  --transition-fast:   0.15s ease;
+  --transition-base:   0.25s ease;
+  --transition-slow:   0.4s ease;
+  --transition-spring: 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  /* ---- Aliases de compatibilidade (componentes legados) ---- */
+
+  /* Tipografia */
+  --font-family:      var(--font-sans);
+  --font-size-xs:     var(--text-xs);
+  --font-size-sm:     var(--text-sm);
+  --font-size-md:     1rem;
+  --font-size-lg:     var(--text-lg);
+  --font-size-xl:     var(--text-xl);
+  --font-size-2xl:    var(--text-2xl);
+  --font-size-3xl:    var(--text-3xl);
+  --font-size-4xl:    var(--text-4xl);
+  --font-size-5xl:    var(--text-4xl);
+
+  /* Espaçamento */
+  --max-width:     var(--max-width-site);
+  --spacing-xs:    var(--space-1);
+  --spacing-sm:    var(--space-2);
+  --spacing-md:    var(--space-4);
+  --spacing-lg:    var(--space-6);
+  --spacing-xl:    var(--space-8);
+  --spacing-2xl:   var(--space-12);
+  --spacing-3xl:   var(--space-16);
+
+  /* Cores de texto */
+  --text-primary:   var(--color-text-primary);
+  --text-secondary: var(--color-text-secondary);
+  --text-muted:     var(--color-text-muted);
+
+  /* Fundos */
+  --dark-bg:        var(--color-bg-base);
+  --darker-bg:      var(--color-bg-base);
+  --card-bg:        var(--color-bg-surface);
+  --card-bg-hover:  var(--color-bg-elevated);
+  --input-bg:       var(--color-bg-elevated);
+
+  /* Bordas */
+  --border-color:       var(--color-border-subtle);
+  --border-color-hover: var(--color-border);
+
+  /* Accent (aliases legados) */
+  --primary-purple:  var(--color-accent-brand);
+  --primary-blue:    var(--color-accent-alt);
+  --primary-pink:    #be185d;
+
+  /* Gradientes — usados em placeholders de capa */
+  --gradient-purple-blue:  linear-gradient(135deg, #005871 0%, #0369a1 100%);
+  --gradient-pink-purple:  linear-gradient(135deg, #be185d 0%, #005871 100%);
+  --gradient-blue-cyan:    linear-gradient(135deg, #0369a1 0%, #06b6d4 100%);
+  --gradient-hero:         linear-gradient(135deg, #005871 0%, #004660 100%);
+
+  /* Sombras com accent */
+  --shadow-purple:    0 4px 16px rgba(0, 88, 113, 0.18);
+  --shadow-purple-lg: 0 8px 32px rgba(0, 88, 113, 0.24);
+
+  /* Tags — neutras, discretas */
+  --tag-fandom-bg:     rgba(0, 0, 0, 0.05);
+  --tag-fandom-color:  var(--color-text-secondary);
+  --tag-fandom-border: var(--color-border-subtle);
+
+  --tag-warning-bg:     rgba(0, 0, 0, 0.05);
+  --tag-warning-color:  var(--color-text-secondary);
+  --tag-warning-border: var(--color-border-subtle);
+
+  --tag-pairing-bg:     rgba(0, 0, 0, 0.05);
+  --tag-pairing-color:  var(--color-text-secondary);
+  --tag-pairing-border: var(--color-border-subtle);
+}
+
+/* ---------- DARK MODE (conforto editorial noturno) ---------- */
+[data-theme="dark"] {
+  /* Fundos — escuro editorial (sem preto puro) */
+  --color-bg-base:     #121212;
+  --color-bg-surface:  #1E1E1E;
+  --color-bg-elevated: #2A2A2A;
+
+  /* Texto — off-white que evita "halação" retiniana */
+  --color-text-primary:   #E8E4DC;
+  --color-text-secondary: #A89F96;
+  --color-text-muted:     #6E6660;
+
+  /* Bordas neutras no dark */
+  --color-border-subtle: #333333;
+  --color-border:        #444444;
+
+  /* Accent teal ajustado para fundo escuro */
+  --color-accent-brand:  #38BDF8;
+  --color-accent-hover:  #7DD3FC;
+  --color-accent-alt:    #38BDF8;
+
+  /* Dark mode: elevação por cor, não por sombra (anti-halo artificial).
+     Cards usam border sutil + background step, sem box-shadow. */
+  --shadow-sm:   none;
+  --shadow-md:   none;
+  --shadow-lg:   none;
+  --shadow-card: none;
+
+  --shadow-purple:    none;
+  --shadow-purple-lg: none;
+
+  /* Tags no dark */
+  --tag-fandom-bg:     rgba(255, 255, 255, 0.07);
+  --tag-fandom-color:  var(--color-text-secondary);
+  --tag-fandom-border: var(--color-border-subtle);
+
+  --tag-warning-bg:     rgba(255, 255, 255, 0.07);
+  --tag-warning-color:  var(--color-text-secondary);
+  --tag-warning-border: var(--color-border-subtle);
+
+  --tag-pairing-bg:     rgba(255, 255, 255, 0.07);
+  --tag-pairing-color:  var(--color-text-secondary);
+  --tag-pairing-border: var(--color-border-subtle);
+}

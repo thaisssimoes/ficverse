@@ -1,0 +1,57 @@
+/* ============================================
+   TaxonomyPill — tag discreta que não compete
+   visualmente com o conteúdo principal
+   ============================================ */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px var(--space-3);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: 0.6875rem; /* 11px — discreto, não rouba atenção da capa */
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  transition: background-color var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
+  background-color: var(--color-bg-elevated);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border-subtle);
+}
+
+.clickable {
+  cursor: pointer;
+}
+
+.clickable:hover {
+  background-color: var(--color-text-primary);
+  color: var(--color-bg-base);
+  border-color: var(--color-text-primary);
+}
+
+/* Tipos — diferenciação por borda sutil, não cores agressivas */
+.fandom {
+  border-color: var(--color-border);
+}
+
+.warning {
+  border-color: rgba(245, 158, 11, 0.35);
+  color: #92400e;
+  background-color: rgba(245, 158, 11, 0.07);
+}
+
+[data-theme="dark"] .warning {
+  color: #fcd34d;
+  background-color: rgba(245, 158, 11, 0.1);
+}
+
+.pairing {
+  border-color: rgba(236, 72, 153, 0.3);
+  color: #9d174d;
+  background-color: rgba(236, 72, 153, 0.07);
+}
+
+[data-theme="dark"] .pairing {
+  color: #f9a8d4;
+  background-color: rgba(236, 72, 153, 0.1);
+}

@@ -1,0 +1,66 @@
+/* Estilos específicos da página — layout geral gerenciado pelo ReadingContainer */
+
+.error {
+  text-align: center;
+  color: var(--color-text-muted);
+  padding: var(--space-16);
+  font-family: var(--font-sans);
+}
+
+/* Navegação entre capítulos */
+.nav {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin: var(--space-12) 0;
+  padding: var(--space-6) 0;
+  border-top: 1px solid var(--color-border-subtle);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+/* Modal de perguntas interativas */
+.validationMsg {
+  color: var(--color-error);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  margin-bottom: var(--space-4);
+}
+
+.questionsList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.questionItem {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.questionLabel {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.questionInput {
+  background-color: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  outline: none;
+  transition: border-color var(--transition-fast);
+}
+
+.questionInput:focus {
+  border-color: var(--color-accent-brand);
+}
+
+.inputError {
+  border-color: var(--color-error);
+}

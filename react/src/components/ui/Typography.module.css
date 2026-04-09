@@ -1,0 +1,135 @@
+/* ============================================
+   Typography — Design System Lollipopfics
+   Fonte de verdade para todo texto renderizado
+   ============================================ */
+
+/* --- Display (DM Serif Display) --- */
+
+.h1Display {
+  font-family: var(--font-display);
+  font-size: var(--text-4xl);
+  font-weight: 400; /* DM Serif Display já é bold por natureza */
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-text-primary);
+}
+
+.h2Display {
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  font-weight: 400;
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-text-primary);
+}
+
+/* --- Leitura (Lora — serifada para corpos longos) --- */
+
+.h1Reading {
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--color-text-primary);
+}
+
+.h2Reading {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 400;
+  line-height: var(--leading-snug);
+  letter-spacing: -0.015em;
+  color: var(--color-text-primary);
+}
+
+.h3Reading {
+  font-family: var(--font-serif);
+  font-size: var(--text-xl);
+  font-weight: 600;
+  line-height: var(--leading-snug);
+  color: var(--color-text-primary);
+}
+
+.bodyPrimary {
+  font-family: var(--font-serif);
+  font-size: var(--text-base);
+  font-weight: 400;
+  line-height: var(--leading-reading);
+  color: var(--color-text-primary);
+  max-width: 65ch; /* limite ergonômico de 50-75 caracteres por linha */
+}
+
+/* Variante de leitura longa — 18-20px + line-height 1.6 (regra de ouro do Medium) */
+.readingBody {
+  font-family: var(--font-serif);
+  font-size: clamp(1.0625rem, 1.2vw + 0.8rem, 1.25rem); /* 17px → 20px fluido */
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--color-text-primary);
+  max-width: var(--reading-max-width); /* 68ch — sweet spot ergonômico */
+  text-align: left; /* padrão F de leitura */
+}
+
+.bodySecondary {
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  font-weight: 400;
+  line-height: var(--leading-ui);
+  color: var(--color-text-secondary);
+}
+
+.lead {
+  font-family: var(--font-serif);
+  font-size: var(--text-lg);
+  font-weight: 400;
+  line-height: var(--leading-reading);
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+/* --- Interface (Inter / DM Sans) --- */
+
+.labelMicro {
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.labelSmall {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  line-height: var(--leading-ui);
+  color: var(--color-text-secondary);
+}
+
+.caption {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: 400;
+  line-height: var(--leading-ui);
+  color: var(--color-text-muted);
+}
+
+/* --- Modificadores --- */
+
+.noMaxWidth {
+  max-width: none;
+}
+
+.center {
+  text-align: center;
+}
+
+.accent {
+  color: var(--color-accent-brand);
+}
+
+.italic {
+  font-style: italic;
+}

@@ -11,6 +11,7 @@ import (
 var (
 	ErrContentRequired = errors.New("content is required")
 	ErrUnauthorized    = errors.New("unauthorized to delete this comment")
+	ErrNotOwner        = errors.New("only the comment author can edit this comment")
 )
 
 // CommentService handles business logic for comments
@@ -71,6 +72,21 @@ func (s *CommentService) ListFanficComments(fanficID int) ([]models.Comment, err
 // ListChapterComments retrieves all comments for a chapter
 func (s *CommentService) ListChapterComments(chapterID int) ([]models.Comment, error) {
 	return s.repo.GetByChapterID(chapterID)
+}
+
+// UpdateComment edits the content of a comment; only the original author can do this
+func (s *CommentService) UpdateComment(commentID, userID int, content string) (*models.Comment, error) {
+	if strings.TrimSpace(content) == "" {
+		return nil, ErrContentRequired
+	}
+	c, err := s.repo.GetByID(commentID)
+	if err != nil {
+		return nil, err
+	}
+	if c.UserID != userID {
+		return nil, ErrNotOwner
+	}
+	return s.repo.Update(commentID, strings.TrimSpace(content))
 }
 
 // GetComment retrieves a comment by ID
