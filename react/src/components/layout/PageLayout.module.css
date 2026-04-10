@@ -7,18 +7,19 @@
   min-height: 100vh;
 }
 
-/* Área principal — recua para dar espaço à sidebar */
+/* Área principal — largura total da viewport, padding-left empurra o conteúdo para fora da nav */
 .main {
   flex: 1;
-  margin-left: var(--nav-sidebar-width);
-  max-width: calc(var(--max-width-site) + var(--nav-sidebar-width));
-  min-width: 0; /* evita overflow em flex */
-  padding: var(--space-10) var(--space-8) var(--space-16);
+  /* padding-left empurra o conteúdo, mas o centro é calculado sobre a largura total */
+  padding: var(--space-10) var(--space-8) var(--space-16) calc(var(--nav-sidebar-width) + var(--space-8));
+  min-width: 0;
+  /* Transição suave quando o menu recolhe/expande */
+  transition: padding-left 0.22s ease;
 }
 
 /* Sem max-width (páginas de leitura, hero full-width) */
 .fullWidth {
-  padding: 0;
+  padding: 0 0 0 var(--nav-sidebar-width);
 }
 
 /* Sem nav — ocupa a tela toda (usado em ReadingEnvironment) */
@@ -26,14 +27,17 @@
   margin-left: 0;
 }
 
-/* ── Mobile: margem lateral vira padding top/bottom ── */
+/* Modo leitura — conteúdo usa a largura completa; a nav sobrepõe discretamente */
+.readingMain {
+  padding: 0 !important;
+  transition: none;
+}
+
+/* ── Mobile: sem sidebar, padding normal ── */
 @media (max-width: 1023px) {
   .main {
-    margin-left: 0;
-    padding-top: calc(var(--top-bar-height) + var(--space-6));
-    padding-bottom: calc(var(--bottom-nav-height) + var(--space-6));
-    padding-left: var(--space-4);
-    padding-right: var(--space-4);
+    padding: calc(var(--top-bar-height) + var(--space-6)) var(--space-4) calc(var(--bottom-nav-height) + var(--space-6));
+    transition: none;
   }
 
   .fullWidth {

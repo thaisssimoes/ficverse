@@ -28,10 +28,12 @@
   }
 }
 
-/* ── Quando sidebar está presente, compensar o offset ── */
+/* ── Desktop: centraliza deslocando o conteúdo para além da nav compacta (56px) ── */
 @media (min-width: 1024px) {
   .environment {
-    /* A sidebar tem 240px, então compensamos para centralizar na área de conteúdo */
-    padding-left: calc(var(--space-6) + var(--nav-sidebar-width));
+    /* A nav em modo leitura é sempre compacta (56px) e sobrepõe.
+       Adicionamos padding-left para que o texto fique visualmente centrado
+       na área útil (viewport - 56px). */
+    padding-left: calc(var(--space-16) + 56px);
   }
 }

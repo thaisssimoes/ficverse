@@ -2,12 +2,14 @@ import { useState } from 'react';
 import {
   Plus,
   BookOpen,
-  Edit2,
+  Cloud,
+  MoreVertical,
+  Pencil,
   Eye,
-  Trash2,
-  BarChart2,
   Heart,
   MessageSquare,
+  BarChart2,
+  Edit2,
 } from 'lucide-react';
 
 // ─── Mock Data ───────────────────────────────────────────────────────────────
@@ -15,193 +17,264 @@ import {
 const FANFICS = [
   {
     id: 1,
-    title: 'A Sombra do Rei Eterno',
+    title: 'The Midnight Gardener',
     category: 'Fantasia',
     status: 'publicada',
     synopsis:
-      'Em um reino esquecido pelos deuses, um jovem escriba descobre que a lenda do monarca imortal não é apenas um conto — é um aviso. Agora ele carrega o segredo que pode destruir o trono ou salvá-lo.',
-    publishedChapters: 10,
-    totalChapters: 12,
-    words: '87.420',
+      'Em um jardim que floresce apenas à meia-noite, uma jovem descobre que as flores carregam memórias de quem as plantou — incluindo segredos que alguns prefeririam enterrados para sempre.',
+    publishedChapters: 24,
+    totalChapters: 24,
+    words: '94.200',
+    icon: 'book',
   },
   {
     id: 2,
-    title: 'Entre Estrelas e Cinzas',
-    category: 'Sci-Fi / Romance',
+    title: 'Echoes of Rain',
+    category: 'Romance / Drama',
     status: 'publicada',
     synopsis:
-      'Dois exploradores em lados opostos de uma guerra intergaláctica se encontram no único planeta neutro que resta. O tempo que têm é curto. O que constroem pode durar para sempre.',
-    publishedChapters: 8,
-    totalChapters: 8,
-    words: '61.300',
+      'Duas pessoas que se encontram repetidamente em dias de chuva começam a acreditar que o universo tem um plano para elas — ou talvez seja só coincidência.',
+    publishedChapters: 18,
+    totalChapters: 18,
+    words: '72.800',
+    icon: 'cloud',
   },
   {
     id: 3,
-    title: 'O Último Acordo',
-    category: 'Drama',
-    status: 'rascunho',
+    title: 'The Midnight Forest',
+    category: 'Terror / Mistério',
+    status: 'publicada',
     synopsis:
-      'Uma pianista que perdeu a audição e um compositor que nunca terminou uma obra. O que nasce entre silêncios pode ser a música mais honesta que o mundo já ouviu.',
-    publishedChapters: 0,
-    totalChapters: 3,
-    words: '18.200',
+      'Uma floresta que muda de forma toda vez que alguém entra. Ninguém sabe se o caminho de saída existe de verdade.',
+    publishedChapters: 11,
+    totalChapters: 11,
+    words: '58.400',
+    icon: 'cloud',
   },
   {
     id: 4,
-    title: 'Fragmentos de Inverno',
+    title: 'Berning Farms',
     category: 'Slice of Life',
-    status: 'rascunho',
-    synopsis: 'Rascunho em andamento.',
-    publishedChapters: 0,
-    totalChapters: 1,
-    words: '4.100',
+    status: 'publicada',
+    synopsis:
+      'Uma família que herda uma fazenda em ruínas descobre que o solo guarda mais do que apenas sementes.',
+    publishedChapters: 9,
+    totalChapters: 9,
+    words: '41.100',
+    icon: 'book',
   },
   {
     id: 5,
-    title: 'Herança de Sangue',
-    category: 'Fantasia / Ação',
+    title: 'The Midnight Gardener',
+    category: 'Fantasia',
     status: 'publicada',
-    synopsis:
-      'Três irmãos, uma maldição antiga e um trono que nenhum deles quer — mas que todos precisam conquistar para sobreviver.',
-    publishedChapters: 22,
-    totalChapters: 22,
-    words: '194.750',
+    synopsis: 'Continuação da saga.',
+    publishedChapters: 6,
+    totalChapters: 6,
+    words: '28.300',
+    icon: 'cloud',
   },
   {
     id: 6,
-    title: 'Noites em Neverland',
-    category: 'Aventura',
-    status: 'publicada',
-    synopsis:
-      'Peter Pan nunca foi o herói. Ele era o guardião de um lugar que não podia existir sem sacrifício.',
-    publishedChapters: 6,
-    totalChapters: 6,
-    words: '42.900',
+    title: 'The Midnight Gardener',
+    category: 'Fantasia',
+    status: 'rascunho',
+    synopsis: 'Rascunho da terceira parte.',
+    publishedChapters: 0,
+    totalChapters: 3,
+    words: '9.100',
+    icon: 'book',
   },
   {
     id: 7,
-    title: 'Código Vermelho',
-    category: 'Thriller',
+    title: 'Echoes of Rain',
+    category: 'Romance / Drama',
     status: 'rascunho',
-    synopsis: 'Rascunho em andamento.',
+    synopsis: 'Spin-off em desenvolvimento.',
     publishedChapters: 0,
     totalChapters: 2,
-    words: '9.600',
+    words: '5.700',
+    icon: 'cloud',
+  },
+  {
+    id: 8,
+    title: 'The Midnight Forest',
+    category: 'Terror / Mistério',
+    status: 'rascunho',
+    synopsis: 'Segunda temporada — rascunho.',
+    publishedChapters: 0,
+    totalChapters: 1,
+    words: '2.200',
+    icon: 'cloud',
   },
 ];
 
-// Mapa de capítulos por fanfic (id → array)
+// Capítulos por fanfic
 const CHAPTERS_BY_FANFIC = {
   1: [
-    { id: 1, title: 'Prólogo: O Começo do Fim',      date: 'Jan 10, 2024', status: 'publicado' },
-    { id: 2, title: 'Capítulo 1: A Convocação',       date: 'Jan 17, 2024', status: 'publicado' },
-    { id: 3, title: 'Capítulo 2: O Trono Vazio',      date: 'Jan 24, 2024', status: 'publicado' },
-    { id: 4, title: 'Capítulo 3: Sombras no Corredor',date: 'Jan 31, 2024', status: 'publicado' },
-    { id: 5, title: 'Capítulo 4: A Traição',          date: 'Fev 07, 2024', status: 'publicado' },
-    { id: 6, title: 'Capítulo 5: O Exílio',           date: 'Fev 14, 2024', status: 'publicado' },
-    { id: 7, title: 'Capítulo 6: Aliados Improváveis',date: 'Fev 21, 2024', status: 'publicado' },
-    { id: 8, title: 'Capítulo 7: O Mapa Proibido',    date: 'Fev 28, 2024', status: 'publicado' },
-    { id: 9, title: 'Capítulo 8: Batalha no Vale',    date: 'Mar 06, 2024', status: 'publicado' },
-    { id: 10,title: 'Capítulo 9: O Preço da Vitória', date: 'Mar 13, 2024', status: 'publicado' },
-    { id: 11,title: 'Capítulo 10: Revelações',        date: '—',            status: 'rascunho'  },
-    { id: 12,title: 'Epílogo: Uma Nova Era',          date: '—',            status: 'rascunho'  },
+    { id: 1,  title: 'Ch 01: The Awakening',      date: 'Jan 15, 2024', status: 'publicado' },
+    { id: 2,  title: 'Ch 02: Roots and Shadows',   date: 'Jan 12, 2024', status: 'publicado' },
+    { id: 3,  title: 'Ch 03: Midnight Bloom',      date: 'Jan 10, 2024', status: 'publicado' },
+    { id: 4,  title: 'Ch 04: The First Petal',     date: 'Jan 08, 2024', status: 'publicado' },
+    { id: 5,  title: 'Ch 05: Whispers in Soil',    date: 'Jan 05, 2024', status: 'publicado' },
+    { id: 6,  title: 'Ch 06: The Gardener\'s Vow', date: 'Jan 03, 2024', status: 'publicado' },
+    { id: 7,  title: 'Ch 07: Thorns',              date: 'Dez 28, 2023', status: 'publicado' },
+    { id: 8,  title: 'Ch 08: Memory Blossoms',     date: 'Dez 20, 2023', status: 'publicado' },
+    { id: 9,  title: 'Ch 09: Buried Secrets',      date: 'Dez 14, 2023', status: 'publicado' },
+    { id: 10, title: 'Ch 10: The Last Frost',       date: 'Dez 07, 2023', status: 'publicado' },
+    { id: 11, title: 'Ch 11: Spring\'s Return',    date: 'Nov 30, 2023', status: 'publicado' },
+    { id: 12, title: 'Ch 12: New Growth',          date: 'Nov 22, 2023', status: 'publicado' },
+    { id: 13, title: 'Ch 13: The Dark Season',     date: 'Nov 15, 2023', status: 'publicado' },
+    { id: 14, title: 'Ch 14: Seeds of Truth',      date: 'Nov 08, 2023', status: 'publicado' },
+    { id: 15, title: 'Ch 15: Harvest',             date: 'Nov 01, 2023', status: 'publicado' },
+    { id: 16, title: 'Ch 16: The Withering',       date: 'Out 25, 2023', status: 'publicado' },
+    { id: 17, title: 'Ch 17: Echoes Underground',  date: 'Out 18, 2023', status: 'publicado' },
+    { id: 18, title: 'Ch 18: A Flower\'s Memory',  date: 'Out 11, 2023', status: 'publicado' },
+    { id: 19, title: 'Ch 19: The Visitor',         date: 'Out 04, 2023', status: 'publicado' },
+    { id: 20, title: 'Ch 20: Roots Run Deep',      date: 'Set 27, 2023', status: 'publicado' },
+    { id: 21, title: 'Ch 21: Midnight Rain',       date: 'Set 20, 2023', status: 'publicado' },
+    { id: 22, title: 'Ch 22: The Final Garden',    date: 'Set 13, 2023', status: 'publicado' },
+    { id: 23, title: 'Ch 23: What Remains',        date: 'Set 06, 2023', status: 'publicado' },
+    { id: 24, title: 'Ch 24: Epilogue',            date: 'Set 01, 2023', status: 'publicado' },
   ],
-  2: [
-    { id: 1, title: 'Capítulo 1: Órbita Zero',          date: 'Mar 01, 2024', status: 'publicado' },
-    { id: 2, title: 'Capítulo 2: O Planeta Neutro',      date: 'Mar 08, 2024', status: 'publicado' },
-    { id: 3, title: 'Capítulo 3: Primeiros Sinais',      date: 'Mar 15, 2024', status: 'publicado' },
-    { id: 4, title: 'Capítulo 4: Armistício Pessoal',    date: 'Mar 22, 2024', status: 'publicado' },
-    { id: 5, title: 'Capítulo 5: Gravidade',             date: 'Mar 29, 2024', status: 'publicado' },
-    { id: 6, title: 'Capítulo 6: O Aviso',               date: 'Abr 05, 2024', status: 'publicado' },
-    { id: 7, title: 'Capítulo 7: Countdown',             date: 'Abr 12, 2024', status: 'publicado' },
-    { id: 8, title: 'Epílogo: Luz que Demora',           date: 'Abr 19, 2024', status: 'publicado' },
-  ],
-  3: [
-    { id: 1, title: 'Capítulo 1: O Silêncio Primeiro',  date: '—', status: 'rascunho' },
-    { id: 2, title: 'Capítulo 2: Notas em Braille',     date: '—', status: 'rascunho' },
-    { id: 3, title: 'Capítulo 3: O Acordo Final',       date: '—', status: 'rascunho' },
-  ],
-  4: [
-    { id: 1, title: 'Capítulo 1: Dezembro',             date: '—', status: 'rascunho' },
-  ],
-  5: Array.from({ length: 22 }, (_, i) => ({
+  2: Array.from({ length: 18 }, (_, i) => ({
     id: i + 1,
-    title: i === 0 ? 'Prólogo: Sangue Chama Sangue' : `Capítulo ${i}: ${['A Herança','O Ritual','Primogênito','A Maldição','Irmãos','O Trono','Traição','A Fuga','Aliança','Batalha','Segredo','O Pacto','Retorno','A Prova','Sacrifício','Renascimento','O Julgamento','Cinzas','Novo Rei','Últimas Palavras','Epílogo'][i - 1] ?? `Parte ${i}`}`,
-    date: `Jan ${String(i + 1).padStart(2, '0')}, 2024`,
+    title: `Ch ${String(i + 1).padStart(2, '0')}: Title`,
+    date: `Jan ${String(15 - i).padStart(2, '0')}, 2024`,
     status: 'publicado',
   })),
-  6: [
-    { id: 1, title: 'Capítulo 1: A Segunda Estrela à Direita', date: 'Dez 01, 2023', status: 'publicado' },
-    { id: 2, title: 'Capítulo 2: Voo Noturno',                 date: 'Dez 08, 2023', status: 'publicado' },
-    { id: 3, title: 'Capítulo 3: O Preço de Neverland',        date: 'Dez 15, 2023', status: 'publicado' },
-    { id: 4, title: 'Capítulo 4: Sombras que Crescem',         date: 'Dez 22, 2023', status: 'publicado' },
-    { id: 5, title: 'Capítulo 5: A Última Maré',               date: 'Dez 29, 2023', status: 'publicado' },
-    { id: 6, title: 'Epílogo: Guardião',                       date: 'Jan 05, 2024', status: 'publicado' },
-  ],
-  7: [
-    { id: 1, title: 'Capítulo 1: Alerta Silencioso', date: '—', status: 'rascunho' },
-    { id: 2, title: 'Capítulo 2: A Fonte',           date: '—', status: 'rascunho' },
-  ],
+  3: Array.from({ length: 11 }, (_, i) => ({
+    id: i + 1,
+    title: `Ch ${String(i + 1).padStart(2, '0')}: Title`,
+    date: `Fev ${String(i + 1).padStart(2, '0')}, 2024`,
+    status: 'publicado',
+  })),
+  4: Array.from({ length: 9 }, (_, i) => ({
+    id: i + 1,
+    title: `Ch ${String(i + 1).padStart(2, '0')}: Title`,
+    date: `Mar ${String(i + 1).padStart(2, '0')}, 2024`,
+    status: 'publicado',
+  })),
+  5: Array.from({ length: 6 }, (_, i) => ({
+    id: i + 1,
+    title: `Ch ${String(i + 1).padStart(2, '0')}: Title`,
+    date: `Abr ${String(i + 1).padStart(2, '0')}, 2024`,
+    status: 'publicado',
+  })),
+  6: Array.from({ length: 3 }, (_, i) => ({
+    id: i + 1,
+    title: `Ch ${String(i + 1).padStart(2, '0')}: Title`,
+    date: '—',
+    status: 'rascunho',
+  })),
+  7: Array.from({ length: 2 }, (_, i) => ({
+    id: i + 1,
+    title: `Ch ${String(i + 1).padStart(2, '0')}: Title`,
+    date: '—',
+    status: 'rascunho',
+  })),
+  8: [{ id: 1, title: 'Ch 01: Title', date: '—', status: 'rascunho' }],
 };
 
-const TABS = ['Informações', 'Capítulos', 'Estatísticas'];
+const TABS = ['Information', 'Chapters', 'Questions', 'Comments'];
+const PREVIEW_COUNT = 6; // linhas visíveis antes do "View All"
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function StatusBadge({ status, light = false }) {
-  const isPublished = status === 'publicada' || status === 'publicado';
-  if (light) {
-    return (
-      <span
-        className={`text-[10px] font-semibold uppercase tracking-widest px-2 py-0.5 rounded ${
-          isPublished
-            ? 'bg-teal-100 text-teal-700'
-            : 'bg-amber-100 text-amber-700'
-        }`}
-      >
-        {isPublished ? 'Publicada' : 'Rascunho'}
-      </span>
-    );
-  }
+function StoryIcon({ type }) {
+  return type === 'book'
+    ? <BookOpen size={15} className="text-gray-500 shrink-0" />
+    : <Cloud     size={15} className="text-gray-500 shrink-0" />;
+}
+
+// ─── Tab: Chapters ────────────────────────────────────────────────────────────
+
+function TabChapters({ fanfic }) {
+  const [expanded, setExpanded] = useState(false);
+  const all      = CHAPTERS_BY_FANFIC[fanfic.id] ?? [];
+  const published = all.filter((c) => c.status === 'publicado');
+  const visible   = expanded ? all : all.slice(0, PREVIEW_COUNT);
+
   return (
-    <span
-      className={`text-[10px] font-semibold uppercase tracking-widest px-2 py-0.5 rounded ${
-        isPublished
-          ? 'bg-teal-900/60 text-teal-400'
-          : 'bg-amber-900/40 text-amber-400'
-      }`}
-    >
-      {isPublished ? 'Publicada' : 'Rascunho'}
-    </span>
+    <div>
+      {/* Cabeçalho da seção */}
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-sm font-semibold text-gray-100">
+          {published.length} Published{' '}
+          {published.length === 1 ? 'Chapter' : 'Chapters'}
+        </p>
+        <button className="flex items-center gap-1.5 bg-teal-600 hover:bg-teal-500 transition-colors text-white text-xs font-semibold px-3.5 py-2 rounded-md">
+          <Plus size={13} />
+          Add New Chapter
+        </button>
+      </div>
+
+      {/* Coluna headers */}
+      <div className="grid grid-cols-[1fr_140px_110px_64px] gap-x-4 px-0 pb-2 border-b border-gray-800">
+        <p className="text-xs text-gray-500">
+          {all[0]?.title ?? ''}
+        </p>
+        <p className="text-xs text-gray-500">Published Date</p>
+        <p className="text-xs text-gray-500">Status</p>
+        <p />
+      </div>
+
+      {/* Linhas */}
+      <ul>
+        {visible.map((ch) => (
+          <li
+            key={ch.id}
+            className="grid grid-cols-[1fr_140px_110px_64px] gap-x-4 items-center py-3 border-b border-gray-800 hover:bg-white/[0.02] transition-colors group"
+          >
+            <p className="text-sm text-gray-200 truncate">{ch.title}</p>
+            <p className="text-sm text-gray-400 font-mono">{ch.date}</p>
+            <p className="text-sm text-gray-300">
+              {ch.status === 'publicado' ? 'Published' : 'Draft'}
+            </p>
+            <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button
+                title="Mais opções"
+                className="p-1 text-gray-500 hover:text-gray-300 rounded transition-colors"
+              >
+                <MoreVertical size={14} />
+              </button>
+              <button
+                title="Editar"
+                className="p-1 text-gray-500 hover:text-gray-300 rounded transition-colors"
+              >
+                <Pencil size={13} />
+              </button>
+            </div>
+          </li>
+        ))}
+      </ul>
+
+      {/* Ver todos */}
+      {all.length > PREVIEW_COUNT && (
+        <button
+          onClick={() => setExpanded((p) => !p)}
+          className="mt-4 text-sm text-teal-500 hover:text-teal-400 transition-colors font-medium"
+        >
+          {expanded
+            ? 'Show Less'
+            : `View All Chapters (${all.length})`}
+        </button>
+      )}
+    </div>
   );
 }
 
-function ChapterStatusBadge({ status }) {
-  return (
-    <span
-      className={`text-[10px] font-semibold uppercase tracking-widest px-2 py-0.5 rounded ${
-        status === 'publicado'
-          ? 'bg-teal-900/60 text-teal-400'
-          : 'bg-amber-900/40 text-amber-400'
-      }`}
-    >
-      {status === 'publicado' ? 'Publicado' : 'Rascunho'}
-    </span>
-  );
-}
+// ─── Tab: Information ────────────────────────────────────────────────────────
 
-// ─── Tabs ────────────────────────────────────────────────────────────────────
-
-function TabInformacoes({ fanfic }) {
+function TabInformation({ fanfic }) {
   return (
     <div className="space-y-8">
-      {/* Meta grid */}
       <div className="grid grid-cols-2 gap-px bg-gray-800 border border-gray-800 rounded-md overflow-hidden">
         {[
-          { label: 'Categoria',          value: fanfic.category },
-          { label: 'Status',             value: fanfic.status === 'publicada' ? 'Publicada' : 'Rascunho' },
-          { label: 'Capítulos Totais',   value: fanfic.totalChapters },
-          { label: 'Palavras (estimado)',value: fanfic.words },
+          { label: 'Category',         value: fanfic.category },
+          { label: 'Status',           value: fanfic.status === 'publicada' ? 'Published' : 'Draft' },
+          { label: 'Total Chapters',   value: fanfic.totalChapters },
+          { label: 'Word Count (est.)', value: fanfic.words },
         ].map(({ label, value }) => (
           <div key={label} className="bg-[#1E1E1E] px-5 py-4">
             <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-500 mb-1">
@@ -212,15 +285,14 @@ function TabInformacoes({ fanfic }) {
         ))}
       </div>
 
-      {/* Sinopse */}
       <div>
         <div className="flex items-center justify-between mb-3">
           <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-500">
-            Sinopse
+            Synopsis
           </p>
           <button className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-teal-400 transition-colors">
             <Edit2 size={11} />
-            Editar
+            Edit
           </button>
         </div>
         <p className="text-gray-400 text-sm leading-relaxed border-l-2 border-gray-700 pl-4">
@@ -231,121 +303,45 @@ function TabInformacoes({ fanfic }) {
   );
 }
 
-function TabCapitulos({ fanfic }) {
-  const chapters = CHAPTERS_BY_FANFIC[fanfic.id] ?? [];
-  const publishedCount = chapters.filter((c) => c.status === 'publicado').length;
+// ─── Tab: Questions / Comments ────────────────────────────────────────────────
 
+function TabEmpty({ icon: Icon, label }) {
   return (
-    <div>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <p className="text-sm font-medium text-gray-400">
-          <span className="text-gray-100 font-semibold">{publishedCount}</span>{' '}
-          {publishedCount === 1 ? 'capítulo publicado' : 'capítulos publicados'}
-          {chapters.length > publishedCount && (
-            <span className="text-gray-600 ml-1">
-              · {chapters.length - publishedCount} em rascunho
-            </span>
-          )}
-        </p>
-        <button className="flex items-center gap-2 bg-teal-700 hover:bg-teal-600 transition-colors text-white text-xs font-semibold px-3.5 py-2 rounded-md">
-          <Plus size={13} />
-          Adicionar Novo Capítulo
-        </button>
-      </div>
-
-      {/* Header da tabela */}
-      <div className="grid grid-cols-[1fr_140px_110px_80px] gap-x-4 px-4 pb-2 border-b border-gray-800">
-        {['Título', 'Publicação', 'Status', ''].map((h) => (
-          <p
-            key={h}
-            className="text-[10px] font-semibold uppercase tracking-widest text-gray-600"
-          >
-            {h}
-          </p>
-        ))}
-      </div>
-
-      {/* Linhas */}
-      <ul>
-        {chapters.map((ch) => (
-          <li
-            key={ch.id}
-            className="grid grid-cols-[1fr_140px_110px_80px] gap-x-4 items-center px-4 py-3.5 border-b border-gray-800 hover:bg-white/[0.02] transition-colors group"
-          >
-            {/* Título */}
-            <p className="text-sm text-gray-200 font-medium truncate">{ch.title}</p>
-
-            {/* Data */}
-            <p className="text-xs text-gray-500 font-mono">{ch.date}</p>
-
-            {/* Status */}
-            <div>
-              <ChapterStatusBadge status={ch.status} />
-            </div>
-
-            {/* Ações */}
-            <div className="flex items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button
-                title="Editar"
-                className="p-1.5 text-gray-500 hover:text-teal-400 hover:bg-teal-400/10 rounded transition-colors"
-              >
-                <Edit2 size={13} />
-              </button>
-              <button
-                title="Visualizar"
-                className="p-1.5 text-gray-500 hover:text-gray-200 hover:bg-white/5 rounded transition-colors"
-              >
-                <Eye size={13} />
-              </button>
-              <button
-                title="Excluir"
-                className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-400/10 rounded transition-colors"
-              >
-                <Trash2 size={13} />
-              </button>
-            </div>
-          </li>
-        ))}
-      </ul>
+    <div className="flex flex-col items-center justify-center gap-3 py-24 text-gray-700">
+      <Icon size={36} strokeWidth={1.25} />
+      <p className="text-xs uppercase tracking-widest">{label}</p>
     </div>
   );
 }
 
-function TabEstatisticas({ fanfic }) {
-  const stats = [
-    { label: 'Visualizações', value: '14.320', icon: Eye,           delta: '+8%' },
-    { label: 'Favoritos',     value: '832',    icon: Heart,          delta: '+12%' },
-    { label: 'Comentários',   value: '247',    icon: MessageSquare,  delta: '+3%' },
-    { label: 'Capítulos',     value: fanfic.totalChapters, icon: BookOpen, delta: null },
-  ];
+// ─── Tab: Statistics ─────────────────────────────────────────────────────────
 
+function TabStats({ fanfic }) {
+  const stats = [
+    { label: 'Views',    value: '14,320', icon: Eye,          delta: '+8%' },
+    { label: 'Likes',    value: '832',    icon: Heart,         delta: '+12%' },
+    { label: 'Comments', value: '247',    icon: MessageSquare, delta: '+3%' },
+    { label: 'Chapters', value: String(fanfic.totalChapters), icon: BookOpen, delta: null },
+  ];
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-4">
         {stats.map(({ label, value, icon: Icon, delta }) => (
-          <div
-            key={label}
-            className="bg-[#252525] border border-gray-800 rounded-md p-5 flex items-start gap-4"
-          >
+          <div key={label} className="bg-[#252525] border border-gray-800 rounded-md p-5 flex items-start gap-4">
             <div className="p-2 bg-teal-700/20 rounded-md shrink-0">
               <Icon size={16} className="text-teal-400" />
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-100 leading-none">{value}</p>
               <p className="text-[11px] uppercase tracking-widest text-gray-500 mt-1.5">{label}</p>
-              {delta && (
-                <p className="text-[11px] text-teal-500 font-medium mt-1">{delta} este mês</p>
-              )}
+              {delta && <p className="text-[11px] text-teal-500 font-medium mt-1">{delta} this month</p>}
             </div>
           </div>
         ))}
       </div>
-
-      {/* Placeholder do gráfico */}
       <div className="bg-[#252525] border border-gray-800 rounded-md p-6 h-52 flex flex-col items-center justify-center gap-3 text-gray-700">
         <BarChart2 size={32} strokeWidth={1.25} />
-        <p className="text-xs uppercase tracking-widest">Gráfico de visualizações em breve</p>
+        <p className="text-xs uppercase tracking-widest">Analytics chart coming soon</p>
       </div>
     </div>
   );
@@ -355,84 +351,139 @@ function TabEstatisticas({ fanfic }) {
 
 export default function MinhasFanfics() {
   const [selectedStory, setSelectedStory] = useState(1);
-  const [activeTab, setActiveTab] = useState('Capítulos');
+  const [activeTab, setActiveTab]         = useState('Chapters');
 
-  const selected = FANFICS.find((f) => f.id === selectedStory) ?? null;
+  const selected  = FANFICS.find((f) => f.id === selectedStory) ?? null;
   const published = FANFICS.filter((f) => f.status === 'publicada');
   const drafts    = FANFICS.filter((f) => f.status === 'rascunho');
 
   return (
     <div className="flex w-full h-full bg-[#121212] text-gray-100 overflow-hidden">
 
-      {/* ── Coluna 1 · Lista de Histórias ─────────────────────────────── */}
+      {/* ── Coluna 1 · Sidebar de histórias ───────────────────────────── */}
       <aside className="w-[320px] shrink-0 border-r border-gray-800 flex flex-col overflow-y-auto">
 
-        {/* Botão principal */}
-        <div className="p-4 border-b border-gray-800">
-          <button className="w-full flex items-center justify-center gap-2 bg-teal-700 hover:bg-teal-600 transition-colors text-white text-sm font-semibold py-2.5 rounded-md">
-            <Plus size={15} />
-            Nova Fanfic
-          </button>
+        {/* Título fixo do painel */}
+        <div className="px-5 pt-6 pb-4">
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-500">
+            Your Stories
+          </p>
         </div>
 
-        {/* TODAS */}
-        <SectionLabel label={`Todas (${FANFICS.length})`} />
-        <StoryList
-          items={FANFICS}
-          selectedStory={selectedStory}
-          onSelect={(id) => setSelectedStory(id)}
-        />
+        {/* PUBLIC STORIES */}
+        <div className="px-5 pb-2">
+          <p className="text-sm font-semibold text-gray-200">
+            Public Stories{' '}
+            <span className="text-gray-500 font-normal">({published.length})</span>
+          </p>
+        </div>
+        <ul className="px-3 pb-3">
+          {published.map((fanfic) => {
+            const isActive = fanfic.id === selectedStory;
+            return (
+              <li key={fanfic.id}>
+                <button
+                  onClick={() => setSelectedStory(fanfic.id)}
+                  className={`w-full text-left px-3 py-2.5 rounded-md flex items-center gap-2.5 transition-colors ${
+                    isActive
+                      ? 'bg-[#F5F0E8] text-gray-900'
+                      : 'hover:bg-gray-800/50 text-gray-300'
+                  }`}
+                >
+                  {/* Dot de seleção */}
+                  <span
+                    className={`shrink-0 w-2 h-2 rounded-full transition-colors ${
+                      isActive ? 'bg-teal-600' : 'bg-transparent'
+                    }`}
+                  />
 
-        {/* RASCUNHOS */}
-        <SectionLabel label={`Rascunhos (${drafts.length})`} topBorder />
-        <StoryList
-          items={drafts}
-          selectedStory={selectedStory}
-          onSelect={(id) => setSelectedStory(id)}
-          compact
-        />
+                  {/* Textos */}
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm font-medium leading-snug truncate ${isActive ? 'text-gray-900' : 'text-gray-200'}`}>
+                      {fanfic.title}
+                    </p>
+                    <p className={`text-xs mt-0.5 ${isActive ? 'text-gray-500' : 'text-gray-600'}`}>
+                      Publicado
+                    </p>
+                  </div>
 
-        {/* PUBLICADAS */}
-        <SectionLabel label={`Publicadas (${published.length})`} topBorder />
-        <StoryList
-          items={published}
-          selectedStory={selectedStory}
-          onSelect={(id) => setSelectedStory(id)}
-          compact
-        />
+                  {/* Ícone à direita */}
+                  <span className={isActive ? 'text-gray-500' : 'text-gray-700'}>
+                    <StoryIcon type={fanfic.icon} />
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
 
-        {/* Espaçador final */}
-        <div className="pb-6" />
+        {/* DRAFTS */}
+        <div className="px-5 pt-3 pb-2 border-t border-gray-800/70">
+          <p className="text-sm font-semibold text-gray-200">
+            Drafts{' '}
+            <span className="text-gray-500 font-normal">({drafts.length})</span>
+          </p>
+        </div>
+        <ul className="px-3 pb-6">
+          {drafts.map((fanfic) => {
+            const isActive = fanfic.id === selectedStory;
+            return (
+              <li key={fanfic.id}>
+                <button
+                  onClick={() => setSelectedStory(fanfic.id)}
+                  className={`w-full text-left px-3 py-2.5 rounded-md flex items-center gap-2.5 transition-colors ${
+                    isActive
+                      ? 'bg-[#F5F0E8] text-gray-900'
+                      : 'hover:bg-gray-800/50 text-gray-300'
+                  }`}
+                >
+                  <span
+                    className={`shrink-0 w-2 h-2 rounded-full transition-colors ${
+                      isActive ? 'bg-teal-600' : 'bg-transparent'
+                    }`}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm font-medium leading-snug truncate ${isActive ? 'text-gray-900' : 'text-gray-200'}`}>
+                      {fanfic.title}
+                    </p>
+                    <p className={`text-xs mt-0.5 ${isActive ? 'text-gray-500' : 'text-gray-600'}`}>
+                      Rascunho
+                    </p>
+                  </div>
+                  <span className={isActive ? 'text-gray-500' : 'text-gray-700'}>
+                    <StoryIcon type={fanfic.icon} />
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
       </aside>
 
-      {/* ── Coluna 2 · Detalhe da Fanfic ──────────────────────────────── */}
+      {/* ── Coluna 2 · Detalhe ────────────────────────────────────────── */}
       <main className="flex-1 bg-[#1E1E1E] overflow-y-auto">
         {!selected ? (
           <div className="h-full flex flex-col items-center justify-center gap-3 text-gray-700">
             <BookOpen size={44} strokeWidth={1} />
-            <p className="text-sm uppercase tracking-widest">Selecione uma fanfic</p>
+            <p className="text-sm uppercase tracking-widest">Select a story</p>
           </div>
         ) : (
           <div className="p-8 max-w-4xl">
 
-            {/* Cabeçalho */}
-            <div className="mb-1">
-              <StatusBadge status={selected.status} />
-            </div>
-            <h1 className="font-serif text-[2.25rem] font-bold text-gray-50 leading-tight mt-3">
+            {/* Título grande (serif) */}
+            <h1 className="font-serif text-[2.5rem] font-bold text-gray-50 leading-tight">
               {selected.title}
             </h1>
-            <p className="text-gray-500 text-sm mt-1.5">{selected.category}</p>
 
             {/* Tabs */}
-            <div className="flex mt-8 border-b border-gray-800">
+            <div className="flex mt-6 border-b border-gray-800">
               {TABS.map((tab) => {
                 const isActive = tab === activeTab;
                 return (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
-                    className={`relative px-5 py-2.5 text-sm font-medium transition-colors ${
+                    className={`relative px-4 py-2.5 text-sm font-medium transition-colors ${
                       isActive
                         ? 'text-gray-100'
                         : 'text-gray-500 hover:text-gray-300'
@@ -448,92 +499,16 @@ export default function MinhasFanfics() {
             </div>
 
             {/* Conteúdo da tab */}
-            <div className="mt-7">
-              {activeTab === 'Informações'  && <TabInformacoes  fanfic={selected} />}
-              {activeTab === 'Capítulos'    && <TabCapitulos    fanfic={selected} />}
-              {activeTab === 'Estatísticas' && <TabEstatisticas fanfic={selected} />}
+            <div className="mt-6">
+              {activeTab === 'Information' && <TabInformation fanfic={selected} />}
+              {activeTab === 'Chapters'    && <TabChapters    fanfic={selected} />}
+              {activeTab === 'Questions'   && <TabEmpty icon={MessageSquare} label="No questions yet" />}
+              {activeTab === 'Comments'    && <TabEmpty icon={MessageSquare} label="No comments yet" />}
             </div>
 
           </div>
         )}
       </main>
     </div>
-  );
-}
-
-// ─── Componentes auxiliares da sidebar ───────────────────────────────────────
-
-function SectionLabel({ label, topBorder = false }) {
-  return (
-    <div
-      className={`px-4 pt-5 pb-2 ${
-        topBorder ? 'border-t border-gray-800/70 mt-1' : ''
-      }`}
-    >
-      <p className="text-[10px] font-bold uppercase tracking-widest text-gray-600">
-        {label}
-      </p>
-    </div>
-  );
-}
-
-function StoryList({ items, selectedStory, onSelect, compact = false }) {
-  return (
-    <ul className="px-2">
-      {items.map((fanfic) => {
-        const isActive = fanfic.id === selectedStory;
-
-        if (compact) {
-          return (
-            <li key={fanfic.id}>
-              <button
-                onClick={() => onSelect(fanfic.id)}
-                className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors truncate ${
-                  isActive
-                    ? 'text-gray-900 bg-gray-100 font-semibold'
-                    : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/50'
-                }`}
-              >
-                {fanfic.title}
-              </button>
-            </li>
-          );
-        }
-
-        return (
-          <li key={fanfic.id}>
-            <button
-              onClick={() => onSelect(fanfic.id)}
-              className={`w-full text-left px-3 py-3 rounded-md flex items-start gap-2.5 transition-colors ${
-                isActive
-                  ? 'bg-gray-100 text-gray-900'
-                  : 'hover:bg-gray-800/50 text-gray-300'
-              }`}
-            >
-              {/* Dot indicador de seleção */}
-              <span
-                className={`mt-[7px] shrink-0 w-1.5 h-1.5 rounded-full transition-colors ${
-                  isActive ? 'bg-teal-600' : 'bg-transparent'
-                }`}
-              />
-
-              <div className="flex-1 min-w-0">
-                <p
-                  className={`text-sm font-semibold leading-snug truncate ${
-                    isActive ? 'text-gray-900' : 'text-gray-200'
-                  }`}
-                >
-                  {fanfic.title}
-                </p>
-                <p className="text-xs mt-0.5 text-gray-500 truncate">{fanfic.category}</p>
-                <div className="mt-2">
-                  <StatusBadge status={fanfic.status} light={isActive} />
-                </div>
-              </div>
-            </button>
-          </li>
-        );
-      })}
-    </ul>
   );
 }
