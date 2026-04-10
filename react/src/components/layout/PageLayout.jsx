@@ -14,11 +14,17 @@ export default function PageLayout({
   noNav = false,
   noFooter = false,
   fullWidth = false,
+  readingMode = false,
 }) {
   return (
     <div className={`${styles.root} ${noNav ? styles.noNav : ''}`}>
-      {!noNav && <Navbar />}
-      <main className={`${styles.main} ${fullWidth ? styles.fullWidth : ''} page-transition`}>
+      {!noNav && <Navbar readingMode={readingMode} />}
+      <main className={[
+        styles.main,
+        fullWidth    ? styles.fullWidth    : '',
+        readingMode  ? styles.readingMain  : '',
+        'page-transition',
+      ].join(' ')}>
         {children}
       </main>
     </div>

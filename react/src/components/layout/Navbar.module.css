@@ -18,7 +18,29 @@
   z-index: 900;
   overflow-y: auto;
   overflow-x: hidden;
-  transition: background-color var(--transition-base);
+  transition:
+    width 0.22s ease,
+    padding 0.22s ease,
+    opacity 0.3s ease,
+    background-color var(--transition-base);
+}
+
+/* ── Modo compacto (apenas ícones) ── */
+.sidebarCompact {
+  padding: var(--space-6) var(--space-2);
+  align-items: center;
+}
+
+/* ── Modo leitura: discreto, revela no hover ── */
+.sidebarReading {
+  opacity: 0.18;
+  background-color: transparent !important;
+  border-right-color: transparent !important;
+}
+.sidebarReading:hover {
+  opacity: 1;
+  background-color: var(--color-bg-surface) !important;
+  border-right-color: var(--color-border-subtle) !important;
 }
 
 .logo {
@@ -33,10 +55,19 @@
   display: block;
   transition: color var(--transition-fast);
   flex-shrink: 0;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .logo:hover {
   color: var(--color-accent-brand);
+}
+
+/* Logo compacto: ícone centrado */
+.sidebarCompact .logo {
+  padding: var(--space-2);
+  text-align: center;
+  font-size: 1.25rem;
 }
 
 /* Search na sidebar */
@@ -107,6 +138,14 @@
   color: var(--color-accent-brand);
 }
 
+/* Item de nav compacto — ícone centralizado */
+.navItemCompact {
+  justify-content: center;
+  padding: var(--space-3) var(--space-2) !important;
+  min-width: 40px;
+  width: 100%;
+}
+
 [data-theme="dark"] .navActive {
   background-color: rgba(167, 139, 250, 0.12);
 }
@@ -116,6 +155,43 @@
   background-color: var(--color-border-subtle);
   margin: var(--space-4) var(--space-3);
   flex-shrink: 0;
+}
+
+/* Linha compacta do usuário */
+.userRowCompact {
+  justify-content: center;
+  padding: var(--space-3) var(--space-2) !important;
+}
+
+/* Botão de recolher/expandir menu */
+.collapseBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  background: none;
+  border: none;
+  border-top: 1px solid var(--color-border-subtle);
+  margin-top: var(--space-2);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  transition: color var(--transition-fast), background-color var(--transition-fast);
+  min-height: 36px;
+  flex-shrink: 0;
+}
+
+.collapseBtn:hover {
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-elevated);
+}
+
+.collapseBtnLabel {
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  color: inherit;
 }
 
 /* Footer da sidebar */

@@ -68,8 +68,26 @@ const IconLogout = () => (
     <line x1="21" y1="12" x2="9" y2="12" />
   </svg>
 );
+/* Ícone de painel com seta — indica recolher/expandir sidebar */
+const IconPanelClose = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" width="16" height="16" aria-hidden>
+    {/* painel esquerdo */}
+    <rect x="3" y="3" width="18" height="18" rx="2" />
+    <line x1="9" y1="3" x2="9" y2="21" />
+    {/* seta apontando para a esquerda (recolher) */}
+    <polyline points="13 8 17 12 13 16" />
+  </svg>
+);
+const IconPanelOpen = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" width="16" height="16" aria-hidden>
+    <rect x="3" y="3" width="18" height="18" rx="2" />
+    <line x1="9" y1="3" x2="9" y2="21" />
+    {/* seta apontando para a direita (expandir) */}
+    <polyline points="11 8 7 12 11 16" />
+  </svg>
+);
 
-export default function Navbar() {
+export default function Navbar({ readingMode = false }) {
   const { isAuthenticated, user, logout } = useAuth();
   const queryClient = useQueryClient();
   const {
@@ -82,7 +100,38 @@ export default function Navbar() {
   const [isDark, setIsDark] = useState(
     () => document.documentElement.getAttribute('data-theme') === 'dark'
   );
+  const [collapsed, setCollapsed] = useState(
+    () => localStorage.getItem('navCollapsed') === 'true'
+  );
   const navigate = useNavigate();
+
+  // Em modo leitura, o usuário pode clicar para expandir temporariamente
+  // readingExpanded sobrescreve o comportamento compacto forçado pelo readingMode
+  const [readingExpanded, setReadingExpanded] = useState(false);
+
+  // isCompact: ícones apenas, sem labels
+  const isCompact = readingMode
+    ? !readingExpanded   // no modo leitura: compacto exceto quando expandido manualmente
+    : collapsed;         // fora da leitura: segue o estado persistido
+
+  // Sincroniza a CSS variable --nav-sidebar-width com o estado atual
+  useEffect(() => {
+    document.documentElement.style.setProperty(
+      '--nav-sidebar-width',
+      isCompact ? '56px' : '240px'
+    );
+  }, [isCompact]);
+
+  const toggleCollapsed = () => {
+    if (readingMode) {
+      // Em leitura: alterna a expansão temporária (não persiste)
+      setReadingExpanded((v) => !v);
+    } else {
+      const next = !collapsed;
+      setCollapsed(next);
+      localStorage.setItem('navCollapsed', String(next));
+    }
+  };
 
   const notifRef = useRef(null);
   const mobileSearchRef = useRef(null);
@@ -155,44 +204,58 @@ export default function Navbar() {
       {/* ═══════════════════════════════════════════════════
           DESKTOP: Sidebar fixa à esquerda
           ═══════════════════════════════════════════════════ */}
-      <aside className={styles.sidebar}>
+      <aside className={[
+        styles.sidebar,
+        isCompact   ? styles.sidebarCompact  : '',
+        readingMode ? styles.sidebarReading  : '',
+      ].join(' ')}>
+
         {/* Logo */}
-        <Link to={isAuthenticated ? '/home' : '/'} className={styles.logo}>
-          FicVerse
+        <Link
+          to={isAuthenticated ? '/home' : '/'}
+          className={styles.logo}
+          title="FicVerse"
+        >
+          {isCompact ? 'FV' : 'FicVerse'}
         </Link>
 
-        {/* Search */}
-        <form className={styles.sideSearch} onSubmit={handleSearch}>
-          <IconExplore />
-          <input
-            type="text"
-            className={styles.sideSearchInput}
-            placeholder="Buscar histórias..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            aria-label="Buscar fanfics"
-          />
-        </form>
+        {/* Search — oculto quando compacto */}
+        {!isCompact && (
+          <form className={styles.sideSearch} onSubmit={handleSearch}>
+            <IconExplore />
+            <input
+              type="text"
+              className={styles.sideSearchInput}
+              placeholder="Buscar histórias..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              aria-label="Buscar fanfics"
+            />
+          </form>
+        )}
 
         {/* Navegação principal */}
         <nav className={styles.sideNav}>
           <NavLink
             to={isAuthenticated ? '/home' : '/'}
-            className={({ isActive }) => `${styles.navItem} ${isActive ? styles.navActive : ''}`}
+            className={({ isActive }) => `${styles.navItem} ${isCompact ? styles.navItemCompact : ''} ${isActive ? styles.navActive : ''}`}
+            title="Início"
           >
-            <IconHome /><span>Início</span>
+            <IconHome />{!isCompact && <span>Início</span>}
           </NavLink>
           <NavLink
             to="/explore"
-            className={({ isActive }) => `${styles.navItem} ${isActive ? styles.navActive : ''}`}
+            className={({ isActive }) => `${styles.navItem} ${isCompact ? styles.navItemCompact : ''} ${isActive ? styles.navActive : ''}`}
+            title="Explorar"
           >
-            <IconExplore /><span>Explorar</span>
+            <IconExplore />{!isCompact && <span>Explorar</span>}
           </NavLink>
           <NavLink
             to="/tags"
-            className={({ isActive }) => `${styles.navItem} ${isActive ? styles.navActive : ''}`}
+            className={({ isActive }) => `${styles.navItem} ${isCompact ? styles.navItemCompact : ''} ${isActive ? styles.navActive : ''}`}
+            title="Buscar Tags"
           >
-            <IconTag /><span>Buscar Tags</span>
+            <IconTag />{!isCompact && <span>Buscar Tags</span>}
           </NavLink>
         </nav>
 
@@ -202,21 +265,24 @@ export default function Navbar() {
             <nav className={styles.sideNav}>
               <NavLink
                 to="/dashboard"
-                className={({ isActive }) => `${styles.navItem} ${isActive ? styles.navActive : ''}`}
+                className={({ isActive }) => `${styles.navItem} ${isCompact ? styles.navItemCompact : ''} ${isActive ? styles.navActive : ''}`}
+                title="Minhas Histórias"
               >
-                <IconBook /><span>Minhas Fanfics</span>
+                <IconBook />{!isCompact && <span>Minhas Histórias</span>}
               </NavLink>
               <NavLink
                 to="/favorites"
-                className={({ isActive }) => `${styles.navItem} ${isActive ? styles.navActive : ''}`}
+                className={({ isActive }) => `${styles.navItem} ${isCompact ? styles.navItemCompact : ''} ${isActive ? styles.navActive : ''}`}
+                title="Favoritos"
               >
-                <IconHeart /><span>Favoritos</span>
+                <IconHeart />{!isCompact && <span>Favoritos</span>}
               </NavLink>
               <NavLink
                 to="/profiles"
-                className={({ isActive }) => `${styles.navItem} ${isActive ? styles.navActive : ''}`}
+                className={({ isActive }) => `${styles.navItem} ${isCompact ? styles.navItemCompact : ''} ${isActive ? styles.navActive : ''}`}
+                title="Perfis de Leitura"
               >
-                <IconUser /><span>Perfis de Leitura</span>
+                <IconUser />{!isCompact && <span>Perfis de Leitura</span>}
               </NavLink>
             </nav>
           </>
@@ -229,12 +295,13 @@ export default function Navbar() {
               {/* Notificações */}
               <div className={styles.notifWrapper} ref={notifRef}>
                 <button
-                  className={styles.sideFooterBtn}
+                  className={`${styles.sideFooterBtn} ${isCompact ? styles.navItemCompact : ''}`}
                   onClick={() => setNotifOpen(!notifOpen)}
                   aria-label="Notificações"
+                  title="Notificações"
                 >
                   <IconBell />
-                  <span>Notificações</span>
+                  {!isCompact && <span>Notificações</span>}
                   {unreadCount > 0 && (
                     <span className={styles.badge}>{unreadCount > 9 ? '9+' : unreadCount}</span>
                   )}
@@ -245,35 +312,64 @@ export default function Navbar() {
               {/* Perfil do usuário */}
               <NavLink
                 to="/profile"
-                className={({ isActive }) => `${styles.userRow} ${isActive ? styles.navActive : ''}`}
+                className={({ isActive }) => `${styles.userRow} ${isCompact ? styles.userRowCompact : ''} ${isActive ? styles.navActive : ''}`}
+                title={user?.username}
               >
                 <div className={styles.avatar}>{initials}</div>
-                <div className={styles.userInfo}>
-                  <span className={styles.userDisplayName}>{user?.username}</span>
-                  <span className={styles.userHandle}>@{user?.username}</span>
-                </div>
+                {!isCompact && (
+                  <div className={styles.userInfo}>
+                    <span className={styles.userDisplayName}>{user?.username}</span>
+                    <span className={styles.userHandle}>@{user?.username}</span>
+                  </div>
+                )}
               </NavLink>
 
               {/* Logout */}
-              <button className={styles.logoutBtn} onClick={handleLogout}>
-                <IconLogout /><span>Sair</span>
+              <button
+                className={`${styles.logoutBtn} ${isCompact ? styles.navItemCompact : ''}`}
+                onClick={handleLogout}
+                title="Sair"
+              >
+                <IconLogout />{!isCompact && <span>Sair</span>}
               </button>
             </>
           ) : (
-            <div className={styles.authBtns}>
-              <Link to="/login" className={styles.btnEntrar}>Entrar</Link>
-              <Link to="/register" className={styles.btnCadastrar}>Cadastrar</Link>
-            </div>
+            !isCompact ? (
+              <div className={styles.authBtns}>
+                <Link to="/login" className={styles.btnEntrar}>Entrar</Link>
+                <Link to="/register" className={styles.btnCadastrar}>Cadastrar</Link>
+              </div>
+            ) : (
+              <NavLink
+                to="/login"
+                className={({ isActive }) => `${styles.navItem} ${styles.navItemCompact} ${isActive ? styles.navActive : ''}`}
+                title="Entrar"
+              >
+                <IconUser />
+              </NavLink>
+            )
           )}
 
           {/* Toggle de tema */}
           <button
-            className={styles.themeBtn}
+            className={`${styles.themeBtn} ${isCompact ? styles.navItemCompact : ''}`}
             onClick={toggleTheme}
             aria-label={isDark ? 'Modo claro' : 'Modo escuro'}
+            title={isDark ? 'Modo Claro' : 'Modo Escuro'}
           >
             {isDark ? <IconSun /> : <IconMoon />}
-            <span>{isDark ? 'Modo Claro' : 'Modo Escuro'}</span>
+            {!isCompact && <span>{isDark ? 'Modo Claro' : 'Modo Escuro'}</span>}
+          </button>
+
+          {/* Botão de recolher/expandir — sempre visível */}
+          <button
+            className={styles.collapseBtn}
+            onClick={toggleCollapsed}
+            title={isCompact ? 'Expandir menu' : 'Recolher menu'}
+            aria-label={isCompact ? 'Expandir menu' : 'Recolher menu'}
+          >
+            {isCompact ? <IconPanelOpen /> : <IconPanelClose />}
+            {!isCompact && <span className={styles.collapseBtnLabel}>Recolher</span>}
           </button>
         </div>
       </aside>

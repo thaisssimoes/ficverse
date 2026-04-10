@@ -6,41 +6,41 @@
    ✓ espaçamento generoso, ✓ acento teal
    ============================================ */
 
+/* ── Página: ocupa toda a altura sem padding extra ── */
 .page {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: var(--space-8) 0 var(--space-16);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
 }
 
-.pageTitle {
-  font-size: var(--font-size-2xl);
-  font-weight: 700;
-  margin-bottom: var(--space-8);
-  color: var(--text-primary);
-  letter-spacing: var(--tracking-tight);
-}
-
-/* ── Layout ───────────────────────────── */
+/* ── Layout: flex row, altura total ── */
 .layout {
-  display: grid;
-  grid-template-columns: 260px 1fr;
-  gap: var(--space-6);
-  align-items: flex-start;
+  display: flex;
+  flex: 1;
+  align-items: stretch;
+  min-height: 100vh;
 }
 
-/* ── Sidebar ──────────────────────────── */
+/* ── Sidebar de histórias ── */
 .sidebar {
+  width: 280px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border-color);
   background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  /* Scroll independente, colado ao nav */
   position: sticky;
-  top: 80px;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
-.sidebarHeader {
-  padding: var(--space-5);
-  border-bottom: 1px solid var(--border-color);
+/* Botão "+ Nova História" — no topo absoluto */
+.sidebarNewRow {
+  padding: 1.25rem 0.875rem 0.75rem;
+  flex-shrink: 0;
 }
 
 .newBtn {
@@ -48,77 +48,167 @@
   justify-content: center;
 }
 
-.filterBar {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  padding: var(--space-3) var(--space-4);
-  border-bottom: 1px solid var(--border-color);
+.sidebarTop {
+  padding: 0 1.25rem 0.5rem;
+  flex-shrink: 0;
 }
 
-.filterBtn {
-  width: 100%;
-  padding: 0.4rem 0.75rem;
-  background: transparent;
-  border: none;
-  border-radius: var(--radius-sm);
+.sidebarLabel {
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
   color: var(--text-muted);
-  font-size: var(--font-size-sm);
-  font-family: var(--font-family);
-  cursor: pointer;
-  text-align: left;
-  transition: background var(--transition-fast), color var(--transition-fast);
 }
 
-.filterBtn:hover {
-  background: var(--input-bg);
+.sidebarGroupHeader {
+  padding: 0.5rem 1.25rem 0.35rem;
+  flex-shrink: 0;
+}
+
+.sidebarGroupBorderTop {
+  border-top: 1px solid var(--border-color);
+  padding-top: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.sidebarGroupTitle {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
   color: var(--text-primary);
 }
 
-.filterActive {
-  background: rgba(0, 88, 113, 0.1);
-  color: var(--color-accent-brand);
-  font-weight: 500;
+.sidebarGroupCount {
+  font-weight: 400;
+  color: var(--text-muted);
 }
 
-.fanficList {
-  max-height: calc(100vh - 280px);
-  overflow-y: auto;
+/* Story list items */
+.storyList {
+  list-style: none;
+  padding: 0 0.5rem 0.5rem;
+  margin: 0;
 }
 
-.fanficItem {
+/* Wrapper do item — olho sempre visível à direita */
+.storyListItem {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  padding: 0.75rem var(--space-5);
-  border-bottom: 1px solid var(--border-color);
+  gap: 0.25rem;
+  padding-right: 0.25rem;
+}
+
+/* O botão da história ocupa o espaço disponível mas deixa margem pro ícone */
+.storyListItem .storyItem {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Inclinação do título no hover/ativo — aplicada na definição original abaixo */
+
+/* Ícone de link para a página da história — sempre visível */
+.storyViewLink {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  flex-shrink: 0;
+  opacity: 0.5;
+  transition: opacity var(--transition-fast), color var(--transition-fast);
+}
+
+.storyViewLink:hover {
+  opacity: 1;
+  color: var(--color-accent-brand);
+}
+
+.storyListItem:has(.storyItemActive) .storyViewLink {
+  opacity: 0.7;
+  color: #6b7280;
+}
+
+.storyListItem:has(.storyItemActive) .storyViewLink:hover {
+  opacity: 1;
+  color: var(--color-accent-brand);
+}
+
+.storyItem {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: var(--radius-md);
+  border: none;
+  background: transparent;
   cursor: pointer;
+  text-align: left;
   transition: background var(--transition-fast);
 }
 
-.fanficItem:last-child { border-bottom: none; }
-.fanficItem:hover { background: var(--input-bg); }
+.storyItem:hover { background: rgba(255,255,255,0.04); }
 
-.fanficItemActive {
-  background: rgba(0, 88, 113, 0.06);
-  border-left: 2px solid var(--color-accent-brand);
+.storyItemActive {
+  background: #F5F0E8 !important;
 }
 
-.fanficItemInfo { flex: 1; min-width: 0; }
+.storyDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: transparent;
+  transition: background var(--transition-fast);
+}
 
-.fanficItemTitle {
+.storyDotActive { background: var(--color-accent-brand); }
+
+.storyItemBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.storyItemTitle {
   font-size: var(--font-size-sm);
   font-weight: 500;
   color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-bottom: 0.2rem;
+  line-height: 1.3;
+  margin: 0;
+  max-width: 130px;
+  display: inline-block;
+  transition: transform 0.18s ease;
 }
 
-.fanficItemMeta { display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; }
+.storyItem:hover .storyItemTitle { transform: skewX(-6deg); }
 
+.storyItemTitleActive { color: #1a1a1a; }
+
+.storyItemStatus {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin: 0.15rem 0 0;
+}
+
+.storyItemActive .storyItemStatus { color: #6b7280; }
+
+.storyItemIcon {
+  color: var(--text-muted);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.storyItemActive .storyItemIcon { color: #6b7280; }
+
+/* Keep legacy classes to avoid breaking other parts */
+.sidebarFooter { display: none; }
+.fanficList { display: none; }
 .fanficItemActions { display: flex; gap: 0.25rem; flex-shrink: 0; }
 
 .iconBtn {
@@ -166,12 +256,28 @@
   font-size: var(--font-size-sm);
 }
 
-/* ── Editor area ─────────────────────── */
+/* ── Painel direito (detalhes/capítulos) — componente separado ── */
 .editorArea {
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
-  min-height: 520px;
+  flex: 1;
+  min-width: 0;
+  background: var(--bg-page, var(--color-bg-base));
+  overflow-y: auto;
+  /* Padding interno, deixa o conteúdo respirar */
+  padding: var(--space-10) var(--space-8) var(--space-16);
+}
+
+.editorInner {
+  max-width: 860px;
+}
+
+/* Large serif story title */
+.storyTitle {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+  margin: 0 0 0;
 }
 
 .noSelection {
@@ -179,8 +285,7 @@
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
-  height: 520px;
-  padding: var(--space-10) var(--space-12);
+  min-height: 60vh;
   gap: var(--space-3);
 }
 
@@ -206,8 +311,9 @@
 .tabBar {
   display: flex;
   border-bottom: 1px solid var(--border-color);
-  padding: 0 var(--space-6);
+  padding: 0;
   gap: var(--space-1);
+  margin-top: 1.25rem;
 }
 
 .tabBtn {
@@ -229,10 +335,28 @@
 
 .tabActive {
   border-bottom-color: var(--color-accent-brand);
-  color: var(--color-accent-brand);
+  color: var(--text-primary);
 }
 
-.tabContent { padding: var(--space-6); }
+.tabContent { padding: 1.5rem 0 2rem; }
+
+.deleteBtn {
+  padding: 0.875rem var(--space-3);
+  background: none;
+  border: none;
+  color: #f87171;
+  font-size: var(--font-size-sm);
+  font-family: var(--font-family);
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: color var(--transition-fast);
+  margin-bottom: -1px;
+}
+
+.deleteBtn:hover { color: #ef4444; }
 
 /* ── Status banner ───────────────────── */
 .statusBanner {
@@ -366,49 +490,117 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--space-5);
+  margin-bottom: 1rem;
 }
 
-.chaptersHeader h3 {
-  font-size: var(--font-size-lg);
+.chaptersCount {
+  font-size: var(--font-size-sm);
   font-weight: 600;
   color: var(--text-primary);
+  margin: 0;
 }
 
-.chaptersList { display: flex; flex-direction: column; gap: var(--space-3); }
-
-.chapterCard {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-  background: var(--input-bg);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  padding: var(--space-4) var(--space-5);
-  transition: border-color var(--transition-fast);
+/* Column headers */
+.chapterColHeader {
+  display: grid;
+  grid-template-columns: 1fr 140px 110px 80px;
+  gap: 1rem;
+  padding: 0 0 0.5rem;
+  border-bottom: 1px solid var(--border-color);
 }
 
-.chapterCard:hover { border-color: var(--border-color-hover); }
-
-.chapterNum {
+.chapterColHeader span {
+  font-size: 0.7rem;
   color: var(--text-muted);
-  font-size: var(--font-size-xs);
   font-weight: 500;
-  min-width: 52px;
-  flex-shrink: 0;
-}
-
-.chapterInfo { flex: 1; display: flex; align-items: center; gap: var(--space-3); min-width: 0; }
-
-.chapterTitle {
-  font-weight: 500;
-  font-size: var(--font-size-sm);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.chapterActions { display: flex; gap: var(--space-2); flex-shrink: 0; }
+/* Chapter rows */
+.chapterRows {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.chapterRow {
+  display: grid;
+  grid-template-columns: 1fr 140px 110px 80px;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border-color);
+  transition: background var(--transition-fast);
+}
+
+.chapterRow:hover { background: rgba(255,255,255,0.02); }
+.chapterRow:last-child { border-bottom: none; }
+
+.chapterRowTitle {
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  font-weight: 500;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chapterRowDate {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  font-family: monospace;
+  margin: 0;
+}
+
+.chapterRowStatus {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.chapterRowActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.2rem;
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.chapterRow:hover .chapterRowActions { opacity: 1; }
+
+.chapterActionBtn {
+  background: none;
+  border: none;
+  padding: 0.25rem;
+  cursor: pointer;
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color var(--transition-fast), background var(--transition-fast);
+}
+
+.chapterActionBtn:hover {
+  color: var(--text-primary);
+  background: var(--input-bg);
+}
+
+.chapterActionDanger:hover {
+  color: #f87171;
+  background: rgba(239, 68, 68, 0.08);
+}
+
+/* Legacy (kept to avoid breaking anything) */
+.chapterCard { display: none; }
+.chapterNum  { display: none; }
+.chapterInfo { display: none; }
+.chapterTitle { display: none; }
+.chapterActions { display: none; }
 
 /* ── Questions tab ───────────────────── */
 .infoBox {
@@ -619,10 +811,12 @@
   margin-top: var(--space-2);
 }
 
-@media (max-width: 768px) {
-  .layout { grid-template-columns: 1fr; }
-  .sidebar { position: static; }
-  .fanficList { max-height: 240px; }
+@media (max-width: 1023px) {
+  .layout { flex-direction: column; min-height: unset; }
+  .sidebar { position: static; width: 100%; height: auto; max-height: 320px; border-right: none; border-bottom: 1px solid var(--border-color); }
+  .editorArea { padding: var(--space-6) var(--space-4) var(--space-10); }
   .formGrid { grid-template-columns: 1fr; }
-  .tabBar { padding: 0 var(--space-4); overflow-x: auto; }
+  .tabBar { overflow-x: auto; }
+  .storyTitle { font-size: 1.5rem; }
+  .chapterColHeader, .chapterRow { grid-template-columns: 1fr 100px 80px 64px; }
 }

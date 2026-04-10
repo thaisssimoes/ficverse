@@ -38,6 +38,25 @@ const IconPen = () => (
     <path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
   </svg>
 );
+
+const IconBookOpen = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+    <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+  </svg>
+);
+
+const IconCloud = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" />
+  </svg>
+);
+
+const IconMoreVertical = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <circle cx="12" cy="5" r="1" /><circle cx="12" cy="12" r="1" /><circle cx="12" cy="19" r="1" />
+  </svg>
+);
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fanficApi, chapterApi, interactiveApi, commentApi, tagApi, profileApi } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
@@ -527,34 +546,77 @@ function ChaptersTab({ fanfic }) {
 
   if (isLoading) return <LoadingSpinner />;
 
+  const publishedChapters = sorted.filter((ch) => !ch.is_draft);
+
   return (
     <>
+      {/* Cabeçalho */}
       <div className={styles.chaptersHeader}>
-        <h3>Capítulos</h3>
+        <p className={styles.chaptersCount}>
+          {publishedChapters.length} Published{' '}
+          {publishedChapters.length === 1 ? 'Chapter' : 'Chapters'}
+        </p>
         <Button size="sm" onClick={() => setChapterModal('new')}>+ Novo Capítulo</Button>
       </div>
 
       {sorted.length === 0 ? (
         <div className={styles.emptyState}>Nenhum capítulo ainda. Clique em "+ Novo Capítulo" para começar.</div>
       ) : (
-        <div className={styles.chaptersList}>
-          {sorted.map((ch) => (
-            <div key={ch.id} className={styles.chapterCard}>
-              <span className={styles.chapterNum}>Cap. {ch.order}</span>
-              <div className={styles.chapterInfo}>
-                <span className={styles.chapterTitle}>{ch.title}</span>
-                {ch.is_draft && <span className={styles.badgeDraft}>Rascunho</span>}
-              </div>
-              <div className={styles.chapterActions}>
-                {ch.is_draft && (
-                  <Button size="sm" onClick={() => handlePublish(ch.id)}><IconPublish /> Publicar</Button>
-                )}
-                <Button variant="secondary" size="sm" onClick={() => setChapterModal(ch)}><IconPencil /> Editar</Button>
-                <Button variant="danger" size="sm" onClick={() => handleDelete(ch.id)} title="Excluir capítulo"><IconTrash /></Button>
-              </div>
-            </div>
-          ))}
-        </div>
+        <>
+          {/* Cabeçalho das colunas */}
+          <div className={styles.chapterColHeader}>
+            <span>{sorted[0]?.title ?? ''}</span>
+            <span>Published Date</span>
+            <span>Status</span>
+            <span />
+          </div>
+
+          {/* Linhas */}
+          <ul className={styles.chapterRows}>
+            {sorted.map((ch) => (
+              <li key={ch.id} className={styles.chapterRow}>
+                <p className={styles.chapterRowTitle}>{ch.title}</p>
+                <p className={styles.chapterRowDate}>
+                  {ch.created_at ? formatTimestamp(ch.created_at) : '—'}
+                </p>
+                <p className={styles.chapterRowStatus}>
+                  {ch.is_draft ? 'Draft' : 'Published'}
+                </p>
+                <div className={styles.chapterRowActions}>
+                  {ch.is_draft && (
+                    <button
+                      className={styles.chapterActionBtn}
+                      title="Publicar"
+                      onClick={() => handlePublish(ch.id)}
+                    >
+                      <IconPublish />
+                    </button>
+                  )}
+                  <button
+                    className={styles.chapterActionBtn}
+                    title="Mais opções"
+                  >
+                    <IconMoreVertical />
+                  </button>
+                  <button
+                    className={styles.chapterActionBtn}
+                    title="Editar"
+                    onClick={() => setChapterModal(ch)}
+                  >
+                    <IconPencil />
+                  </button>
+                  <button
+                    className={`${styles.chapterActionBtn} ${styles.chapterActionDanger}`}
+                    title="Excluir"
+                    onClick={() => handleDelete(ch.id)}
+                  >
+                    <IconTrash />
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
 
       {chapterModal !== null && (
@@ -991,6 +1053,9 @@ export default function DashboardPage() {
     : filterStatus === 'draft' ? myFanfics.filter((f) => f.is_draft)
     : myFanfics.filter((f) => !f.is_draft);
 
+  const published = myFanfics.filter((f) => !f.is_draft);
+  const drafts    = myFanfics.filter((f) => f.is_draft);
+
   const selectedFanfic = selectedFanficOverride || myFanfics.find((f) => f.id === selectedId) || null;
 
   const handleSelect = useCallback((f) => {
@@ -1030,78 +1095,113 @@ export default function DashboardPage() {
   };
 
   return (
-    <PageLayout>
+    <PageLayout fullWidth>
       <div className={styles.page}>
-        <h1 className={styles.pageTitle}>Dashboard</h1>
-
         <div className={styles.layout}>
-          {/* Sidebar */}
+
+          {/* ── Sidebar ── */}
           <aside className={styles.sidebar}>
-            <div className={styles.sidebarHeader}>
-              <Button className={styles.newBtn} onClick={() => setShowNewModal(true)}>+ Nova Fanfic</Button>
+            {/* Botão no topo, acima de tudo */}
+            <div className={styles.sidebarNewRow}>
+              <Button onClick={() => setShowNewModal(true)} size="sm" className={styles.newBtn}>
+                + Nova História
+              </Button>
             </div>
 
-            <div className={styles.filterBar}>
-              {[
-                { key: 'all', label: `Todas (${myFanfics.length})` },
-                { key: 'draft', label: `Rascunhos (${myFanfics.filter((f) => f.is_draft).length})` },
-                { key: 'published', label: `Publicadas (${myFanfics.filter((f) => !f.is_draft).length})` },
-              ].map(({ key, label }) => (
-                <button
-                  key={key}
-                  className={`${styles.filterBtn} ${filterStatus === key ? styles.filterActive : ''}`}
-                  onClick={() => setFilterStatus(key)}
-                >
-                  {label}
-                </button>
-              ))}
+            <div className={styles.sidebarTop}>
+              <p className={styles.sidebarLabel}>Suas Histórias</p>
             </div>
 
-            <div className={styles.fanficList}>
-              {isLoading ? (
-                <LoadingSpinner />
-              ) : filtered.length === 0 ? (
-                <div className={styles.emptyList}>
-                  {myFanfics.length === 0 ? 'Nenhuma fanfic ainda.' : 'Nenhuma fanfic neste filtro.'}
+            {isLoading ? (
+              <div className={styles.emptyList}><LoadingSpinner /></div>
+            ) : (
+              <>
+                {/* Publicadas */}
+                <div className={styles.sidebarGroupHeader}>
+                  <p className={styles.sidebarGroupTitle}>
+                    Public Stories{' '}
+                    <span className={styles.sidebarGroupCount}>({published.length})</span>
+                  </p>
                 </div>
-              ) : (
-                filtered.map((f) => (
-                  <div
-                    key={f.id}
-                    className={`${styles.fanficItem} ${f.id === selectedId ? styles.fanficItemActive : ''}`}
-                    onClick={() => handleSelect(f)}
-                  >
-                    <div className={styles.fanficItemInfo}>
-                      <div className={styles.fanficItemTitle}>{f.title}</div>
-                      <div className={styles.fanficItemMeta}>
-                        <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{f.category}</span>
-                        {f.is_draft
-                          ? <span className={styles.badgeDraft}>Rascunho</span>
-                          : <span className={styles.badgePublished}>Publicada</span>
-                        }
-                      </div>
-                    </div>
-                    {!f.is_draft && (
-                      <div className={styles.fanficItemActions}>
-                        <Link to={`/fanfic/${f.id}`} onClick={(e) => e.stopPropagation()} className={styles.iconBtn} title="Ver fanfic"><IconEye /></Link>
-                      </div>
-                    )}
-                  </div>
-                ))
-              )}
-            </div>
+                <ul className={styles.storyList}>
+                  {published.map((f) => {
+                    const isActive = f.id === selectedId;
+                    return (
+                      <li key={f.id} className={styles.storyListItem}>
+                        <button
+                          className={`${styles.storyItem} ${isActive ? styles.storyItemActive : ''}`}
+                          onClick={() => handleSelect(f)}
+                        >
+                          <span className={`${styles.storyDot} ${isActive ? styles.storyDotActive : ''}`} />
+                          <div className={styles.storyItemBody}>
+                            <p className={`${styles.storyItemTitle} ${isActive ? styles.storyItemTitleActive : ''}`}>{f.title}</p>
+                            <p className={styles.storyItemStatus}>Publicado</p>
+                          </div>
+                          <span className={styles.storyItemIcon}><IconBookOpen /></span>
+                        </button>
+                        <Link
+                          to={`/fanfic/${f.id}`}
+                          className={styles.storyViewLink}
+                          title="Ver página da história"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <IconEye />
+                        </Link>
+                      </li>
+                    );
+                  })}
+                  {published.length === 0 && (
+                    <li className={styles.emptyList}>Nenhuma história publicada.</li>
+                  )}
+                </ul>
+
+                {/* Rascunhos */}
+                <div className={`${styles.sidebarGroupHeader} ${styles.sidebarGroupBorderTop}`}>
+                  <p className={styles.sidebarGroupTitle}>
+                    Drafts{' '}
+                    <span className={styles.sidebarGroupCount}>({drafts.length})</span>
+                  </p>
+                </div>
+                <ul className={styles.storyList}>
+                  {drafts.map((f) => {
+                    const isActive = f.id === selectedId;
+                    return (
+                      <li key={f.id}>
+                        <button
+                          className={`${styles.storyItem} ${isActive ? styles.storyItemActive : ''}`}
+                          onClick={() => handleSelect(f)}
+                        >
+                          <span className={`${styles.storyDot} ${isActive ? styles.storyDotActive : ''}`} />
+                          <div className={styles.storyItemBody}>
+                            <p className={`${styles.storyItemTitle} ${isActive ? styles.storyItemTitleActive : ''}`}>{f.title}</p>
+                            <p className={styles.storyItemStatus}>Rascunho</p>
+                          </div>
+                          <span className={styles.storyItemIcon}><IconCloud /></span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                  {drafts.length === 0 && (
+                    <li className={styles.emptyList}>Nenhum rascunho.</li>
+                  )}
+                </ul>
+              </>
+            )}
+
           </aside>
 
-          {/* Editor Area */}
+          {/* ── Painel principal ── */}
           <div className={styles.editorArea}>
             {!selectedFanfic ? (
               <div className={styles.noSelection}>
                 <span className={styles.noSelectionIcon}><IconPen /></span>
-                <p className={styles.noSelectionTitle}>Selecione uma fanfic</p>
-                <p className={styles.noSelectionText}>Clique em uma fanfic na lista ou crie uma nova.</p>
+                <p className={styles.noSelectionTitle}>Selecione uma história</p>
+                <p className={styles.noSelectionText}>Clique em uma história na lista ou crie uma nova.</p>
               </div>
             ) : (
-              <>
+              <div className={styles.editorInner}>
+                <h1 className={styles.storyTitle}>{selectedFanfic.title}</h1>
+
                 <div className={styles.tabBar}>
                   {TABS.map(({ key, label }) => (
                     <button
@@ -1114,9 +1214,8 @@ export default function DashboardPage() {
                   ))}
                   <div style={{ flex: 1 }} />
                   <button
-                    className={styles.tabBtn}
+                    className={styles.deleteBtn}
                     onClick={handleDelete}
-                    style={{ color: '#f87171', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
                     title="Excluir fanfic"
                   >
                     <IconTrash /> Excluir
@@ -1124,20 +1223,15 @@ export default function DashboardPage() {
                 </div>
 
                 <div className={styles.tabContent}>
-                  {activeTab === 'info' && (
-                    <InfoTab
-                      key={`info-${selectedFanfic.id}`}
-                      fanfic={selectedFanfic}
-                      onUpdated={handleFanficUpdated}
-                    />
-                  )}
-                  {activeTab === 'chapters' && <ChaptersTab key={`ch-${selectedFanfic.id}`} fanfic={selectedFanfic} />}
-                  {activeTab === 'questions' && <QuestionsTab key={`q-${selectedFanfic.id}`} fanfic={selectedFanfic} />}
-                  {activeTab === 'comments' && <CommentsTab key={`c-${selectedFanfic.id}`} fanfic={selectedFanfic} />}
+                  {activeTab === 'info'     && <InfoTab      key={`info-${selectedFanfic.id}`} fanfic={selectedFanfic} onUpdated={handleFanficUpdated} />}
+                  {activeTab === 'chapters' && <ChaptersTab  key={`ch-${selectedFanfic.id}`}   fanfic={selectedFanfic} />}
+                  {activeTab === 'questions'&& <QuestionsTab key={`q-${selectedFanfic.id}`}    fanfic={selectedFanfic} />}
+                  {activeTab === 'comments' && <CommentsTab  key={`c-${selectedFanfic.id}`}    fanfic={selectedFanfic} />}
                 </div>
-              </>
+              </div>
             )}
           </div>
+
         </div>
       </div>
 

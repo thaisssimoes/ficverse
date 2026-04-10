@@ -180,7 +180,7 @@ export default function ChapterReaderPage() {
   if (!chapter) return <PageLayout><p className={styles.error}>Capítulo não encontrado.</p></PageLayout>;
 
   return (
-    <PageLayout noNav>
+    <PageLayout readingMode>
       {/* Modal de perguntas */}
       {questionsOpen && (
         <QuestionsModal
