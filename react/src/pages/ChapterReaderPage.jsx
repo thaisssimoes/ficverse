@@ -199,7 +199,8 @@ export default function ChapterReaderPage() {
           chapterOrder={chapter.order}
           fanficTitle={fanfic?.title}
           fanficId={fanfic?.id}
-          author={fanfic?.author_username}
+          author={fanfic?.author?.username}
+          authorAvatar={fanfic?.author?.avatar_url}
           mode={mode}
           actions={
             user && fanfic && user.user_id === fanfic.author_id ? (
@@ -217,16 +218,32 @@ export default function ChapterReaderPage() {
 
         {/* Navegação entre capítulos */}
         <nav className={styles.nav}>
-          {prevChapter && (
+          {prevChapter ? (
             <Button variant="secondary" onClick={() => navigateTo(prevChapter.id)}>
-              ← Capítulo Anterior
+              ← Anterior
             </Button>
+          ) : <span />}
+
+          {sorted.length > 1 && (
+            <select
+              className={styles.chapterSelect}
+              value={parseInt(id)}
+              onChange={(e) => navigateTo(Number(e.target.value))}
+              aria-label="Ir para capítulo"
+            >
+              {sorted.map((ch) => (
+                <option key={ch.id} value={ch.id}>
+                  Cap. {ch.order} — {ch.title}
+                </option>
+              ))}
+            </select>
           )}
-          {nextChapter && (
+
+          {nextChapter ? (
             <Button onClick={() => navigateTo(nextChapter.id)}>
-              Próximo Capítulo →
+              Próximo →
             </Button>
-          )}
+          ) : <span />}
         </nav>
 
         {/* Comentários */}

@@ -119,15 +119,15 @@ export const fanficApi = {
   delete: (id) => request(`/fanfics/${id}`, { method: 'DELETE' }),
   publish: (id) => request(`/fanfics/${id}/publish`, { method: 'POST' }),
   unpublish: (id) => request(`/fanfics/${id}/unpublish`, { method: 'POST' }),
-  uploadCover: async (file) => {
+  uploadCover: async (fanficId, file) => {
     const formData = new FormData();
     formData.append('cover', file);
     const token = localStorage.getItem('auth_token');
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
-    const response = await fetch(`${API_BASE_URL}/upload/cover`, { method: 'POST', headers, body: formData });
+    const response = await fetch(`${API_BASE_URL}/fanfics/${fanficId}/cover`, { method: 'POST', headers, body: formData });
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
-      throw new Error(error.message || 'Falha no upload da imagem');
+      throw new Error(error.error?.message || error.message || 'Falha no upload da imagem');
     }
     return response.json();
   },

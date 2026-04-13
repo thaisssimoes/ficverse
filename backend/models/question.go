@@ -40,8 +40,10 @@ type Question struct {
 	// VariableType: "standard" or "custom"
 	VariableType string `gorm:"size:50;not null;default:'custom'" json:"variable_type"`
 	// StandardKey: key from StandardVariables (only set when VariableType == "standard")
-	StandardKey string    `gorm:"size:100" json:"standard_key,omitempty"`
-	CreatedAt   time.Time `gorm:"autoCreateTime" json:"created_at"`
+	StandardKey string `gorm:"size:100" json:"standard_key,omitempty"`
+	// DefaultAnswer: resposta padrão usada no modo normal de leitura
+	DefaultAnswer string    `gorm:"type:text" json:"default_answer,omitempty"`
+	CreatedAt     time.Time `gorm:"autoCreateTime" json:"created_at"`
 
 	Fanfic Fanfic `gorm:"foreignKey:FanficID" json:"fanfic,omitempty"`
 }

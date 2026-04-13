@@ -8,6 +8,34 @@ import (
 	"gorm.io/gorm"
 )
 
+// RunSafeColumnMigrations adds new columns to existing tables if they are missing.
+// This runs on every startup (even when AUTO_MIGRATE=false) and is safe to run multiple times.
+func RunSafeColumnMigrations(db *gorm.DB) {
+	migrateQuestionsColumns(db)
+}
+
+// migrateQuestionsColumns ensures the questions table has the interactive-mode columns.
+func migrateQuestionsColumns(db *gorm.DB) {
+	type col struct {
+		name string
+		ddl  string
+	}
+	cols := []col{
+		{name: "variable_type", ddl: "ALTER TABLE questions ADD COLUMN IF NOT EXISTS variable_type VARCHAR(50) NOT NULL DEFAULT 'custom'"},
+		{name: "standard_key", ddl: "ALTER TABLE questions ADD COLUMN IF NOT EXISTS standard_key VARCHAR(100)"},
+		{name: "default_answer", ddl: "ALTER TABLE questions ADD COLUMN IF NOT EXISTS default_answer TEXT"},
+	}
+	for _, c := range cols {
+		if !db.Migrator().HasColumn(&models.Question{}, c.name) {
+			if err := db.Exec(c.ddl).Error; err != nil {
+				log.Printf("Warning: could not add column '%s' to questions: %v", c.name, err)
+			} else {
+				log.Printf("Added column '%s' to questions table.", c.name)
+			}
+		}
+	}
+}
+
 // Migrate runs all database migrations using GORM AutoMigrate
 func Migrate(db *gorm.DB) error {
 	log.Println("Running database migrations...")

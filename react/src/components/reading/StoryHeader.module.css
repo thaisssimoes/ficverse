@@ -27,12 +27,67 @@ a.storyTitle:hover {
   color: var(--color-accent-brand);
 }
 
+/* Link de volta */
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  text-decoration: none;
+  margin-bottom: var(--space-5);
+  transition: color var(--transition-fast);
+}
+
+.backLink:hover {
+  color: var(--color-accent-brand);
+}
+
 /* Linha do autor */
 .authorLine {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   font-family: var(--font-sans);
   font-size: var(--text-sm);
   color: var(--color-text-muted);
   margin: 0 0 var(--space-6);
+}
+
+/* Avatar circular do autor */
+.authorAvatar {
+  display: inline-flex;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  overflow: hidden;
+  text-decoration: none;
+  transition: opacity var(--transition-fast);
+}
+
+.authorAvatar:hover {
+  opacity: 0.8;
+}
+
+.authorAvatarImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.authorAvatarInitial {
+  width: 100%;
+  height: 100%;
+  background-color: var(--color-accent-brand);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  font-weight: 700;
 }
 
 .authorLink {

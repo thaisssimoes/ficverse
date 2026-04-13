@@ -3,9 +3,7 @@ package routes
 import (
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
-	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -15,6 +13,7 @@ import (
 	"github.com/interactive-fanfic-platform/auth"
 	"github.com/interactive-fanfic-platform/chapter"
 	"github.com/interactive-fanfic-platform/fanfic"
+	"github.com/interactive-fanfic-platform/storage"
 	"gorm.io/gorm"
 )
 
@@ -23,14 +22,16 @@ type ChapterHandler struct {
 	service       *chapter.ChapterService
 	fanficService *fanfic.FanficService
 	db            *gorm.DB
+	store         storage.StorageService
 }
 
 // NewChapterHandler creates a new chapter handler
-func NewChapterHandler(db *gorm.DB) *ChapterHandler {
+func NewChapterHandler(db *gorm.DB, store storage.StorageService) *ChapterHandler {
 	return &ChapterHandler{
 		service:       chapter.NewChapterService(db),
 		fanficService: fanfic.NewFanficService(db),
 		db:            db,
+		store:         store,
 	}
 }
 
@@ -638,33 +639,20 @@ func (h *ChapterHandler) UploadCover(c *gin.Context) {
 	}
 
 	ext := strings.ToLower(filepath.Ext(header.Filename))
-	allowed := map[string]bool{".jpg": true, ".jpeg": true, ".png": true, ".webp": true, ".gif": true}
-	if !allowed[ext] {
+	mimeByExt := map[string]string{".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp", ".gif": "image/gif"}
+	contentType, ok := mimeByExt[ext]
+	if !ok {
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: ErrorDetail{Code: "UPLOAD_ERROR", Message: "Formato não suportado (jpg, png, webp, gif)"}})
 		return
 	}
 
-	dir := "./uploads/chapter-covers"
-	if err := os.MkdirAll(dir, 0755); err != nil {
-		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: ErrorDetail{Code: "UPLOAD_ERROR", Message: "Erro ao criar diretório"}})
-		return
-	}
-
-	filename := fmt.Sprintf("%d_%d%s", id, time.Now().UnixNano(), ext)
-	dst := filepath.Join(dir, filename)
-	out, err := os.Create(dst)
+	key := fmt.Sprintf("chapter-covers/%d_%d%s", id, time.Now().UnixNano(), ext)
+	coverURL, err := h.store.Upload(c.Request.Context(), key, file, header.Size, contentType)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: ErrorDetail{Code: "UPLOAD_ERROR", Message: "Erro ao salvar arquivo"}})
-		return
-	}
-	defer out.Close()
-
-	if _, err := io.Copy(out, file); err != nil {
-		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: ErrorDetail{Code: "UPLOAD_ERROR", Message: "Erro ao gravar arquivo"}})
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: ErrorDetail{Code: "UPLOAD_ERROR", Message: "Erro ao fazer upload da imagem"}})
 		return
 	}
 
-	coverURL := "/uploads/chapter-covers/" + filename
 	if err := h.db.Table("chapters").Where("id = ?", id).Update("cover_url", coverURL).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: ErrorDetail{Code: "DB_ERROR", Message: "Erro ao salvar capa"}})
 		return

@@ -57,11 +57,31 @@ const IconMoreVertical = () => (
     <circle cx="12" cy="5" r="1" /><circle cx="12" cy="12" r="1" /><circle cx="12" cy="19" r="1" />
   </svg>
 );
+
+const IconReply = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <polyline points="9 17 4 12 9 7" />
+    <path d="M20 18v-2a4 4 0 0 0-4-4H4" />
+  </svg>
+);
+
+const IconHeart = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+  </svg>
+);
+
+const IconFlag = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
+    <line x1="4" y1="22" x2="4" y2="15" />
+  </svg>
+);
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fanficApi, chapterApi, interactiveApi, commentApi, tagApi, profileApi } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
-import { formatTimestamp } from '../utils/formatters';
+import { formatTimestamp, formatAbsoluteDate } from '../utils/formatters';
 import { CATEGORIES } from '../constants';
 import PageLayout from '../components/layout/PageLayout';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
@@ -133,6 +153,7 @@ function NewFanficModal({ isOpen, onClose, onCreated }) {
   const synopsisRef = useRef(null);
   const disclaimerRef = useRef(null);
   const triggerWarningsRef = useRef(null);
+  const newCoverInputRef = useRef(null);
 
   const handleCoverChange = (e) => {
     const file = e.target.files[0];
@@ -182,10 +203,7 @@ function NewFanficModal({ isOpen, onClose, onCreated }) {
       // 2) Upload da capa, se houver
       if (coverFile) {
         try {
-          const result = await fanficApi.uploadCover(coverFile);
-          if (result?.cover_url) {
-            await fanficApi.update(fanfic.id, { cover_url: result.cover_url });
-          }
+          await fanficApi.uploadCover(fanfic.id, coverFile);
         } catch {
           toast.error('Fanfic criada, mas a capa falhou ao subir.');
         }
@@ -302,10 +320,8 @@ function NewFanficModal({ isOpen, onClose, onCreated }) {
             : <div className={styles.coverPlaceholder}>—</div>
           }
           <div>
-            <input type="file" id="new-cover-upload" accept="image/*" onChange={handleCoverChange} style={{ display: 'none' }} />
-            <label htmlFor="new-cover-upload">
-              <Button variant="secondary" as="span" size="sm">Escolher Capa</Button>
-            </label>
+            <input ref={newCoverInputRef} type="file" accept="image/*" onChange={handleCoverChange} style={{ display: 'none' }} />
+            <Button variant="secondary" size="sm" type="button" onClick={() => newCoverInputRef.current?.click()}>Escolher Capa</Button>
             <p className={styles.formHint}>JPG, PNG, GIF, WEBP · Máx. 5MB · Proporção recomendada: 2:3</p>
           </div>
         </div>
@@ -317,11 +333,33 @@ function NewFanficModal({ isOpen, onClose, onCreated }) {
 // ─── Aba: Info ─────────────────────────────────────────────────────────
 function InfoTab({ fanfic, onUpdated }) {
   const toast = useToast();
+  const queryClient = useQueryClient();
   const [title, setTitle] = useState(fanfic.title);
   const [category, setCategory] = useState(fanfic.category);
   const [interactiveMode, setInteractiveMode] = useState(fanfic.interactive_mode);
+  const [adultContent, setAdultContent] = useState(fanfic.is_adult_content || false);
   const [coverFile, setCoverFile] = useState(null);
   const [coverPreview, setCoverPreview] = useState(null);
+  const [tags, setTags] = useState({ fandom: [], warning: [], pairing: [] });
+  const coverInputRef = useRef(null);
+
+  // Carrega tags existentes da fanfic
+  // Sem default = [] aqui: o default inline criaria um array novo a cada render,
+  // fazendo o useEffect abaixo disparar em loop infinito.
+  const { data: existingTags } = useQuery({
+    queryKey: ['fanfic-tags', fanfic.id],
+    queryFn: () => tagApi.getFanficTags(fanfic.id),
+  });
+
+  // Inicializa o estado de tags quando os dados chegam do servidor (só roda uma vez por carga)
+  useEffect(() => {
+    if (!existingTags) return;
+    setTags({
+      fandom:  existingTags.filter((t) => t.type === 'fandom').map((t) => t.name),
+      warning: existingTags.filter((t) => t.type === 'warning').map((t) => t.name),
+      pairing: existingTags.filter((t) => t.type === 'pairing').map((t) => t.name),
+    });
+  }, [existingTags]);
 
   // Usado para checar perguntas antes de publicar (usa cache do React Query)
   const { data: questions = [] } = useQuery({
@@ -333,6 +371,10 @@ function InfoTab({ fanfic, onUpdated }) {
 
   const synopsisRef = useRef(null);
   const disclaimerRef = useRef(null);
+  const triggerWarningsRef = useRef(null);
+
+  const addTag = (type, name) => setTags((t) => ({ ...t, [type]: [...t[type], name] }));
+  const removeTag = (type, idx) => setTags((t) => ({ ...t, [type]: t[type].filter((_, i) => i !== idx) }));
 
   const handleCoverChange = (e) => {
     const file = e.target.files[0];
@@ -357,20 +399,55 @@ function InfoTab({ fanfic, onUpdated }) {
         category,
         synopsis,
         disclaimer: disclaimerRef.current?.getContent() || '',
-        interactive_mode: interactiveMode,
+        trigger_warnings: triggerWarningsRef.current?.getContent() || '',
+        is_adult_content: adultContent,
       });
 
       if (coverFile) {
         try {
-          const result = await fanficApi.uploadCover(coverFile);
+          const result = await fanficApi.uploadCover(fanfic.id, coverFile);
           if (result?.cover_url) {
-            await fanficApi.update(fanfic.id, { cover_url: result.cover_url });
             updated.cover_url = result.cover_url;
           }
         } catch {
           toast.error('Dados salvos, mas a capa falhou.');
         }
       }
+
+      // Sincroniza tags: remove as antigas, adiciona as novas
+      try {
+        const oldTags = existingTags || [];
+        const newTagNames = [
+          ...tags.fandom.map((n) => ({ name: n, type: 'fandom' })),
+          ...tags.warning.map((n) => ({ name: n, type: 'warning' })),
+          ...tags.pairing.map((n) => ({ name: n, type: 'pairing' })),
+        ];
+        const oldTagNames = oldTags.map((t) => t.name.toLowerCase());
+        const newTagNamesLower = newTagNames.map((t) => t.name.toLowerCase());
+
+        // Remove tags que não estão mais na lista
+        for (const old of oldTags) {
+          if (!newTagNamesLower.includes(old.name.toLowerCase())) {
+            await tagApi.removeFromFanfic(fanfic.id, old.id).catch(() => {});
+          }
+        }
+        // Adiciona tags novas
+        for (const { name, type } of newTagNames) {
+          if (!oldTagNames.includes(name.toLowerCase())) {
+            try {
+              const tag = await tagApi.create(name, type);
+              await tagApi.addToFanfic(fanfic.id, [tag.id]);
+            } catch {
+              try {
+                const results = await tagApi.search(name, type);
+                const existing = results?.find?.((t) => t.name.toLowerCase() === name.toLowerCase());
+                if (existing) await tagApi.addToFanfic(fanfic.id, [existing.id]);
+              } catch { /* ignora */ }
+            }
+          }
+        }
+        queryClient.invalidateQueries({ queryKey: ['fanfic-tags', fanfic.id] });
+      } catch { /* tags são melhor-esforço */ }
 
       toast.success('Alterações salvas!');
       onUpdated(updated);
@@ -467,14 +544,34 @@ function InfoTab({ fanfic, onUpdated }) {
         <QuillEditor key={`disclaimer-${fanfic.id}`} ref={disclaimerRef} initialValue={fanfic.disclaimer || ''} placeholder="Avisos ou disclaimers (opcional)..." minHeight="100px" />
       </div>
 
-      <div className={styles.formGroup}>
-        <label className={styles.checkboxGroup}>
-          <input type="checkbox" checked={interactiveMode} onChange={(e) => setInteractiveMode(e.target.checked)} />
-          Modo Interativo
-          {interactiveMode && <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)', fontWeight: 400 }}>
-            — Use a aba "Perguntas" para criar variáveis.
-          </span>}
+      {/* Avisos de conteúdo */}
+      <div className={styles.warningSection}>
+        <p className={styles.warningSectionTitle}>Avisos de Conteúdo</p>
+        <label className={styles.checkboxGroup} style={{ marginBottom: '0.75rem' }}>
+          <input type="checkbox" checked={adultContent} onChange={(e) => setAdultContent(e.target.checked)} />
+          Conteúdo Adulto (+18)
         </label>
+        <div className={styles.formGroup} style={{ margin: 0 }}>
+          <label className={styles.formLabel}>Trigger Warnings</label>
+          <QuillEditor key={`tw-${fanfic.id}`} ref={triggerWarningsRef} initialValue={fanfic.trigger_warnings || ''} placeholder="Liste conteúdos potencialmente perturbadores..." minHeight="80px" />
+        </div>
+      </div>
+
+      {/* Tags */}
+      <div className={styles.tagsSection}>
+        <p className={styles.tagsSectionTitle}>Tags</p>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Fandom</label>
+          <TagInput tags={tags.fandom} onAdd={(v) => addTag('fandom', v)} onRemove={(i) => removeTag('fandom', i)} placeholder="Ex: Harry Potter" />
+        </div>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Avisos</label>
+          <TagInput tags={tags.warning} onAdd={(v) => addTag('warning', v)} onRemove={(i) => removeTag('warning', i)} placeholder="Ex: Violência" />
+        </div>
+        <div className={styles.formGroup} style={{ marginBottom: 0 }}>
+          <label className={styles.formLabel}>Pairing</label>
+          <TagInput tags={tags.pairing} onAdd={(v) => addTag('pairing', v)} onRemove={(i) => removeTag('pairing', i)} placeholder="Ex: Harry/Hermione" />
+        </div>
       </div>
 
       {/* Capa */}
@@ -486,10 +583,8 @@ function InfoTab({ fanfic, onUpdated }) {
             : <div className={styles.coverPlaceholder}>—</div>
           }
           <div>
-            <input type="file" id={`cover-${fanfic.id}`} accept="image/*" onChange={handleCoverChange} style={{ display: 'none' }} />
-            <label htmlFor={`cover-${fanfic.id}`}>
-              <Button variant="secondary" as="span" size="sm">Escolher Nova Capa</Button>
-            </label>
+            <input ref={coverInputRef} type="file" accept="image/*" onChange={handleCoverChange} style={{ display: 'none' }} />
+            <Button variant="secondary" size="sm" type="button" onClick={() => coverInputRef.current?.click()}>Escolher Nova Capa</Button>
             <p className={styles.formHint}>JPG, PNG, GIF, WEBP · Máx. 5MB · Proporção: 2:3</p>
           </div>
         </div>
@@ -512,6 +607,7 @@ function ChaptersTab({ fanfic }) {
   const toast = useToast();
   const queryClient = useQueryClient();
   const [chapterModal, setChapterModal] = useState(null); // null | chapter object | 'new'
+  const [openMenuId, setOpenMenuId] = useState(null); // ID do capítulo com dropdown aberto
 
   const { data: chapters = [], isLoading } = useQuery({
     queryKey: ['dash-chapters', fanfic.id],
@@ -523,17 +619,19 @@ function ChaptersTab({ fanfic }) {
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['dash-chapters', fanfic.id] });
 
   const handleDelete = async (chapterId) => {
+    setOpenMenuId(null);
     if (!window.confirm('Excluir este capítulo? Esta ação não pode ser desfeita.')) return;
     try {
       await chapterApi.delete(chapterId);
       invalidate();
-      toast.success('Capítulo excluído. Capítulos reordenados.');
+      toast.success('Capítulo excluído.');
     } catch (err) {
       toast.error(err.message || 'Erro ao excluir.');
     }
   };
 
   const handlePublish = async (chapterId) => {
+    setOpenMenuId(null);
     if (!window.confirm('Publicar este capítulo? Ele ficará visível para os leitores.')) return;
     try {
       await chapterApi.publish(chapterId);
@@ -541,6 +639,18 @@ function ChaptersTab({ fanfic }) {
       toast.success('Capítulo publicado.');
     } catch (err) {
       toast.error(err.message || 'Erro ao publicar.');
+    }
+  };
+
+  const handleUnpublish = async (chapterId) => {
+    setOpenMenuId(null);
+    if (!window.confirm('Converter para rascunho? O capítulo ficará invisível para os leitores.')) return;
+    try {
+      await chapterApi.update(chapterId, { is_draft: true });
+      invalidate();
+      toast.success('Capítulo convertido para rascunho.');
+    } catch (err) {
+      toast.error(err.message || 'Erro ao converter.');
     }
   };
 
@@ -553,8 +663,7 @@ function ChaptersTab({ fanfic }) {
       {/* Cabeçalho */}
       <div className={styles.chaptersHeader}>
         <p className={styles.chaptersCount}>
-          {publishedChapters.length} Published{' '}
-          {publishedChapters.length === 1 ? 'Chapter' : 'Chapters'}
+          {publishedChapters.length} {publishedChapters.length === 1 ? 'Capítulo publicado' : 'Capítulos publicados'}
         </p>
         <Button size="sm" onClick={() => setChapterModal('new')}>+ Novo Capítulo</Button>
       </div>
@@ -565,8 +674,8 @@ function ChaptersTab({ fanfic }) {
         <>
           {/* Cabeçalho das colunas */}
           <div className={styles.chapterColHeader}>
-            <span>{sorted[0]?.title ?? ''}</span>
-            <span>Published Date</span>
+            <span>Título</span>
+            <span>Data</span>
             <span>Status</span>
             <span />
           </div>
@@ -574,44 +683,73 @@ function ChaptersTab({ fanfic }) {
           {/* Linhas */}
           <ul className={styles.chapterRows}>
             {sorted.map((ch) => (
-              <li key={ch.id} className={styles.chapterRow}>
+              <li key={ch.id} className={styles.chapterRow} onClick={() => openMenuId === ch.id && setOpenMenuId(null)}>
                 <p className={styles.chapterRowTitle}>{ch.title}</p>
                 <p className={styles.chapterRowDate}>
-                  {ch.created_at ? formatTimestamp(ch.created_at) : '—'}
+                  {formatAbsoluteDate(ch.created_at)}
                 </p>
                 <p className={styles.chapterRowStatus}>
-                  {ch.is_draft ? 'Draft' : 'Published'}
+                  {ch.is_draft ? 'Rascunho' : 'Publicado'}
                 </p>
                 <div className={styles.chapterRowActions}>
+                  {/* Publicar (apenas rascunhos) */}
                   {ch.is_draft && (
                     <button
                       className={styles.chapterActionBtn}
-                      title="Publicar"
-                      onClick={() => handlePublish(ch.id)}
+                      title="Publicar capítulo"
+                      onClick={(e) => { e.stopPropagation(); handlePublish(ch.id); }}
                     >
                       <IconPublish />
                     </button>
                   )}
+                  {/* Editar */}
                   <button
                     className={styles.chapterActionBtn}
-                    title="Mais opções"
-                  >
-                    <IconMoreVertical />
-                  </button>
-                  <button
-                    className={styles.chapterActionBtn}
-                    title="Editar"
-                    onClick={() => setChapterModal(ch)}
+                    title="Editar capítulo"
+                    onClick={(e) => { e.stopPropagation(); setChapterModal(ch); }}
                   >
                     <IconPencil />
                   </button>
-                  <button
-                    className={`${styles.chapterActionBtn} ${styles.chapterActionDanger}`}
-                    title="Excluir"
-                    onClick={() => handleDelete(ch.id)}
+                  {/* Visualizar (link para o capítulo) */}
+                  <Link
+                    to={`/chapter/${ch.id}`}
+                    className={styles.chapterActionBtn}
+                    title="Visualizar capítulo"
+                    onClick={(e) => e.stopPropagation()}
                   >
-                    <IconTrash />
-                  </button>
+                    <IconEye />
+                  </Link>
+                  {/* Menu 3 pontos */}
+                  <div className={styles.chapterMenuWrapper}>
+                    <button
+                      className={styles.chapterActionBtn}
+                      title="Mais opções"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setOpenMenuId(openMenuId === ch.id ? null : ch.id);
+                      }}
+                    >
+                      <IconMoreVertical />
+                    </button>
+                    {openMenuId === ch.id && (
+                      <div className={styles.chapterDropdown}>
+                        {!ch.is_draft && (
+                          <button
+                            className={styles.chapterDropdownItem}
+                            onClick={(e) => { e.stopPropagation(); handleUnpublish(ch.id); }}
+                          >
+                            Salvar como Rascunho
+                          </button>
+                        )}
+                        <button
+                          className={`${styles.chapterDropdownItem} ${styles.chapterDropdownDanger}`}
+                          onClick={(e) => { e.stopPropagation(); handleDelete(ch.id); }}
+                        >
+                          Excluir
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </li>
             ))}
@@ -640,6 +778,7 @@ function ChapterModal({ fanficId, chapter, onClose, onSaved }) {
   const [coverFile, setCoverFile] = useState(null);
   const [coverPreview, setCoverPreview] = useState(chapter?.cover_url || null);
   const contentRef = useRef(null);
+  const chCoverInputRef = useRef(null);
   const isEdit = chapter !== null;
 
   const handleCoverChange = (e) => {
@@ -715,31 +854,7 @@ function ChapterModal({ fanficId, chapter, onClose, onSaved }) {
         <p className={styles.editorHint}>Dica: Use {'{{'} placeholder {'}} '}para criar espaços interativos</p>
       </div>
 
-      {/* Capa do capítulo (opcional) */}
-      <div className={styles.formGroup}>
-        <label className={styles.formLabel}>Imagem do Capítulo <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(opcional)</span></label>
-        <div className={styles.coverUpload}>
-          {coverPreview
-            ? <img src={coverPreview} alt="Pré-visualização" className={styles.coverPreview} />
-            : <div className={styles.coverPlaceholder} style={{ fontSize: '1.25rem', color: 'var(--text-muted)' }}>—</div>
-          }
-          <div>
-            <input
-              type="file"
-              id={`ch-cover-${chapter?.id ?? 'new'}`}
-              accept="image/*"
-              onChange={handleCoverChange}
-              style={{ display: 'none' }}
-            />
-            <label htmlFor={`ch-cover-${chapter?.id ?? 'new'}`}>
-              <Button variant="secondary" as="span" size="sm">
-                {coverPreview ? 'Trocar Imagem' : 'Adicionar Imagem'}
-              </Button>
-            </label>
-            <p className={styles.formHint}>JPG, PNG, GIF, WEBP · Máx. 5MB</p>
-          </div>
-        </div>
-      </div>
+      {/* Upload de imagem de capítulo — desabilitado por ora */}
 
       <label className={styles.checkboxGroup}>
         <input type="checkbox" checked={isDraft} onChange={(e) => setIsDraft(e.target.checked)} />
@@ -752,12 +867,14 @@ function ChapterModal({ fanficId, chapter, onClose, onSaved }) {
   );
 }
 
-// ─── Aba: Perguntas / Variáveis ─────────────────────────────────────────
-function QuestionsTab({ fanfic }) {
+// ─── Aba: Modo Interativo ────────────────────────────────────────────────
+function QuestionsTab({ fanfic, onFanficUpdated }) {
   const toast = useToast();
   const queryClient = useQueryClient();
-  const [questionModal, setQuestionModal] = useState(null); // null | question | 'new'
+  const [questionModal, setQuestionModal] = useState(null); // null | question | 'new' | { pendingStd: varDef }
   const [selectedStdKey, setSelectedStdKey] = useState('');
+  const [interactiveMode, setInteractiveMode] = useState(fanfic.interactive_mode || false);
+  const [togglingMode, setTogglingMode] = useState(false);
 
   const { data: questions = [], isLoading: loadingQ } = useQuery({
     queryKey: ['dash-questions', fanfic.id],
@@ -774,23 +891,28 @@ function QuestionsTab({ fanfic }) {
   const usedStdKeys = new Set(questions.filter((q) => q.variable_type === 'standard').map((q) => q.standard_key));
   const availableStdVars = standardVars.filter((v) => !usedStdKeys.has(v.key));
 
-  const handleAddStd = async () => {
+  // Toggle do modo interativo
+  const handleToggleMode = async (enabled) => {
+    setTogglingMode(true);
+    try {
+      await fanficApi.update(fanfic.id, { interactive_mode: enabled });
+      setInteractiveMode(enabled);
+      onFanficUpdated({ ...fanfic, interactive_mode: enabled });
+      toast.success(enabled ? 'Modo Interativo ativado.' : 'Modo Interativo desativado.');
+    } catch (err) {
+      toast.error(err.message || 'Erro ao alterar modo.');
+    } finally {
+      setTogglingMode(false);
+    }
+  };
+
+  // Selecionar variável padrão abre modal para preencher resposta padrão
+  const handleAddStdClick = () => {
     if (!selectedStdKey) return;
     const varDef = standardVars.find((v) => v.key === selectedStdKey);
     if (!varDef) return;
-    try {
-      await interactiveApi.createQuestion(fanfic.id, {
-        question_text: varDef.label,
-        placeholder: varDef.key,
-        variable_type: 'standard',
-        standard_key: varDef.key,
-      });
-      setSelectedStdKey('');
-      invalidate();
-      toast.success('Variável padrão adicionada!');
-    } catch (err) {
-      toast.error(err.message || 'Erro ao adicionar variável.');
-    }
+    // Abre modal com a variável padrão pendente
+    setQuestionModal({ pendingStd: varDef });
   };
 
   const handleDelete = async (qId) => {
@@ -808,96 +930,150 @@ function QuestionsTab({ fanfic }) {
 
   return (
     <>
-      <div className={styles.infoBox}>
-        <strong>Como funciona:</strong> Declare aqui quais variáveis sua história usa.
-        Use <code style={{ color: 'var(--tag-fandom-color)' }}>{'{{nome_da_variavel}}'}</code> nos capítulos.
-        Antes de ler, o sistema pedirá ao leitor que preencha o que estiver faltando.
-      </div>
-
-      <div className={styles.questionActions}>
-        {availableStdVars.length > 0 ? (
-          <div className={styles.standardVarRow}>
-            <label className={styles.formLabel} style={{ whiteSpace: 'nowrap' }}>Variável padrão:</label>
-            <select className={styles.formInput} value={selectedStdKey} onChange={(e) => setSelectedStdKey(e.target.value)}>
-              <option value="">Selecione...</option>
-              {availableStdVars.map((v) => (
-                <option key={v.key} value={v.key}>{v.label} ({'{{'}{v.key}{'}}'})</option>
-              ))}
-            </select>
-            <Button size="sm" onClick={handleAddStd} disabled={!selectedStdKey}>+ Adicionar</Button>
-          </div>
-        ) : (
-          <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>
-            Todas as variáveis padrão já foram adicionadas.
-          </span>
-        )}
-        <Button variant="secondary" size="sm" onClick={() => setQuestionModal('new')}>+ Variável Customizada</Button>
-      </div>
-
-      {questions.length === 0 ? (
-        <div className={styles.emptyState}>Nenhuma variável ainda. Adicione variáveis padrão ou crie customizadas.</div>
-      ) : (
-        <div className={styles.questionsList}>
-          {questions.map((q) => (
-            <div key={q.id} className={styles.questionCard}>
-              <div className={styles.questionCardInfo}>
-                <div className={styles.questionCardTop}>
-                  {q.variable_type === 'standard'
-                    ? <span className={styles.badgeStandard}>PADRÃO</span>
-                    : <span className={styles.badgeCustom}>CUSTOM</span>
-                  }
-                  <span className={styles.questionCardText}>{q.question_text}</span>
-                </div>
-                <div className={styles.questionCardPlaceholder}>
-                  Placeholder: <code>{'{{'}{q.placeholder}{'}}'}</code>
-                </div>
-              </div>
-              <div className={styles.questionCardActions}>
-                {q.variable_type !== 'standard' && (
-                  <Button variant="secondary" size="sm" onClick={() => setQuestionModal(q)} title="Editar variável"><IconPencil /></Button>
-                )}
-                <Button variant="danger" size="sm" onClick={() => handleDelete(q.id)} title="Remover variável"><IconTrash /></Button>
-              </div>
-            </div>
-          ))}
+      {/* Toggle do Modo Interativo */}
+      <div className={styles.interactiveModeToggle}>
+        <div>
+          <p className={styles.interactiveModeTitle}>Modo Interativo</p>
+          <p className={styles.interactiveModeDesc}>
+            Permite personalizar a história com o nome e dados do leitor.
+          </p>
         </div>
+        <label className={styles.toggleSwitch}>
+          <input
+            type="checkbox"
+            checked={interactiveMode}
+            onChange={(e) => handleToggleMode(e.target.checked)}
+            disabled={togglingMode}
+          />
+          <span className={styles.toggleSlider} />
+        </label>
+      </div>
+
+      {interactiveMode && (
+        <>
+          <div className={styles.infoBox}>
+            <strong>Como funciona:</strong> Declare aqui quais variáveis sua história usa.
+            Use <code style={{ color: 'var(--tag-fandom-color)' }}>{'{{nome_da_variavel}}'}</code> nos capítulos.{' '}
+            Antes de ler, o sistema pedirá ao leitor que preencha os dados.{' '}
+            A <strong>resposta padrão</strong> é usada quando o leitor lê sem personalizar — ela substitui a variável no modo normal de leitura.
+          </div>
+
+          <div className={styles.questionActions}>
+            {availableStdVars.length > 0 ? (
+              <div className={styles.standardVarRow}>
+                <label className={styles.formLabel} style={{ whiteSpace: 'nowrap' }}>Variável padrão:</label>
+                <select className={styles.formInput} value={selectedStdKey} onChange={(e) => setSelectedStdKey(e.target.value)}>
+                  <option value="">Selecione...</option>
+                  {availableStdVars.map((v) => (
+                    <option key={v.key} value={v.key}>{v.label} ({'{{'}{v.key}{'}}'})</option>
+                  ))}
+                </select>
+                <Button size="sm" onClick={handleAddStdClick} disabled={!selectedStdKey}>+ Adicionar</Button>
+              </div>
+            ) : (
+              <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>
+                Todas as variáveis padrão já foram adicionadas.
+              </span>
+            )}
+            <Button variant="secondary" size="sm" onClick={() => setQuestionModal('new')}>+ Variável Customizada</Button>
+          </div>
+
+          {questions.length === 0 ? (
+            <div className={styles.emptyState}>Nenhuma variável ainda. Adicione variáveis padrão ou crie customizadas.</div>
+          ) : (
+            <div className={styles.questionsList}>
+              {questions.map((q) => (
+                <div key={q.id} className={styles.questionCard}>
+                  <div className={styles.questionCardInfo}>
+                    <div className={styles.questionCardTop}>
+                      {q.variable_type === 'standard'
+                        ? <span className={styles.badgeStandard}>PADRÃO</span>
+                        : <span className={styles.badgeCustom}>CUSTOM</span>
+                      }
+                      <span className={styles.questionCardText}>{q.question_text}</span>
+                    </div>
+                    <div className={styles.questionCardPlaceholder}>
+                      Placeholder: <code>{'{{'}{q.placeholder}{'}}'}</code>
+                    </div>
+                    {q.default_answer ? (
+                      <div className={styles.questionCardPlaceholder}>
+                        Resposta padrão: <code>{q.default_answer}</code>
+                      </div>
+                    ) : (
+                      <div className={styles.questionCardPlaceholder} style={{ color: 'var(--color-warning)' }}>
+                        Sem resposta padrão — a variável não será substituída no modo normal.
+                      </div>
+                    )}
+                      </div>
+                  <div className={styles.questionCardActions}>
+                    <Button variant="secondary" size="sm" onClick={() => setQuestionModal(q)} title="Editar variável"><IconPencil /></Button>
+                    <Button variant="danger" size="sm" onClick={() => handleDelete(q.id)} title="Remover variável"><IconTrash /></Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       {questionModal !== null && (
         <QuestionModal
           fanficId={fanfic.id}
-          question={questionModal === 'new' ? null : questionModal}
-          onClose={() => setQuestionModal(null)}
-          onSaved={() => { invalidate(); setQuestionModal(null); }}
+          pendingStd={questionModal?.pendingStd || null}
+          question={questionModal === 'new' || questionModal?.pendingStd ? null : questionModal}
+          onClose={() => { setQuestionModal(null); setSelectedStdKey(''); }}
+          onSaved={() => { invalidate(); setQuestionModal(null); setSelectedStdKey(''); }}
         />
       )}
     </>
   );
 }
 
-// ─── Modal: Variável Customizada ────────────────────────────────────────
-function QuestionModal({ fanficId, question, onClose, onSaved }) {
+// ─── Modal: Variável (Custom ou Padrão pendente) ─────────────────────────
+function QuestionModal({ fanficId, question, pendingStd, onClose, onSaved }) {
   const toast = useToast();
-  const [text, setText] = useState(question?.question_text || '');
-  const [placeholder, setPlaceholder] = useState(question?.placeholder || '');
+  // pendingStd = { key, label, placeholder } → novo padrão a adicionar
+  const isPendingStd = !!pendingStd;
+  const isEdit = question !== null && !isPendingStd;
+  const isStandard = isEdit && question?.variable_type === 'standard';
+
+  const [text, setText] = useState(isPendingStd ? pendingStd.label : (question?.question_text || ''));
+  const [placeholder, setPlaceholder] = useState(isPendingStd ? pendingStd.key : (question?.placeholder || ''));
+  const [defaultAnswer, setDefaultAnswer] = useState(question?.default_answer || '');
+  const [skipDefault, setSkipDefault] = useState(false);
   const [saving, setSaving] = useState(false);
-  const isEdit = question !== null;
 
   const handleSave = async () => {
-    if (!text.trim() || !placeholder.trim()) { toast.error('Preencha todos os campos.'); return; }
-    if (!/^[a-zA-Z0-9_]+$/.test(placeholder)) {
+    if (!isPendingStd && !isStandard && (!text.trim() || !placeholder.trim())) {
+      toast.error('Preencha todos os campos.');
+      return;
+    }
+    if (!isEdit && !isPendingStd && !/^[a-zA-Z0-9_]+$/.test(placeholder)) {
       toast.error('Placeholder: apenas letras, números e underscores.');
       return;
     }
+    const finalDefault = skipDefault ? '' : defaultAnswer.trim();
     setSaving(true);
     try {
       if (isEdit) {
-        await interactiveApi.updateQuestion(question.id, { question_text: text.trim() });
+        await interactiveApi.updateQuestion(question.id, {
+          question_text: isStandard ? undefined : text.trim(),
+          default_answer: finalDefault,
+        });
+      } else if (isPendingStd) {
+        await interactiveApi.createQuestion(fanficId, {
+          question_text: pendingStd.label,
+          placeholder: pendingStd.key,
+          variable_type: 'standard',
+          standard_key: pendingStd.key,
+          default_answer: finalDefault,
+        });
       } else {
         await interactiveApi.createQuestion(fanficId, {
           question_text: text.trim(),
           placeholder: placeholder.trim(),
           variable_type: 'custom',
+          default_answer: finalDefault,
         });
       }
       toast.success(isEdit ? 'Variável atualizada!' : 'Variável criada!');
@@ -909,39 +1085,87 @@ function QuestionModal({ fanficId, question, onClose, onSaved }) {
     }
   };
 
+  const modalTitle = isPendingStd
+    ? `Adicionar: ${pendingStd.label}`
+    : isEdit
+      ? `Editar Variável${isStandard ? ' Padrão' : ' Customizada'}`
+      : 'Nova Variável Customizada';
+
   return (
     <Modal
       isOpen
       onClose={onClose}
-      title={isEdit ? 'Editar Variável Customizada' : 'Nova Variável Customizada'}
+      title={modalTitle}
       footer={
         <>
           <Button variant="secondary" onClick={onClose} disabled={saving}>Cancelar</Button>
-          <Button onClick={handleSave} isLoading={saving}>{isEdit ? 'Salvar' : 'Criar Variável'}</Button>
+          <Button onClick={handleSave} isLoading={saving}>{isEdit ? 'Salvar' : isPendingStd ? 'Adicionar Variável' : 'Criar Variável'}</Button>
         </>
       }
     >
-      <div className={styles.formGroup}>
-        <label className={styles.formLabel}>Pergunta para o leitor</label>
-        <input
-          className={styles.formInput}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="Ex: Qual o nome da sua espada mágica?"
-        />
-      </div>
-      <div className={styles.formGroup}>
-        <label className={styles.formLabel}>Nome da variável (placeholder)</label>
-        <input
-          className={styles.formInput}
-          value={placeholder}
-          onChange={(e) => setPlaceholder(e.target.value)}
-          placeholder="Ex: espada_magica"
-          readOnly={isEdit}
-        />
-        <p className={styles.formHint}>
-          Apenas letras, números e underscores. Use no capítulo como <code style={{ color: 'var(--tag-fandom-color)' }}>{'{{'}{placeholder || 'variavel'}{'}}'}</code>
-        </p>
+      {/* Variável padrão pendente — mostra qual variável será adicionada */}
+      {isPendingStd && (
+        <div className={styles.infoBox} style={{ marginBottom: 'var(--space-4)' }}>
+          <strong>{pendingStd.label}</strong> — será usada como{' '}
+          <code style={{ color: 'var(--tag-fandom-color)' }}>{'{{'}{pendingStd.key}{'}}'}</code> nos capítulos.
+        </div>
+      )}
+
+      {/* Pergunta para o leitor — apenas variáveis customizadas e edições */}
+      {!isPendingStd && (
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Pergunta para o leitor</label>
+          <input
+            className={styles.formInput}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="Ex: Qual o nome da sua espada mágica?"
+            readOnly={isStandard}
+          />
+        </div>
+      )}
+
+      {/* Placeholder — apenas ao criar variável customizada */}
+      {!isEdit && !isPendingStd && (
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Nome da variável (placeholder)</label>
+          <input
+            className={styles.formInput}
+            value={placeholder}
+            onChange={(e) => setPlaceholder(e.target.value.replace(/[^a-zA-Z0-9_]/g, ''))}
+            placeholder="Ex: espada_magica"
+          />
+          <p className={styles.formHint}>
+            Apenas letras, números e underscores. Use no capítulo como <code style={{ color: 'var(--tag-fandom-color)' }}>{'{{'}{placeholder || 'variavel'}{'}}'}</code>
+          </p>
+        </div>
+      )}
+
+      {/* Resposta padrão */}
+      <div className={styles.formGroup} style={{ marginBottom: skipDefault ? 0 : undefined }}>
+        <label className={styles.formLabel}>
+          Resposta padrão{' '}
+          <span className={styles.formHint}>(substitui a variável para leitores sem personalização)</span>
+        </label>
+        {!skipDefault && (
+          <input
+            className={styles.formInput}
+            value={defaultAnswer}
+            onChange={(e) => setDefaultAnswer(e.target.value)}
+            placeholder={isPendingStd ? `Ex: ${pendingStd.placeholder || '—'}` : 'Ex: uma guerreira destemida'}
+            disabled={skipDefault}
+          />
+        )}
+        <label className={styles.checkboxGroup} style={{ marginTop: '0.5rem' }}>
+          <input
+            type="checkbox"
+            checked={skipDefault}
+            onChange={(e) => setSkipDefault(e.target.checked)}
+          />
+          <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>
+            Deixar sem resposta padrão (a variável não será substituída no modo normal)
+          </span>
+        </label>
       </div>
     </Modal>
   );
@@ -961,19 +1185,6 @@ function CommentsTab({ fanfic }) {
     queryKey: ['dash-chapters', fanfic.id],
     queryFn: () => chapterApi.getAll(fanfic.id),
   });
-
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['dash-comments', fanfic.id] });
-
-  const handleDelete = async (cId) => {
-    if (!window.confirm('Excluir este comentário?')) return;
-    try {
-      await commentApi.delete(cId);
-      invalidate();
-      toast.success('Comentário excluído.');
-    } catch (err) {
-      toast.error(err.message || 'Erro ao excluir.');
-    }
-  };
 
   if (loadingC) return <LoadingSpinner />;
 
@@ -995,16 +1206,57 @@ function CommentsTab({ fanfic }) {
       {groups.map((group) => (
         <div key={group.title} className={styles.commentsGroup}>
           <p className={styles.commentsGroupTitle}>{group.title}</p>
-          {group.items.map((c) => (
-            <div key={c.id} className={styles.commentCard}>
-              <div className={styles.commentCardContent}>
-                <p className={styles.commentAuthor}>{c.username || 'Usuário'}</p>
-                <p className={styles.commentDate}>{formatTimestamp(c.created_at)}</p>
-                <p className={styles.commentText}>{c.content}</p>
+          {group.items.map((c) => {
+            const user = c.user || {};
+            const username = user.username || 'Usuário';
+            const userId = user.id;
+            const avatarUrl = user.avatar_url;
+            return (
+              <div key={c.id} className={styles.commentCard}>
+                {/* Avatar */}
+                <div className={styles.commentAvatar}>
+                  {avatarUrl
+                    ? <img src={avatarUrl} alt={username} className={styles.commentAvatarImg} />
+                    : <div className={styles.commentAvatarFallback}>{username[0]?.toUpperCase()}</div>
+                  }
+                </div>
+
+                <div className={styles.commentCardContent}>
+                  <div className={styles.commentMeta}>
+                    {userId
+                      ? <Link to={`/user/${userId}`} className={styles.commentAuthorLink}>{username}</Link>
+                      : <span className={styles.commentAuthor}>{username}</span>
+                    }
+                    <span className={styles.commentDate}>{formatTimestamp(c.created_at)}</span>
+                  </div>
+                  <p className={styles.commentText}>{c.content}</p>
+                  <div className={styles.commentActions}>
+                    <button
+                      className={styles.commentActionBtn}
+                      title="Responder"
+                      onClick={() => toast.info?.('Resposta em breve.')}
+                    >
+                      <IconReply /> <span>Responder</span>
+                    </button>
+                    <button
+                      className={styles.commentActionBtn}
+                      title="Curtir"
+                      onClick={() => toast.info?.('Curtida em breve.')}
+                    >
+                      <IconHeart /> <span>Curtir</span>
+                    </button>
+                    <button
+                      className={`${styles.commentActionBtn} ${styles.commentActionReport}`}
+                      title="Denunciar"
+                      onClick={() => toast.info?.('Denúncia em breve.')}
+                    >
+                      <IconFlag /> <span>Denunciar</span>
+                    </button>
+                  </div>
+                </div>
               </div>
-              <Button variant="danger" size="sm" onClick={() => handleDelete(c.id)} title="Excluir comentário"><IconTrash /></Button>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ))}
     </>
@@ -1015,7 +1267,7 @@ function CommentsTab({ fanfic }) {
 const TABS = [
   { key: 'info', label: 'Informações' },
   { key: 'chapters', label: 'Capítulos' },
-  { key: 'questions', label: 'Perguntas' },
+  { key: 'questions', label: 'Modo Interativo' },
   { key: 'comments', label: 'Comentários' },
 ];
 
@@ -1194,9 +1446,8 @@ export default function DashboardPage() {
           <div className={styles.editorArea}>
             {!selectedFanfic ? (
               <div className={styles.noSelection}>
-                <span className={styles.noSelectionIcon}><IconPen /></span>
-                <p className={styles.noSelectionTitle}>Selecione uma história</p>
-                <p className={styles.noSelectionText}>Clique em uma história na lista ou crie uma nova.</p>
+                <h1 className={styles.noSelectionHeading}>Minhas Histórias</h1>
+                <p className={styles.noSelectionText}>Selecione uma história na lista ou crie uma nova.</p>
               </div>
             ) : (
               <div className={styles.editorInner}>
@@ -1225,7 +1476,7 @@ export default function DashboardPage() {
                 <div className={styles.tabContent}>
                   {activeTab === 'info'     && <InfoTab      key={`info-${selectedFanfic.id}`} fanfic={selectedFanfic} onUpdated={handleFanficUpdated} />}
                   {activeTab === 'chapters' && <ChaptersTab  key={`ch-${selectedFanfic.id}`}   fanfic={selectedFanfic} />}
-                  {activeTab === 'questions'&& <QuestionsTab key={`q-${selectedFanfic.id}`}    fanfic={selectedFanfic} />}
+                  {activeTab === 'questions'&& <QuestionsTab key={`q-${selectedFanfic.id}`}    fanfic={selectedFanfic} onFanficUpdated={handleFanficUpdated} />}
                   {activeTab === 'comments' && <CommentsTab  key={`c-${selectedFanfic.id}`}    fanfic={selectedFanfic} />}
                 </div>
               </div>

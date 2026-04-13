@@ -7,6 +7,7 @@ import (
 	"github.com/interactive-fanfic-platform/config"
 	"github.com/interactive-fanfic-platform/database"
 	"github.com/interactive-fanfic-platform/routes"
+	"github.com/interactive-fanfic-platform/storage"
 )
 
 func main() {
@@ -21,6 +22,9 @@ func main() {
 
 	log.Println("Database connected successfully!")
 
+	// Migrações seguras: adicionam colunas novas se ausentes — sempre roda.
+	database.RunSafeColumnMigrations(db)
+
 	// Run migrations only when AUTO_MIGRATE=true
 	// Em produção ou execuções normais, mantenha AUTO_MIGRATE=false para startup rápido.
 	// Ative apenas ao adicionar novos modelos ou colunas ao schema.
@@ -33,9 +37,18 @@ func main() {
 		log.Println("AUTO_MIGRATE=false: migrations ignoradas.")
 	}
 
+	// Initialise storage backend (local or supabase, controlled by STORAGE_PROVIDER env var)
+	store := storage.New(storage.Config{
+		Provider:       cfg.StorageProvider,
+		SupabaseURL:    cfg.SupabaseURL,
+		SupabaseKey:    cfg.SupabaseKey,
+		SupabaseBucket: cfg.SupabaseBucket,
+	})
+	log.Printf("Storage provider: %s", cfg.StorageProvider)
+
 	// Setup router
 	router := gin.Default()
-	routes.Setup(router, db, cfg)
+	routes.Setup(router, db, cfg, store)
 
 	// Start server
 	log.Printf("Server starting on port %s", cfg.Port)

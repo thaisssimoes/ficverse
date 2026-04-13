@@ -10,9 +10,7 @@ import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
 import ContentWarningModal from '../components/fanfic/ContentWarningModal';
 import AuthorHeader from '../components/editorial/AuthorHeader';
-import AuthorCard from '../components/editorial/AuthorCard';
 import FeedList from '../components/editorial/FeedList';
-import InteractivePanel from '../components/editorial/InteractivePanel';
 import DisclaimerBlock from '../components/editorial/DisclaimerBlock';
 import styles from './FanficDetailPage.module.css';
 
@@ -85,33 +83,63 @@ function MissingQuestionsModal({ isOpen, onClose, questions, profileName, onUpda
   );
 }
 
-// Modal de perguntas interativas
-function QuestionsModal({ isOpen, onClose, questions, existingAnswers, readerProfile, onSave, hasProfiles }) {
+// Modal de perguntas interativas / configuração do modo interativo
+function QuestionsModal({ isOpen, onClose, questions, existingAnswers, readerProfile, allProfiles, selectedProfileId, onSelectProfile, onSave, fanficId }) {
+  const toast = useToast();
   const [inputs, setInputs] = useState({});
   const [errors, setErrors] = useState([]);
   const [saveToProfile, setSaveToProfile] = useState({});
   const [showCreateProfile, setShowCreateProfile] = useState(false);
   const [newProfileName, setNewProfileName] = useState('');
+  // Cópia local do perfil selecionado — mudança imediata sem fechar o modal
+  const [localProfileId, setLocalProfileId] = useState(selectedProfileId);
 
-  // Sincroniza inputs sempre que perfil ou respostas mudam
+  // Na abertura do modal: inicializa localProfileId e carrega respostas
   useEffect(() => {
-    setInputs(() => {
-      const updated = {};
+    if (!isOpen) return;
+    setLocalProfileId(selectedProfileId);
+    const updated = {};
+    questions.forEach((q) => {
+      updated[q.placeholder] =
+        existingAnswers[q.placeholder] ||
+        (q.variable_type === 'standard' ? readerProfile[q.standard_key] || '' : '');
+    });
+    setInputs(updated);
+  }, [isOpen]); // só re-executa ao abrir
+
+  // Quando o leitor troca de perfil DENTRO do modal: recarrega respostas imediatamente
+  const handleProfileChange = (id) => {
+    setLocalProfileId(id);
+    onSelectProfile(id); // propaga para o pai (atualiza readerProfile via state)
+    const newProfile = allProfiles.find((p) => p.id === id) || {};
+    setInputs((prev) => {
+      const updated = { ...prev };
       questions.forEach((q) => {
-        updated[q.placeholder] =
-          existingAnswers[q.placeholder] ||
-          (q.variable_type === 'standard' ? readerProfile[q.standard_key] || '' : '');
+        if (q.variable_type === 'standard') {
+          // Só sobrescreve se o novo perfil TEM valor — preserva valor anterior para campos vazios
+          const profileValue = newProfile[q.standard_key];
+          if (profileValue) updated[q.placeholder] = profileValue;
+        }
       });
       return updated;
     });
-  }, [readerProfile, existingAnswers]); // re-executa quando perfil/respostas chegarem
+  };
+
+  const handleSavePreference = async () => {
+    if (!localProfileId) return;
+    localStorage.setItem(`lollipopfics_fanfic_${fanficId}_profile_id`, String(localProfileId));
+    // Também aplica as respostas do perfil selecionado
+    await onSave(inputs, saveToProfile, null, localProfileId);
+    toast.success('Perfil salvo como preferência para esta história!');
+    onClose();
+  };
 
   const handleSubmit = async () => {
-    const empty = Object.entries(inputs).filter(([, v]) => !v.trim()).map(([k]) => k);
-    if (empty.length) { setErrors(empty); return; }
+    // Não bloqueamos campos vazios — o backend ignora respostas vazias,
+    // preservando respostas anteriores para campos não preenchidos no perfil.
     setErrors([]);
     const profileName = showCreateProfile && newProfileName.trim() ? newProfileName.trim() : null;
-    await onSave(inputs, saveToProfile, profileName);
+    await onSave(inputs, saveToProfile, profileName, localProfileId);
     onClose();
   };
 
@@ -119,15 +147,40 @@ function QuestionsModal({ isOpen, onClose, questions, existingAnswers, readerPro
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Perguntas Interativas"
+      title="Configurar Modo Interativo"
       size="lg"
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>Cancelar</Button>
+          {allProfiles.length > 0 && (
+            <Button variant="secondary" onClick={handleSavePreference}>
+              Salvar como preferência
+            </Button>
+          )}
           <Button onClick={handleSubmit}>Salvar Respostas</Button>
         </>
       }
     >
+      {/* Seletor de perfil — só aparece se há perfis cadastrados */}
+      {allProfiles.length > 0 && (
+        <div className={styles.profileSelectorInModal}>
+          <label className={styles.profileSelectorLabel}>Perfil de leitura</label>
+          <select
+            className={styles.profileSelectorSelect}
+            value={localProfileId ?? allProfiles[0]?.id ?? ''}
+            onChange={(e) => handleProfileChange(Number(e.target.value))}
+          >
+            {allProfiles.map((p) => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
+          <p className={styles.profileSelectorHint}>
+            Selecionar um perfil preenche automaticamente as variáveis de perfil com seus dados salvos.
+            Use "Salvar como preferência" para lembrar esta escolha nesta história.
+          </p>
+        </div>
+      )}
+
       <p className={styles.modalDesc}>
         Responda às perguntas abaixo para personalizar sua experiência de leitura.
         Suas respostas serão incorporadas na história!
@@ -170,7 +223,7 @@ function QuestionsModal({ isOpen, onClose, questions, existingAnswers, readerPro
       </div>
 
       {/* Criar perfil — só exibido para usuários sem perfis */}
-      {!hasProfiles && (
+      {allProfiles.length === 0 && (
         <div className={styles.createProfileSection}>
           {!showCreateProfile ? (
             <button className={styles.createProfileBtn} onClick={() => setShowCreateProfile(true)}>
@@ -208,10 +261,22 @@ export default function FanficDetailPage() {
   const [warningOpen, setWarningOpen] = useState(true);
   const [contentVisible, setContentVisible] = useState(false);
   const [questionsOpen, setQuestionsOpen] = useState(false);
-  const [selectedProfileId, setSelectedProfileId] = useState(null);
+  const [selectedProfileId, setSelectedProfileId] = useState(() => {
+    // Preferência específica para esta história tem prioridade
+    const fanficPref = localStorage.getItem(`lollipopfics_fanfic_${id}_profile_id`);
+    if (fanficPref) return Number(fanficPref);
+    const global = localStorage.getItem('lollipopfics_selected_profile_id');
+    return global ? Number(global) : null;
+  });
+
+  const handleSelectProfile = (newId) => {
+    setSelectedProfileId(newId);
+    localStorage.setItem('lollipopfics_selected_profile_id', String(newId));
+  };
   const [missingModalOpen, setMissingModalOpen] = useState(false);
   const [pendingApplyAnswers, setPendingApplyAnswers] = useState({});
   const [missingQuestions, setMissingQuestions] = useState([]);
+  const [readingMode, setReadingMode] = useState('interactive');
 
   // Queries
   const { data: fanfic, isLoading: loadingFanfic } = useQuery({
@@ -279,7 +344,9 @@ export default function FanficDetailPage() {
 
   const saveAnswersMutation = useMutation({
     mutationFn: ({ answers }) => interactiveApi.saveAnswers(id, answers),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['answers', id] }),
+    // Invalida todas as queries de answers — garante que ChapterReaderPage (que usa fanfic_id
+    // numérico) também receba os dados atualizados, não só a query local com id string.
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['answers'] }),
   });
 
   const updateProfileMutation = useMutation({
@@ -302,12 +369,21 @@ export default function FanficDetailPage() {
   const needsWarning = fanfic && (fanfic.is_adult_content || fanfic.trigger_warnings?.trim());
   const showWarning = needsWarning && warningOpen && !contentVisible;
 
-  const handleSaveAnswers = async (inputs, saveToProfileMap, newProfileName = null) => {
-    const merged = { ...existingAnswers, ...inputs };
-    // Auto-completa variáveis padrão ainda não respondidas com o perfil
+  const handleSaveAnswers = async (inputs, saveToProfileMap, newProfileName = null, profileId = null) => {
+    // Usa o perfil explicitamente selecionado no modal; fallback para readerProfile
+    const activeProfile =
+      (profileId != null ? allProfiles.find((p) => p.id === profileId) : null) ||
+      readerProfile;
+
+    // Filtra inputs vazios: campos sem valor no novo perfil preservam a resposta anterior
+    const filledInputs = Object.fromEntries(
+      Object.entries(inputs).filter(([, v]) => v?.trim())
+    );
+    const merged = { ...existingAnswers, ...filledInputs };
+    // Auto-completa variáveis padrão ainda vazias com dados do perfil ativo
     questions.forEach((q) => {
-      if (!merged[q.placeholder] && q.variable_type === 'standard' && readerProfile[q.standard_key]) {
-        merged[q.placeholder] = readerProfile[q.standard_key];
+      if (!merged[q.placeholder] && q.variable_type === 'standard' && activeProfile[q.standard_key]) {
+        merged[q.placeholder] = activeProfile[q.standard_key];
       }
     });
     await saveAnswersMutation.mutateAsync({ answers: merged });
@@ -327,13 +403,13 @@ export default function FanficDetailPage() {
       } catch {
         toast.error('Respostas salvas, mas falha ao criar perfil.');
       }
-    } else if (readerProfile.id && Object.values(saveToProfileMap).some(Boolean)) {
+    } else if (activeProfile.id && Object.values(saveToProfileMap).some(Boolean)) {
       // Atualiza perfil existente se checkbox marcado
-      const updates = { ...readerProfile };
+      const updates = { ...activeProfile };
       Object.entries(saveToProfileMap).forEach(([key, save]) => {
         if (save && inputs[key]) updates[key] = inputs[key];
       });
-      try { await profileApi.updateProfile(readerProfile.id, updates); } catch {}
+      try { await profileApi.updateProfile(activeProfile.id, updates); } catch {}
       toast.success('Respostas salvas!');
     } else {
       toast.success('Respostas salvas!');
@@ -403,13 +479,15 @@ export default function FanficDetailPage() {
     setMissingModalOpen(false);
   };
 
-  // Modo de leitura vem sempre do autor (interactive_mode da fanfic)
   const readChapter = (chapterId) => {
-    const mode = fanfic?.interactive_mode ? 'interactive' : 'non-interactive';
+    const mode = fanfic?.interactive_mode ? readingMode : 'non-interactive';
     navigate(`/chapter/${chapterId}?mode=${mode}`);
   };
 
   const isAuthor = isAuthenticated && fanfic && user?.user_id === fanfic.author_id;
+  const authorUsername = fanfic?.author?.username;
+  const authorAvatarUrl = fanfic?.author?.avatar_url;
+  const authorBio = fanfic?.author?.bio;
 
   // O autor vê também os rascunhos; leitores veem só capítulos publicados
   const sortedChapters = [...chapters]
@@ -461,8 +539,11 @@ export default function FanficDetailPage() {
           questions={pendingQuestions.length > 0 ? pendingQuestions : questions}
           existingAnswers={existingAnswers}
           readerProfile={readerProfile}
+          allProfiles={allProfiles}
+          selectedProfileId={selectedProfileId}
+          onSelectProfile={handleSelectProfile}
           onSave={handleSaveAnswers}
-          hasProfiles={allProfiles.length > 0}
+          fanficId={id}
         />
       )}
 
@@ -476,7 +557,6 @@ export default function FanficDetailPage() {
             favoritesCount={favoriteStatus?.favorites_count ?? 0}
             onFavorite={() => favoriteMutation.mutate()}
             isAuthor={isAuthor}
-            compact
             authorActions={
               <Link to={`/dashboard?fanficId=${fanfic.id}`}>
                 <Button size="sm" variant="secondary">Editar</Button>
@@ -491,27 +571,49 @@ export default function FanficDetailPage() {
             }
           />
 
-          {/* Layout vertical: autor → interativo → disclaimer → capítulos */}
+          {/* Layout vertical: avisos → modo leitura → capítulos */}
           <div className={styles.stackedLayout}>
-            <AuthorCard username={fanfic.author_username} />
 
-            {fanfic.interactive_mode && questions.length > 0 && (
-              <InteractivePanel
-                questions={questions}
-                allProfiles={allProfiles}
-                readerProfile={readerProfile}
-                selectedProfileId={selectedProfileId}
-                onSelectProfile={setSelectedProfileId}
-                onApplyProfile={handleApplyProfile}
-                applyPending={saveAnswersMutation.isPending}
-                onEditAnswers={() => setQuestionsOpen(true)}
-                existingAnswers={existingAnswers}
-                isAuthenticated={isAuthenticated}
-              />
-            )}
-
+            {/* Avisos do autor */}
             <DisclaimerBlock disclaimer={fanfic.disclaimer} />
 
+            {/* Modo de leitura — só para histórias interativas */}
+            {fanfic.interactive_mode && questions.length > 0 && (
+              <section className={styles.infoSection}>
+                <p className={styles.infoSectionLabel}>Modo de leitura</p>
+                <div className={styles.modeBtns}>
+                  <button
+                    className={`${styles.modeBtn} ${readingMode === 'normal' ? styles.modeBtnActive : ''}`}
+                    onClick={() => setReadingMode('normal')}
+                  >
+                    Normal
+                  </button>
+                  <button
+                    className={`${styles.modeBtn} ${readingMode === 'interactive' ? styles.modeBtnActive : ''}`}
+                    onClick={() => { setReadingMode('interactive'); if (isAuthenticated) setQuestionsOpen(true); }}
+                  >
+                    Interativa
+                  </button>
+                </div>
+                {readingMode === 'interactive' && isAuthenticated && (
+                  <button className={styles.configInteractiveBtn} onClick={() => setQuestionsOpen(true)}>
+                    Configurar modo interativo
+                  </button>
+                )}
+                {readingMode === 'interactive' && !isAuthenticated && (
+                  <p className={styles.modeSelectorHint}>
+                    <a href="/login" style={{ color: 'var(--color-accent-brand)' }}>Faça login</a> para personalizar sua leitura.
+                  </p>
+                )}
+                {readingMode === 'normal' && (
+                  <p className={styles.modeSelectorHint}>
+                    A história é lida com os valores padrão definidos pelo autor.
+                  </p>
+                )}
+              </section>
+            )}
+
+            {/* Lista de capítulos */}
             <FeedList chapters={sortedChapters} onReadChapter={readChapter} />
           </div>
         </div>

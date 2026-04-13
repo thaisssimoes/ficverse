@@ -2,24 +2,33 @@ package routes
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
+	"path/filepath"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/interactive-fanfic-platform/auth"
 	"github.com/interactive-fanfic-platform/fanfic"
+	"github.com/interactive-fanfic-platform/storage"
 	"gorm.io/gorm"
 )
 
 // FanficHandler handles fanfic endpoints
 type FanficHandler struct {
 	service *fanfic.FanficService
+	db      *gorm.DB
+	store   storage.StorageService
 }
 
 // NewFanficHandler creates a new fanfic handler
-func NewFanficHandler(db *gorm.DB) *FanficHandler {
+func NewFanficHandler(db *gorm.DB, store storage.StorageService) *FanficHandler {
 	return &FanficHandler{
 		service: fanfic.NewFanficService(db),
+		db:      db,
+		store:   store,
 	}
 }
 
@@ -463,3 +472,63 @@ func (h *FanficHandler) Unpublish(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Fanfic unpublished successfully"})
 }
+
+// UploadCover — POST /api/fanfics/:id/cover
+func (h *FanficHandler) UploadCover(c *gin.Context) {
+	user, exists := auth.GetCurrentUser(c)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, ErrorResponse{Error: ErrorDetail{Code: "UNAUTHORIZED", Message: "Authentication required"}})
+		return
+	}
+
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: ErrorDetail{Code: "INVALID_ID", Message: "Invalid fanfic ID"}})
+		return
+	}
+
+	fanficData, err := h.service.GetFanfic(id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, ErrorResponse{Error: ErrorDetail{Code: "NOT_FOUND", Message: "Fanfic not found"}})
+		return
+	}
+	if fanficData.AuthorID != user.ID {
+		c.JSON(http.StatusForbidden, ErrorResponse{Error: ErrorDetail{Code: "FORBIDDEN", Message: "Sem permissão"}})
+		return
+	}
+
+	file, header, err := c.Request.FormFile("cover")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: ErrorDetail{Code: "UPLOAD_ERROR", Message: "Arquivo não encontrado"}})
+		return
+	}
+	defer file.Close()
+
+	if header.Size > 5*1024*1024 {
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: ErrorDetail{Code: "UPLOAD_ERROR", Message: "Arquivo muito grande (máximo 5MB)"}})
+		return
+	}
+
+	ext := strings.ToLower(filepath.Ext(header.Filename))
+	mimeByExt := map[string]string{".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp", ".gif": "image/gif"}
+	contentType, ok := mimeByExt[ext]
+	if !ok {
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: ErrorDetail{Code: "UPLOAD_ERROR", Message: "Formato não suportado (jpg, png, webp, gif)"}})
+		return
+	}
+
+	key := fmt.Sprintf("fanfic-covers/%d_%d%s", id, time.Now().UnixNano(), ext)
+	coverURL, err := h.store.Upload(c.Request.Context(), key, file, header.Size, contentType)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: ErrorDetail{Code: "UPLOAD_ERROR", Message: err.Error()}})
+		return
+	}
+
+	if err := h.db.Table("fanfics").Where("id = ?", id).Update("cover_url", coverURL).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: ErrorDetail{Code: "DB_ERROR", Message: "Erro ao salvar capa no banco"}})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"cover_url": coverURL})
+}
+

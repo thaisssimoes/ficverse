@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/interactive-fanfic-platform/auth"
 	"github.com/interactive-fanfic-platform/config"
+	"github.com/interactive-fanfic-platform/storage"
 	"gorm.io/gorm"
 )
 
@@ -63,7 +64,7 @@ func CORSMiddleware() gin.HandlerFunc {
 }
 
 // Setup configures all routes and middleware
-func Setup(router *gin.Engine, db *gorm.DB, cfg *config.Config) {
+func Setup(router *gin.Engine, db *gorm.DB, cfg *config.Config, store storage.StorageService) {
 	// Add CORS middleware
 	router.Use(CORSMiddleware())
 	
@@ -84,8 +85,8 @@ func Setup(router *gin.Engine, db *gorm.DB, cfg *config.Config) {
 
 	// Create handlers
 	authHandler := NewAuthHandler(authService)
-	fanficHandler := NewFanficHandler(db)
-	chapterHandler := NewChapterHandler(db)
+	fanficHandler := NewFanficHandler(db, store)
+	chapterHandler := NewChapterHandler(db, store)
 	interactiveHandler := NewInteractiveHandler(db)
 	commentHandler := NewCommentHandler(db)
 	searchHandler := NewSearchHandler(db)
@@ -94,7 +95,7 @@ func Setup(router *gin.Engine, db *gorm.DB, cfg *config.Config) {
 	tagHandler := NewTagHandler(db)
 	favoriteHandler := NewFavoriteHandler(db)
 	readerProfileHandler := NewReaderProfileHandler(db)
-	userHandler := NewUserHandler(db, authService)
+	userHandler := NewUserHandler(db, authService, store)
 	wallHandler := NewWallHandler(db)
 
 	// API routes
@@ -123,6 +124,7 @@ func Setup(router *gin.Engine, db *gorm.DB, cfg *config.Config) {
 			fanfics.DELETE("/:id", auth.AuthMiddleware(authService), fanficHandler.Delete)
 			fanfics.POST("/:id/publish", auth.AuthMiddleware(authService), fanficHandler.Publish)
 			fanfics.POST("/:id/unpublish", auth.AuthMiddleware(authService), fanficHandler.Unpublish)
+			fanfics.POST("/:id/cover", auth.AuthMiddleware(authService), fanficHandler.UploadCover)
 			
 			// Tag routes under fanfics
 			fanfics.GET("/:id/tags", tagHandler.GetFanficTags)

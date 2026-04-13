@@ -20,12 +20,6 @@ const IconEdit = () => (
  */
 export default function InteractivePanel({
   questions = [],
-  allProfiles = [],
-  readerProfile = {},
-  selectedProfileId,
-  onSelectProfile,
-  onApplyProfile,
-  applyPending = false,
   onEditAnswers,
   existingAnswers = {},
   isAuthenticated = false,
@@ -40,33 +34,9 @@ export default function InteractivePanel({
       </header>
 
       <p className={styles.description}>
-        Esta história usa suas informações para personalizar a experiência de leitura.
+        Esta história personaliza a experiência de leitura com suas informações.
+        Selecione um perfil e edite suas respostas para personalizar a história.
       </p>
-
-      {isAuthenticated && allProfiles.length > 0 && (
-        <div className={styles.profileSelector}>
-          <span className={styles.profileLabel}>Perfil de leitura</span>
-          <div className={styles.profileRow}>
-            <select
-              className={styles.profileSelect}
-              value={selectedProfileId ?? readerProfile.id ?? ''}
-              onChange={(e) => onSelectProfile(Number(e.target.value))}
-            >
-              {allProfiles.map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
-            <button
-              className={styles.applyBtn}
-              onClick={onApplyProfile}
-              disabled={applyPending}
-            >
-              Aplicar
-            </button>
-          </div>
-          <Link to="/profiles" className={styles.manageLink}>Gerenciar perfis</Link>
-        </div>
-      )}
 
       {isAuthenticated && (
         <button className={styles.editBtn} onClick={onEditAnswers}>

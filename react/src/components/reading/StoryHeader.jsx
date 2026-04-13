@@ -29,6 +29,7 @@ const IconBook = () => (
  * @param {string}    [fanficTitle] - Título da história
  * @param {number}    [fanficId]    - ID da história
  * @param {string}    [author]      - Username do autor
+ * @param {string}    [authorAvatar] - URL do avatar do autor
  * @param {'interactive'|'non-interactive'} mode
  * @param {ReactNode} [actions]
  */
@@ -38,11 +39,21 @@ export default function StoryHeader({
   fanficTitle,
   fanficId,
   author,
+  authorAvatar,
   mode = 'non-interactive',
   actions,
 }) {
+  const initial = author?.charAt(0)?.toUpperCase() ?? '?';
+
   return (
     <header className={styles.header}>
+      {/* Link de volta para a história */}
+      {fanficId && fanficTitle && (
+        <Link to={`/fanfic/${fanficId}`} className={styles.backLink}>
+          <IconArrowLeft /> Voltar para detalhes de {fanficTitle}
+        </Link>
+      )}
+
       {/* Título da história — H1 proeminente */}
       {fanficTitle && (
         fanficId
@@ -50,9 +61,15 @@ export default function StoryHeader({
           : <h1 className={styles.storyTitle}>{fanficTitle}</h1>
       )}
 
-      {/* Autor — subtítulo */}
+      {/* Autor — avatar clicável + nome */}
       {author && (
         <p className={styles.authorLine}>
+          <Link to={`/user/${author}`} className={styles.authorAvatar} aria-label={`Perfil de ${author}`}>
+            {authorAvatar
+              ? <img src={authorAvatar} alt={author} className={styles.authorAvatarImg} />
+              : <span className={styles.authorAvatarInitial}>{initial}</span>
+            }
+          </Link>
           por <Link to={`/user/${author}`} className={styles.authorLink}>{author}</Link>
         </p>
       )}
