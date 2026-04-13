@@ -113,7 +113,7 @@ func TestCreateQuestion(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			question, err := service.CreateQuestion(tt.fanficID, tt.questionText, tt.placeholder)
+			question, err := service.CreateQuestion(tt.fanficID, tt.questionText, tt.placeholder, "custom", "", "")
 
 			if tt.expectError {
 				if err == nil {
@@ -151,11 +151,11 @@ func TestSaveAndGetAnswers(t *testing.T) {
 	fanfic := createTestFanficForUnit(t, db, author.ID)
 
 	// Create questions
-	_, err := service.CreateQuestion(fanfic.ID, "What is your name?", "name")
+	_, err := service.CreateQuestion(fanfic.ID, "What is your name?", "name", "custom", "", "")
 	if err != nil {
 		t.Fatalf("Failed to create question: %v", err)
 	}
-	_, err = service.CreateQuestion(fanfic.ID, "What is your favorite color?", "color")
+	_, err = service.CreateQuestion(fanfic.ID, "What is your favorite color?", "color", "custom", "", "")
 	if err != nil {
 		t.Fatalf("Failed to create question: %v", err)
 	}
@@ -198,7 +198,7 @@ func TestUpdateAnswer(t *testing.T) {
 	fanfic := createTestFanficForUnit(t, db, author.ID)
 
 	// Create question
-	_, err := service.CreateQuestion(fanfic.ID, "What is your name?", "name")
+	_, err := service.CreateQuestion(fanfic.ID, "What is your name?", "name", "custom", "", "")
 	if err != nil {
 		t.Fatalf("Failed to create question: %v", err)
 	}
@@ -294,7 +294,7 @@ func TestHasPendingQuestions(t *testing.T) {
 	fanfic := createTestFanficForUnit(t, db, author.ID)
 
 	// Create initial question
-	_, err := service.CreateQuestion(fanfic.ID, "What is your name?", "name")
+	_, err := service.CreateQuestion(fanfic.ID, "What is your name?", "name", "custom", "", "")
 	if err != nil {
 		t.Fatalf("Failed to create question: %v", err)
 	}
@@ -318,7 +318,7 @@ func TestHasPendingQuestions(t *testing.T) {
 	}
 
 	// Add new question
-	newQuestion, err := service.CreateQuestion(fanfic.ID, "What is your favorite color?", "color")
+	newQuestion, err := service.CreateQuestion(fanfic.ID, "What is your favorite color?", "color", "custom", "", "")
 	if err != nil {
 		t.Fatalf("Failed to create new question: %v", err)
 	}
@@ -349,7 +349,7 @@ func TestDeleteQuestion(t *testing.T) {
 	fanfic := createTestFanficForUnit(t, db, user.ID)
 
 	// Create question
-	question, err := service.CreateQuestion(fanfic.ID, "What is your name?", "name")
+	question, err := service.CreateQuestion(fanfic.ID, "What is your name?", "name", "custom", "", "")
 	if err != nil {
 		t.Fatalf("Failed to create question: %v", err)
 	}

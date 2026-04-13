@@ -184,6 +184,14 @@ export const interactiveApi = {
   updateAnswers: (fanficId, answers) =>
     request(`/fanfics/${fanficId}/answers`, { method: 'PUT', body: JSON.stringify({ answers }) }),
   getPendingQuestions: (fanficId) => request(`/fanfics/${fanficId}/pending-questions`),
+
+  // Renderiza o conteúdo com as tags {{ }} substituídas via motor Go.
+  // Stateless — não requer auth.
+  render: (content, vars) =>
+    request('/interactive/render', {
+      method: 'POST',
+      body: JSON.stringify({ content, vars }),
+    }),
 };
 
 // Comentários

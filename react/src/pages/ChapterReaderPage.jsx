@@ -4,7 +4,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { chapterApi, fanficApi, interactiveApi, commentApi } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
-import { substitutePlaceholders } from '../utils/substitution';
 import PageLayout from '../components/layout/PageLayout';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import Button from '../components/ui/Button';
@@ -110,6 +109,16 @@ export default function ChapterReaderPage() {
     enabled: mode === 'interactive' && isAuthenticated && !!chapter?.fanfic_id,
   });
 
+  // Renderiza o conteúdo via motor Go quando o leitor tem respostas salvas.
+  // O queryKey inclui os answers para re-renderizar automaticamente ao salvá-los.
+  const hasAnswers = Object.keys(answers).length > 0;
+  const { data: renderResult } = useQuery({
+    queryKey: ['rendered-content', chapter?.id, answers],
+    queryFn: () => interactiveApi.render(chapter.content, answers),
+    enabled: mode === 'interactive' && !!chapter?.content && hasAnswers,
+    staleTime: Infinity, // o conteúdo não muda enquanto chapter+answers forem os mesmos
+  });
+
   const { data: comments = [], isLoading: loadingComments } = useQuery({
     queryKey: ['chapter-comments', id],
     queryFn: () => commentApi.getChapterComments(id),
@@ -159,14 +168,12 @@ export default function ChapterReaderPage() {
     await saveAnswersMutation.mutateAsync(merged);
   };
 
-  // Conteúdo do capítulo (com substituição de placeholders)
-  const getContent = () => {
-    if (!chapter?.content) return '';
-    if (mode === 'interactive' && Object.keys(answers).length > 0) {
-      return substitutePlaceholders(chapter.content, answers);
-    }
-    return chapter.content;
-  };
+  // Conteúdo final: renderizado pelo Go quando em modo interativo com respostas,
+  // ou o HTML bruto (com tags visíveis) nas demais situações.
+  const displayContent =
+    mode === 'interactive' && renderResult?.rendered_html
+      ? renderResult.rendered_html
+      : (chapter?.content ?? '');
 
   // Navegação entre capítulos
   const sorted = [...allChapters].sort((a, b) => a.order - b.order);
@@ -213,7 +220,7 @@ export default function ChapterReaderPage() {
 
         {/* Conteúdo com tipografia Lora — 18-20px, line-height 1.6 */}
         <article>
-          <ReadingContent html={getContent()} />
+          <ReadingContent html={displayContent} />
         </article>
 
         {/* Navegação entre capítulos */}

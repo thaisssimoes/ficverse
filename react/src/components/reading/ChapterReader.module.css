@@ -1,0 +1,110 @@
+/* ============================================================
+   ChapterReader — renderiza o HTML final do motor Go.
+   Herda os tokens de design do sistema (CSS custom properties).
+   ============================================================ */
+
+.chapterReader {
+  font-family: var(--font-serif);
+  /* 18-20 px fluido — intervalo ideal para leitura longa */
+  font-size: clamp(1.0625rem, 1.2vw + 0.8rem, 1.25rem);
+  line-height: 1.6;
+  color: var(--color-text-primary);
+  text-align: left;
+}
+
+/* Parágrafos */
+.chapterReader p {
+  margin-bottom: 1.5em;
+}
+
+/* Ênfase */
+.chapterReader strong,
+.chapterReader b {
+  font-weight: 700;
+}
+
+.chapterReader em,
+.chapterReader i {
+  font-style: italic;
+}
+
+/* Títulos dentro do conteúdo */
+.chapterReader h1 {
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  font-weight: 400;
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tight);
+  margin: 2em 0 0.5em;
+}
+
+.chapterReader h2 {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 400;
+  line-height: var(--leading-snug);
+  letter-spacing: -0.015em;
+  margin: 1.75em 0 0.5em;
+}
+
+.chapterReader h3 {
+  font-family: var(--font-serif);
+  font-size: var(--text-xl);
+  font-weight: 600;
+  margin: 1.5em 0 0.4em;
+}
+
+/* Links */
+.chapterReader a {
+  color: var(--color-accent-brand);
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  transition: text-decoration-color var(--transition-fast);
+}
+
+.chapterReader a:hover {
+  text-decoration-color: var(--color-accent-brand);
+}
+
+/* Citação em bloco */
+.chapterReader blockquote {
+  border-left: 3px solid var(--color-accent-brand);
+  margin: 1.5em 0;
+  padding: 0.5em 0 0.5em 1.25em;
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+/* Listas */
+.chapterReader ul,
+.chapterReader ol {
+  padding-left: 1.5em;
+  margin-bottom: 1.25em;
+}
+
+.chapterReader li {
+  margin-bottom: 0.4em;
+}
+
+/* Imagens */
+.chapterReader img {
+  max-width: 100%;
+  border-radius: var(--radius-md);
+  margin: 1.5em 0;
+}
+
+/* Código inline */
+.chapterReader code {
+  font-size: 0.9em;
+  background-color: var(--color-bg-elevated);
+  padding: 0.1em 0.35em;
+  border-radius: var(--radius-sm);
+  font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+}
+
+/* Linha horizontal */
+.chapterReader hr {
+  border: none;
+  border-top: 1px solid var(--color-border-subtle);
+  margin: 2.5em 0;
+}

@@ -191,6 +191,9 @@ func Setup(router *gin.Engine, db *gorm.DB, cfg *config.Config, store storage.St
 			comments.DELETE("/:id", auth.AuthMiddleware(authService), commentHandler.Delete)
 		}
 
+		// Render stateless — motor de tags (sem auth, transformação pura)
+		api.POST("/interactive/render", interactiveHandler.Render)
+
 		// Search routes
 		search := api.Group("/search")
 		{
