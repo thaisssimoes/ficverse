@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { chapterApi, fanficApi, interactiveApi, commentApi } from '../services/api';
@@ -97,11 +97,22 @@ export default function ChapterReaderPage() {
     enabled: !!chapter?.fanfic_id,
   });
 
+  // Buscamos questions em qualquer modo: no interativo servem para o modal de
+  // perguntas; no normal, usamos os default_answer para renderizar as tags.
   const { data: questions = [] } = useQuery({
     queryKey: ['questions', chapter?.fanfic_id],
     queryFn: () => interactiveApi.getQuestions(chapter.fanfic_id),
-    enabled: mode === 'interactive' && !!chapter?.fanfic_id,
+    enabled: !!chapter?.fanfic_id,
   });
+
+  // Mapa de substituição para o modo normal (default_answer de cada pergunta).
+  const defaultVars = useMemo(() => {
+    const map = {};
+    for (const q of questions) {
+      if (q.placeholder && q.default_answer) map[q.placeholder] = q.default_answer;
+    }
+    return map;
+  }, [questions]);
 
   const { data: answers = {}, isLoading: loadingAnswers, isFetching: fetchingAnswers } = useQuery({
     queryKey: ['answers', chapter?.fanfic_id],
@@ -109,14 +120,23 @@ export default function ChapterReaderPage() {
     enabled: mode === 'interactive' && isAuthenticated && !!chapter?.fanfic_id,
   });
 
-  // Renderiza o conteúdo via motor Go quando o leitor tem respostas salvas.
-  // O queryKey inclui os answers para re-renderizar automaticamente ao salvá-los.
+  // Modo interativo: renderiza com as respostas personalizadas do leitor.
+  // O queryKey inclui answers para re-renderizar automaticamente ao salvá-los.
   const hasAnswers = Object.keys(answers).length > 0;
   const { data: renderResult } = useQuery({
     queryKey: ['rendered-content', chapter?.id, answers],
     queryFn: () => interactiveApi.render(chapter.content, answers),
     enabled: mode === 'interactive' && !!chapter?.content && hasAnswers,
-    staleTime: Infinity, // o conteúdo não muda enquanto chapter+answers forem os mesmos
+    staleTime: Infinity,
+  });
+
+  // Modo normal: renderiza com os default_answer definidos pelo autor.
+  const hasDefaults = Object.keys(defaultVars).length > 0;
+  const { data: defaultRenderResult } = useQuery({
+    queryKey: ['rendered-content-default', chapter?.id],
+    queryFn: () => interactiveApi.render(chapter.content, defaultVars),
+    enabled: mode !== 'interactive' && !!chapter?.content && hasDefaults,
+    staleTime: Infinity,
   });
 
   const { data: comments = [], isLoading: loadingComments } = useQuery({
@@ -168,12 +188,14 @@ export default function ChapterReaderPage() {
     await saveAnswersMutation.mutateAsync(merged);
   };
 
-  // Conteúdo final: renderizado pelo Go quando em modo interativo com respostas,
-  // ou o HTML bruto (com tags visíveis) nas demais situações.
+  // Conteúdo final — prioridade:
+  //  1. Modo interativo + leitor tem respostas → usa respostas personalizadas
+  //  2. Modo normal + autor definiu defaults   → usa default_answer
+  //  3. Fallback                               → HTML bruto (tags visíveis)
   const displayContent =
     mode === 'interactive' && renderResult?.rendered_html
       ? renderResult.rendered_html
-      : (chapter?.content ?? '');
+      : defaultRenderResult?.rendered_html ?? (chapter?.content ?? '');
 
   // Navegação entre capítulos
   const sorted = [...allChapters].sort((a, b) => a.order - b.order);
@@ -211,8 +233,8 @@ export default function ChapterReaderPage() {
           mode={mode}
           actions={
             user && fanfic && user.user_id === fanfic.author_id ? (
-              <Link to={`/dashboard?fanficId=${fanfic.id}`}>
-                <Button variant="secondary" size="sm">✏️ Editar história</Button>
+              <Link to={`/dashboard?fanficId=${fanfic.id}&tab=chapters&chapterId=${chapter.id}`}>
+                <Button variant="secondary" size="sm">✏️ Editar capítulo</Button>
               </Link>
             ) : null
           }

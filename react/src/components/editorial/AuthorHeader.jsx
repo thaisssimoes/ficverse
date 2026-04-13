@@ -20,6 +20,7 @@ export default function AuthorHeader({
   authorActions,
   isAuthenticated = false,
   loginFavorite,
+  showSynopsis = true,
 }) {
   const coverUrl = fanfic.cover_url ? fanficApi.getAssetUrl(fanfic.cover_url) : null;
   const initial = fanfic.title?.charAt(0)?.toUpperCase() ?? '?';
@@ -118,7 +119,7 @@ export default function AuthorHeader({
           )}
 
           {/* Sinopse */}
-          {fanfic.synopsis && (
+          {showSynopsis && fanfic.synopsis && (
             <div
               className={styles.synopsis}
               dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(fanfic.synopsis) }}

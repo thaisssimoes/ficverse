@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import DOMPurify from 'dompurify';
 import { fanficApi, chapterApi, interactiveApi, tagApi, profileApi } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
@@ -11,8 +12,13 @@ import Modal from '../components/ui/Modal';
 import ContentWarningModal from '../components/fanfic/ContentWarningModal';
 import AuthorHeader from '../components/editorial/AuthorHeader';
 import FeedList from '../components/editorial/FeedList';
-import DisclaimerBlock from '../components/editorial/DisclaimerBlock';
 import styles from './FanficDetailPage.module.css';
+
+// Verifica se um campo HTML tem conteúdo real (não apenas tags vazias do editor)
+function hasRichContent(html) {
+  if (!html) return false;
+  return html.replace(/<[^>]*>/g, '').trim().length > 0;
+}
 
 // Modal para perguntas sem resposta ao aplicar perfil
 function MissingQuestionsModal({ isOpen, onClose, questions, profileName, onUpdateProfile, onSaveLocal }) {
@@ -94,20 +100,29 @@ function QuestionsModal({ isOpen, onClose, questions, existingAnswers, readerPro
   // Cópia local do perfil selecionado — mudança imediata sem fechar o modal
   const [localProfileId, setLocalProfileId] = useState(selectedProfileId);
 
-  // Na abertura do modal: inicializa localProfileId e carrega respostas
+  // Na abertura do modal: inicializa localProfileId e carrega respostas.
+  // Para variáveis padrão, o perfil SELECIONADO tem prioridade sobre os
+  // existingAnswers (que podem ser de um perfil diferente usado anteriormente).
+  // Para variáveis customizadas, não há equivalente no perfil — usa os
+  // existingAnswers diretamente.
   useEffect(() => {
     if (!isOpen) return;
     setLocalProfileId(selectedProfileId);
     const updated = {};
     questions.forEach((q) => {
-      updated[q.placeholder] =
-        existingAnswers[q.placeholder] ||
-        (q.variable_type === 'standard' ? readerProfile[q.standard_key] || '' : '');
+      if (q.variable_type === 'standard') {
+        updated[q.placeholder] = readerProfile[q.standard_key] || existingAnswers[q.placeholder] || '';
+      } else {
+        updated[q.placeholder] = existingAnswers[q.placeholder] || '';
+      }
     });
     setInputs(updated);
   }, [isOpen]); // só re-executa ao abrir
 
-  // Quando o leitor troca de perfil DENTRO do modal: recarrega respostas imediatamente
+  // Quando o leitor troca de perfil DENTRO do modal: recarrega todas as
+  // variáveis padrão com os dados do novo perfil. Campos sem valor no novo
+  // perfil são limpos (não mantemos resíduos do perfil anterior).
+  // Variáveis customizadas não são afetadas pela troca de perfil.
   const handleProfileChange = (id) => {
     setLocalProfileId(id);
     onSelectProfile(id); // propaga para o pai (atualiza readerProfile via state)
@@ -116,10 +131,10 @@ function QuestionsModal({ isOpen, onClose, questions, existingAnswers, readerPro
       const updated = { ...prev };
       questions.forEach((q) => {
         if (q.variable_type === 'standard') {
-          // Só sobrescreve se o novo perfil TEM valor — preserva valor anterior para campos vazios
-          const profileValue = newProfile[q.standard_key];
-          if (profileValue) updated[q.placeholder] = profileValue;
+          // Sempre substitui — limpa o campo se o novo perfil não tiver o valor
+          updated[q.placeholder] = newProfile[q.standard_key] || '';
         }
+        // Variáveis customizadas mantêm o valor já digitado pelo leitor
       });
       return updated;
     });
@@ -288,7 +303,7 @@ export default function FanficDetailPage() {
   useEffect(() => {
     if (!fanfic) return;
     const key = `content_warning_confirmed_${fanfic.id}`;
-    const needs = fanfic.is_adult_content || fanfic.trigger_warnings?.trim();
+    const needs = fanfic.is_adult_content || hasRichContent(fanfic.disclaimer);
     const confirmed = sessionStorage.getItem(key) === 'true';
     if (!needs || confirmed) setContentVisible(true);
   }, [fanfic]);
@@ -366,7 +381,7 @@ export default function FanficDetailPage() {
     navigate(-1);
   };
 
-  const needsWarning = fanfic && (fanfic.is_adult_content || fanfic.trigger_warnings?.trim());
+  const needsWarning = fanfic && (fanfic.is_adult_content || hasRichContent(fanfic.disclaimer));
   const showWarning = needsWarning && warningOpen && !contentVisible;
 
   const handleSaveAnswers = async (inputs, saveToProfileMap, newProfileName = null, profileId = null) => {
@@ -549,7 +564,7 @@ export default function FanficDetailPage() {
 
       {contentVisible && (
         <div className={styles.page}>
-          {/* Cabeçalho: capa + título + tags (sem sinopse) */}
+          {/* Cabeçalho: capa + título + tags + sinopse */}
           <AuthorHeader
             fanfic={fanfic}
             tagsByType={tagsByType}
@@ -571,16 +586,24 @@ export default function FanficDetailPage() {
             }
           />
 
-          {/* Layout vertical: avisos → modo leitura → capítulos */}
-          <div className={styles.stackedLayout}>
+          {/* Seções proporcionais: aviso + modo de leitura */}
+          <div className={styles.sectionsRow}>
 
-            {/* Avisos do autor */}
-            <DisclaimerBlock disclaimer={fanfic.disclaimer} />
+            {/* Aviso do autor */}
+            {hasRichContent(fanfic.disclaimer) && (
+              <section className={styles.detailSection}>
+                <p className={styles.detailSectionLabel}>Aviso do Autor</p>
+                <div
+                  className={styles.detailContent}
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(fanfic.disclaimer) }}
+                />
+              </section>
+            )}
 
             {/* Modo de leitura — só para histórias interativas */}
             {fanfic.interactive_mode && questions.length > 0 && (
-              <section className={styles.infoSection}>
-                <p className={styles.infoSectionLabel}>Modo de leitura</p>
+              <section className={styles.detailSection}>
+                <p className={styles.detailSectionLabel}>Modo de Leitura</p>
                 <div className={styles.modeBtns}>
                   <button
                     className={`${styles.modeBtn} ${readingMode === 'normal' ? styles.modeBtnActive : ''}`}
@@ -612,10 +635,10 @@ export default function FanficDetailPage() {
                 )}
               </section>
             )}
-
-            {/* Lista de capítulos */}
-            <FeedList chapters={sortedChapters} onReadChapter={readChapter} />
           </div>
+
+          {/* Lista de capítulos — largura total */}
+          <FeedList chapters={sortedChapters} onReadChapter={readChapter} />
         </div>
       )}
     </PageLayout>

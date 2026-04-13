@@ -91,7 +91,7 @@ import QuillEditor from '../components/editor/QuillEditor';
 import styles from './DashboardPage.module.css';
 
 // ─── Tag Input (reutilizado em vários lugares) ─────────────────────────
-function TagInput({ tags, onAdd, onRemove, maxTags = 5, placeholder = 'Digite e pressione Enter' }) {
+function TagInput({ tags, onAdd, onRemove, maxTags = 5, placeholder = 'Digite e pressione Enter', neutral = false }) {
   const [value, setValue] = useState('');
 
   const handleKeyDown = (e) => {
@@ -104,6 +104,8 @@ function TagInput({ tags, onAdd, onRemove, maxTags = 5, placeholder = 'Digite e 
       }
     }
   };
+
+  const chipClass = neutral ? styles.tagChipNeutral : styles.tagChip;
 
   return (
     <div>
@@ -121,7 +123,7 @@ function TagInput({ tags, onAdd, onRemove, maxTags = 5, placeholder = 'Digite e 
       {tags.length > 0 && (
         <div className={styles.tagChips}>
           {tags.map((t, i) => (
-            <span key={i} className={styles.tagChip}>
+            <span key={i} className={chipClass}>
               {t}
               <button
                 type="button"
@@ -145,88 +147,26 @@ function NewFanficModal({ isOpen, onClose, onCreated }) {
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('');
   const [interactiveMode, setInteractiveMode] = useState(false);
-  const [adultContent, setAdultContent] = useState(false);
-  const [coverFile, setCoverFile] = useState(null);
-  const [coverPreview, setCoverPreview] = useState(null);
-  const [tags, setTags] = useState({ fandom: [], warning: [], pairing: [] });
-
   const synopsisRef = useRef(null);
-  const disclaimerRef = useRef(null);
-  const triggerWarningsRef = useRef(null);
-  const newCoverInputRef = useRef(null);
 
-  const handleCoverChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    if (!file.type.startsWith('image/')) { toast.error('Selecione um arquivo de imagem válido.'); return; }
-    if (file.size > 5 * 1024 * 1024) { toast.error('Imagem muito grande. Máximo: 5MB.'); return; }
-    setCoverFile(file);
-    const reader = new FileReader();
-    reader.onload = (ev) => setCoverPreview(ev.target.result);
-    reader.readAsDataURL(file);
-  };
-
-  const addTag = (type, name) => setTags((t) => ({ ...t, [type]: [...t[type], name] }));
-  const removeTag = (type, idx) => setTags((t) => ({ ...t, [type]: t[type].filter((_, i) => i !== idx) }));
-
-  const handleSubmit = async (isDraft) => {
+  const handleSubmit = async () => {
     const synopsis = synopsisRef.current?.getContent() || '';
     if (!title.trim() || !category || !synopsis) {
       toast.error('Preencha título, categoria e sinopse.');
       return;
     }
 
-    // Alerta ao publicar (não rascunho) com modo interativo mas sem poder adicionar perguntas ainda
-    if (!isDraft && interactiveMode) {
-      const proceed = window.confirm(
-        'Esta história será criada em Modo Interativo.\n\n' +
-        'Lembre-se de adicionar as variáveis na aba "Perguntas" do Dashboard antes de compartilhar com leitores.\n\n' +
-        'Deseja publicar agora mesmo assim?'
-      );
-      if (!proceed) return;
-    }
-
     setIsSubmitting(true);
     try {
-      // 1) Criar a fanfic
       const fanfic = await fanficApi.create({
         title: title.trim(),
         category,
         synopsis,
-        disclaimer: disclaimerRef.current?.getContent() || '',
-        trigger_warnings: triggerWarningsRef.current?.getContent() || '',
-        adult_content: adultContent,
         interactive_mode: interactiveMode,
-        is_draft: isDraft,
+        is_draft: true,
       });
 
-      // 2) Upload da capa, se houver
-      if (coverFile) {
-        try {
-          await fanficApi.uploadCover(fanfic.id, coverFile);
-        } catch {
-          toast.error('Fanfic criada, mas a capa falhou ao subir.');
-        }
-      }
-
-      // 3) Criar e associar tags
-      for (const [type, names] of Object.entries(tags)) {
-        for (const name of names) {
-          try {
-            const tag = await tagApi.create(name, type);
-            await tagApi.addToFanfic(fanfic.id, [tag.id]);
-          } catch {
-            // tag pode já existir — tenta buscar e associar
-            try {
-              const results = await tagApi.search(name, type);
-              const existing = results?.find?.((t) => t.name.toLowerCase() === name.toLowerCase());
-              if (existing) await tagApi.addToFanfic(fanfic.id, [existing.id]);
-            } catch { /* ignora */ }
-          }
-        }
-      }
-
-      toast.success(isDraft ? 'Rascunho salvo.' : 'Fanfic publicada.');
+      toast.success('Rascunho criado!');
       onCreated(fanfic);
       onClose();
     } catch (err) {
@@ -241,13 +181,12 @@ function NewFanficModal({ isOpen, onClose, onCreated }) {
       isOpen={isOpen}
       onClose={onClose}
       title="Nova Fanfic"
-      size="xl"
+      size="lg"
       footer={
-        <div className={styles.modalFooterMulti}>
+        <>
           <Button variant="secondary" onClick={onClose} disabled={isSubmitting}>Cancelar</Button>
-          <Button variant="secondary" onClick={() => handleSubmit(true)} isLoading={isSubmitting}>Salvar Rascunho</Button>
-          <Button onClick={() => handleSubmit(false)} isLoading={isSubmitting}>Publicar</Button>
-        </div>
+          <Button onClick={handleSubmit} isLoading={isSubmitting}>Salvar</Button>
+        </>
       }
     >
       <div className={styles.formGroup}>
@@ -261,69 +200,18 @@ function NewFanficModal({ isOpen, onClose, onCreated }) {
       </div>
 
       <div className={styles.formGrid}>
-        <div className={styles.formGroup}>
+        <div className={styles.formGroup} style={{ marginBottom: 0 }}>
           <label className={styles.formLabel}>Categoria *</label>
           <select className={styles.formInput} value={category} onChange={(e) => setCategory(e.target.value)}>
             <option value="">Selecione...</option>
             {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
-        <div className={styles.formGroup} style={{ justifyContent: 'flex-end' }}>
+        <div className={styles.formGroup} style={{ justifyContent: 'flex-end', marginBottom: 0 }}>
           <label className={styles.checkboxGroup}>
             <input type="checkbox" checked={interactiveMode} onChange={(e) => setInteractiveMode(e.target.checked)} />
             Modo Interativo
           </label>
-        </div>
-      </div>
-
-      <div className={styles.formGroup}>
-        <label className={styles.formLabel}>Disclaimer</label>
-        <QuillEditor ref={disclaimerRef} placeholder="Avisos ou disclaimers (opcional)..." minHeight="80px" />
-      </div>
-
-      {/* Avisos de conteúdo */}
-      <div className={styles.warningSection}>
-        <p className={styles.warningSectionTitle}>Avisos de Conteúdo</p>
-        <label className={styles.checkboxGroup} style={{ marginBottom: '0.75rem' }}>
-          <input type="checkbox" checked={adultContent} onChange={(e) => setAdultContent(e.target.checked)} />
-          Conteúdo Adulto (+18)
-        </label>
-        <div className={styles.formGroup} style={{ margin: 0 }}>
-          <label className={styles.formLabel}>Trigger Warnings</label>
-          <QuillEditor ref={triggerWarningsRef} placeholder="Liste conteúdos potencialmente perturbadores..." minHeight="80px" />
-        </div>
-      </div>
-
-      {/* Tags */}
-      <div className={styles.tagsSection}>
-        <p className={styles.tagsSectionTitle}>Tags</p>
-        <div className={styles.formGroup}>
-          <label className={styles.formLabel}>Fandom</label>
-          <TagInput tags={tags.fandom} onAdd={(v) => addTag('fandom', v)} onRemove={(i) => removeTag('fandom', i)} placeholder="Ex: Harry Potter" />
-        </div>
-        <div className={styles.formGroup}>
-          <label className={styles.formLabel}>Avisos</label>
-          <TagInput tags={tags.warning} onAdd={(v) => addTag('warning', v)} onRemove={(i) => removeTag('warning', i)} placeholder="Ex: Violência" />
-        </div>
-        <div className={styles.formGroup} style={{ marginBottom: 0 }}>
-          <label className={styles.formLabel}>Pairing</label>
-          <TagInput tags={tags.pairing} onAdd={(v) => addTag('pairing', v)} onRemove={(i) => removeTag('pairing', i)} placeholder="Ex: Harry/Hermione" />
-        </div>
-      </div>
-
-      {/* Capa */}
-      <div className={styles.formGroup}>
-        <label className={styles.formLabel}>Capa da Fanfic</label>
-        <div className={styles.coverUpload}>
-          {coverPreview
-            ? <img src={coverPreview} alt="Pré-visualização" className={styles.coverPreview} />
-            : <div className={styles.coverPlaceholder}>—</div>
-          }
-          <div>
-            <input ref={newCoverInputRef} type="file" accept="image/*" onChange={handleCoverChange} style={{ display: 'none' }} />
-            <Button variant="secondary" size="sm" type="button" onClick={() => newCoverInputRef.current?.click()}>Escolher Capa</Button>
-            <p className={styles.formHint}>JPG, PNG, GIF, WEBP · Máx. 5MB · Proporção recomendada: 2:3</p>
-          </div>
         </div>
       </div>
     </Modal>
@@ -333,48 +221,14 @@ function NewFanficModal({ isOpen, onClose, onCreated }) {
 // ─── Aba: Info ─────────────────────────────────────────────────────────
 function InfoTab({ fanfic, onUpdated }) {
   const toast = useToast();
-  const queryClient = useQueryClient();
   const [title, setTitle] = useState(fanfic.title);
   const [category, setCategory] = useState(fanfic.category);
-  const [interactiveMode, setInteractiveMode] = useState(fanfic.interactive_mode);
-  const [adultContent, setAdultContent] = useState(fanfic.is_adult_content || false);
   const [coverFile, setCoverFile] = useState(null);
   const [coverPreview, setCoverPreview] = useState(null);
-  const [tags, setTags] = useState({ fandom: [], warning: [], pairing: [] });
-  const coverInputRef = useRef(null);
-
-  // Carrega tags existentes da fanfic
-  // Sem default = [] aqui: o default inline criaria um array novo a cada render,
-  // fazendo o useEffect abaixo disparar em loop infinito.
-  const { data: existingTags } = useQuery({
-    queryKey: ['fanfic-tags', fanfic.id],
-    queryFn: () => tagApi.getFanficTags(fanfic.id),
-  });
-
-  // Inicializa o estado de tags quando os dados chegam do servidor (só roda uma vez por carga)
-  useEffect(() => {
-    if (!existingTags) return;
-    setTags({
-      fandom:  existingTags.filter((t) => t.type === 'fandom').map((t) => t.name),
-      warning: existingTags.filter((t) => t.type === 'warning').map((t) => t.name),
-      pairing: existingTags.filter((t) => t.type === 'pairing').map((t) => t.name),
-    });
-  }, [existingTags]);
-
-  // Usado para checar perguntas antes de publicar (usa cache do React Query)
-  const { data: questions = [] } = useQuery({
-    queryKey: ['dash-questions', fanfic.id],
-    queryFn: () => interactiveApi.getQuestions(fanfic.id),
-  });
   const [saving, setSaving] = useState(false);
-  const [publishing, setPublishing] = useState(false);
-
+  const coverInputRef = useRef(null);
   const synopsisRef = useRef(null);
   const disclaimerRef = useRef(null);
-  const triggerWarningsRef = useRef(null);
-
-  const addTag = (type, name) => setTags((t) => ({ ...t, [type]: [...t[type], name] }));
-  const removeTag = (type, idx) => setTags((t) => ({ ...t, [type]: t[type].filter((_, i) => i !== idx) }));
 
   const handleCoverChange = (e) => {
     const file = e.target.files[0];
@@ -399,22 +253,114 @@ function InfoTab({ fanfic, onUpdated }) {
         category,
         synopsis,
         disclaimer: disclaimerRef.current?.getContent() || '',
-        trigger_warnings: triggerWarningsRef.current?.getContent() || '',
-        is_adult_content: adultContent,
       });
 
       if (coverFile) {
         try {
           const result = await fanficApi.uploadCover(fanfic.id, coverFile);
-          if (result?.cover_url) {
-            updated.cover_url = result.cover_url;
-          }
+          if (result?.cover_url) updated.cover_url = result.cover_url;
         } catch {
           toast.error('Dados salvos, mas a capa falhou.');
         }
       }
 
-      // Sincroniza tags: remove as antigas, adiciona as novas
+      toast.success('Alterações salvas!');
+      onUpdated(updated);
+    } catch (err) {
+      toast.error(err.message || 'Erro ao salvar.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const coverSrc = coverPreview || (fanfic.cover_url ? fanficApi.getAssetUrl(fanfic.cover_url) : null);
+
+  return (
+    <form onSubmit={handleSave}>
+      {/* Hero: capa clicável + título/categoria */}
+      <div className={styles.infoHero}>
+        <div className={styles.coverTrigger} onClick={() => coverInputRef.current?.click()}>
+          {coverSrc
+            ? <img src={coverSrc} alt="Capa" className={styles.coverHeroImg} />
+            : <div className={styles.coverHeroEmpty}>Sem capa</div>
+          }
+          <div className={styles.coverHoverLayer}>
+            <span className={styles.coverHoverLabel}>Trocar capa</span>
+          </div>
+          <input ref={coverInputRef} type="file" accept="image/*" onChange={handleCoverChange} style={{ display: 'none' }} />
+        </div>
+
+        <div className={styles.infoHeroFields}>
+          <div className={styles.formGroup}>
+            <label className={styles.formLabel}>Título</label>
+            <input className={styles.formInput} value={title} onChange={(e) => setTitle(e.target.value)} />
+          </div>
+          <div className={styles.formGroup} style={{ marginBottom: 0 }}>
+            <label className={styles.formLabel}>Categoria</label>
+            <select className={styles.formInput} value={category} onChange={(e) => setCategory(e.target.value)}>
+              {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div className={styles.formGroup}>
+        <label className={styles.formLabel}>Sinopse</label>
+        <QuillEditor key={`synopsis-${fanfic.id}`} ref={synopsisRef} initialValue={fanfic.synopsis || ''} placeholder="Sinopse da fanfic..." />
+      </div>
+
+      <div className={styles.formGroup}>
+        <label className={styles.formLabel}>Disclaimer</label>
+        <QuillEditor key={`disclaimer-${fanfic.id}`} ref={disclaimerRef} initialValue={fanfic.disclaimer || ''} placeholder="Avisos ou disclaimers (opcional)..." minHeight="100px" />
+      </div>
+
+      <div className={styles.formActions}>
+        {!fanfic.is_draft && (
+          <Link to={`/fanfic/${fanfic.id}`} style={{ textDecoration: 'none' }}>
+            <Button type="button" variant="secondary" size="sm"><IconEye /> Ver Fanfic</Button>
+          </Link>
+        )}
+        <Button type="submit" isLoading={saving}>Salvar Alterações</Button>
+      </div>
+    </form>
+  );
+}
+
+// ─── Aba: Classificações ────────────────────────────────────────────────
+function ClassificacoesTab({ fanfic, onUpdated }) {
+  const toast = useToast();
+  const queryClient = useQueryClient();
+  const [adultContent, setAdultContent] = useState(fanfic.is_adult_content || false);
+  const [tags, setTags] = useState({ fandom: [], warning: [], pairing: [] });
+  const [saving, setSaving] = useState(false);
+  const triggerWarningsRef = useRef(null);
+
+  const { data: existingTags } = useQuery({
+    queryKey: ['fanfic-tags', fanfic.id],
+    queryFn: () => tagApi.getFanficTags(fanfic.id),
+  });
+
+  useEffect(() => {
+    if (!existingTags) return;
+    setTags({
+      fandom:  existingTags.filter((t) => t.type === 'fandom').map((t) => t.name),
+      warning: existingTags.filter((t) => t.type === 'warning').map((t) => t.name),
+      pairing: existingTags.filter((t) => t.type === 'pairing').map((t) => t.name),
+    });
+  }, [existingTags]);
+
+  const addTag = (type, name) => setTags((t) => ({ ...t, [type]: [...t[type], name] }));
+  const removeTag = (type, idx) => setTags((t) => ({ ...t, [type]: t[type].filter((_, i) => i !== idx) }));
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const updated = await fanficApi.update(fanfic.id, {
+        is_adult_content: adultContent,
+        trigger_warnings: triggerWarningsRef.current?.getContent() || '',
+      });
+
       try {
         const oldTags = existingTags || [];
         const newTagNames = [
@@ -425,13 +371,11 @@ function InfoTab({ fanfic, onUpdated }) {
         const oldTagNames = oldTags.map((t) => t.name.toLowerCase());
         const newTagNamesLower = newTagNames.map((t) => t.name.toLowerCase());
 
-        // Remove tags que não estão mais na lista
         for (const old of oldTags) {
           if (!newTagNamesLower.includes(old.name.toLowerCase())) {
             await tagApi.removeFromFanfic(fanfic.id, old.id).catch(() => {});
           }
         }
-        // Adiciona tags novas
         for (const { name, type } of newTagNames) {
           if (!oldTagNames.includes(name.toLowerCase())) {
             try {
@@ -449,7 +393,7 @@ function InfoTab({ fanfic, onUpdated }) {
         queryClient.invalidateQueries({ queryKey: ['fanfic-tags', fanfic.id] });
       } catch { /* tags são melhor-esforço */ }
 
-      toast.success('Alterações salvas!');
+      toast.success('Classificações salvas!');
       onUpdated(updated);
     } catch (err) {
       toast.error(err.message || 'Erro ao salvar.');
@@ -458,20 +402,74 @@ function InfoTab({ fanfic, onUpdated }) {
     }
   };
 
-  const handlePublish = async () => {
-    const synopsis = synopsisRef.current?.getContent() || '';
-    if (!title.trim() || !synopsis) { toast.error('Salve título e sinopse antes de publicar.'); return; }
+  return (
+    <form onSubmit={handleSave}>
+      {/* Avisos */}
+      <p className={styles.clsGroupLabel}>Avisos de Conteúdo</p>
 
-    // Alerta se modo interativo mas sem perguntas
-    if (interactiveMode && questions.length === 0) {
+      <div className={styles.formGroup}>
+        <label className={styles.checkboxGroup}>
+          <input type="checkbox" checked={adultContent} onChange={(e) => setAdultContent(e.target.checked)} />
+          Conteúdo Adulto (+18)
+        </label>
+      </div>
+
+      <div className={styles.formGroup}>
+        <label className={styles.formLabel}>Trigger Warnings</label>
+        <QuillEditor key={`tw-${fanfic.id}`} ref={triggerWarningsRef} initialValue={fanfic.trigger_warnings || ''} placeholder="Liste conteúdos potencialmente perturbadores..." minHeight="80px" />
+      </div>
+
+      {/* Tags */}
+      <p className={styles.clsGroupLabel} style={{ marginTop: '1.5rem' }}>Tags</p>
+
+      <div className={styles.formGroup}>
+        <label className={styles.formLabel}>Fandom</label>
+        <TagInput neutral tags={tags.fandom} onAdd={(v) => addTag('fandom', v)} onRemove={(i) => removeTag('fandom', i)} placeholder="Ex: Harry Potter" />
+      </div>
+      <div className={styles.formGroup}>
+        <label className={styles.formLabel}>Avisos</label>
+        <TagInput neutral tags={tags.warning} onAdd={(v) => addTag('warning', v)} onRemove={(i) => removeTag('warning', i)} placeholder="Ex: Violência" />
+      </div>
+      <div className={styles.formGroup}>
+        <label className={styles.formLabel}>Pairing</label>
+        <TagInput neutral tags={tags.pairing} onAdd={(v) => addTag('pairing', v)} onRemove={(i) => removeTag('pairing', i)} placeholder="Ex: Harry/Hermione" />
+      </div>
+
+      <div className={styles.formActions}>
+        <Button type="submit" isLoading={saving}>Salvar Classificações</Button>
+      </div>
+    </form>
+  );
+}
+
+// ─── Painel lateral: Status ─────────────────────────────────────────────
+function StatusPanel({ fanfic, onUpdated }) {
+  const toast = useToast();
+  const [publishing, setPublishing] = useState(false);
+
+  const { data: chapters = [] } = useQuery({
+    queryKey: ['dash-chapters', fanfic.id],
+    queryFn: () => chapterApi.getAll(fanfic.id),
+  });
+
+  const { data: questions = [] } = useQuery({
+    queryKey: ['dash-questions', fanfic.id],
+    queryFn: () => interactiveApi.getQuestions(fanfic.id),
+  });
+
+  const lastChapter = chapters.length > 0
+    ? [...chapters].sort((a, b) => new Date(b.updated_at || b.created_at) - new Date(a.updated_at || a.created_at))[0]
+    : null;
+
+  const handlePublish = async () => {
+    if (fanfic.interactive_mode && questions.length === 0) {
       const proceed = window.confirm(
         'Esta história está em Modo Interativo, mas não tem nenhuma variável associada.\n\n' +
         'Leitores não poderão personalizar a experiência de leitura.\n\n' +
-        'Deseja publicar mesmo assim? (Você pode adicionar variáveis na aba "Perguntas")'
+        'Deseja publicar mesmo assim?'
       );
       if (!proceed) return;
     }
-
     setPublishing(true);
     try {
       await fanficApi.publish(fanfic.id);
@@ -497,113 +495,47 @@ function InfoTab({ fanfic, onUpdated }) {
     }
   };
 
-  const coverSrc = coverPreview || (fanfic.cover_url ? fanficApi.getAssetUrl(fanfic.cover_url) : null);
+  const fmtDate = (d) => d ? new Date(d).toLocaleDateString('pt-BR') : '—';
 
   return (
-    <form onSubmit={handleSave}>
-      {/* Status banner */}
-      <div className={`${styles.statusBanner} ${fanfic.is_draft ? styles.statusBannerDraft : styles.statusBannerPublished}`}>
-        <div>
-          <p className={styles.statusBannerTitle}>
-            {fanfic.is_draft ? 'Rascunho' : 'Publicada'}
-          </p>
-          <p className={styles.statusBannerSub}>
-            {fanfic.is_draft
-              ? 'Não visível para outros usuários.'
-              : fanfic.published_at ? `Publicada em ${new Date(fanfic.published_at).toLocaleDateString('pt-BR')}` : 'Publicada'
-            }
-          </p>
+    <aside className={styles.statusAside}>
+      <div className={styles.statusBlock}>
+        <p className={styles.statusBlockLabel}>Status</p>
+        <p className={styles.statusBlockValue}>{fanfic.is_draft ? 'Rascunho' : 'Publicada'}</p>
+      </div>
+      {!fanfic.is_draft && (
+        <div className={styles.statusBlock}>
+          <p className={styles.statusBlockLabel}>Publicada em</p>
+          <p className={styles.statusBlockValue}>{fmtDate(fanfic.published_at)}</p>
         </div>
+      )}
+      <div className={styles.statusBlock}>
+        <p className={styles.statusBlockLabel}>Última alteração</p>
+        <p className={styles.statusBlockValue}>
+          {lastChapter
+            ? fmtDate(lastChapter.updated_at || lastChapter.created_at)
+            : fmtDate(fanfic.updated_at)}
+        </p>
+      </div>
+      <div className={styles.statusBlock}>
         {fanfic.is_draft
-          ? <Button type="button" size="sm" onClick={handlePublish} isLoading={publishing}><IconPublish /> Publicar</Button>
-          : <Button type="button" variant="secondary" size="sm" onClick={handleUnpublish} isLoading={publishing}>Despublicar</Button>
+          ? (
+            <button type="button" className={styles.statusPublishBtn} onClick={handlePublish} disabled={publishing}>
+              {publishing ? 'Publicando…' : 'Publicar'}
+            </button>
+          ) : (
+            <button type="button" className={styles.statusPublishBtn} onClick={handleUnpublish} disabled={publishing}>
+              {publishing ? 'Aguarde…' : 'Mover para Rascunho'}
+            </button>
+          )
         }
       </div>
-
-      {/* Informações básicas */}
-      <div className={styles.formGrid}>
-        <div className={styles.formGroup}>
-          <label className={styles.formLabel}>Título</label>
-          <input className={styles.formInput} value={title} onChange={(e) => setTitle(e.target.value)} />
-        </div>
-        <div className={styles.formGroup}>
-          <label className={styles.formLabel}>Categoria</label>
-          <select className={styles.formInput} value={category} onChange={(e) => setCategory(e.target.value)}>
-            {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-          </select>
-        </div>
-      </div>
-
-      <div className={styles.formGroup}>
-        <label className={styles.formLabel}>Sinopse</label>
-        <QuillEditor key={`synopsis-${fanfic.id}`} ref={synopsisRef} initialValue={fanfic.synopsis || ''} placeholder="Sinopse da fanfic..." />
-      </div>
-
-      <div className={styles.formGroup}>
-        <label className={styles.formLabel}>Disclaimer</label>
-        <QuillEditor key={`disclaimer-${fanfic.id}`} ref={disclaimerRef} initialValue={fanfic.disclaimer || ''} placeholder="Avisos ou disclaimers (opcional)..." minHeight="100px" />
-      </div>
-
-      {/* Avisos de conteúdo */}
-      <div className={styles.warningSection}>
-        <p className={styles.warningSectionTitle}>Avisos de Conteúdo</p>
-        <label className={styles.checkboxGroup} style={{ marginBottom: '0.75rem' }}>
-          <input type="checkbox" checked={adultContent} onChange={(e) => setAdultContent(e.target.checked)} />
-          Conteúdo Adulto (+18)
-        </label>
-        <div className={styles.formGroup} style={{ margin: 0 }}>
-          <label className={styles.formLabel}>Trigger Warnings</label>
-          <QuillEditor key={`tw-${fanfic.id}`} ref={triggerWarningsRef} initialValue={fanfic.trigger_warnings || ''} placeholder="Liste conteúdos potencialmente perturbadores..." minHeight="80px" />
-        </div>
-      </div>
-
-      {/* Tags */}
-      <div className={styles.tagsSection}>
-        <p className={styles.tagsSectionTitle}>Tags</p>
-        <div className={styles.formGroup}>
-          <label className={styles.formLabel}>Fandom</label>
-          <TagInput tags={tags.fandom} onAdd={(v) => addTag('fandom', v)} onRemove={(i) => removeTag('fandom', i)} placeholder="Ex: Harry Potter" />
-        </div>
-        <div className={styles.formGroup}>
-          <label className={styles.formLabel}>Avisos</label>
-          <TagInput tags={tags.warning} onAdd={(v) => addTag('warning', v)} onRemove={(i) => removeTag('warning', i)} placeholder="Ex: Violência" />
-        </div>
-        <div className={styles.formGroup} style={{ marginBottom: 0 }}>
-          <label className={styles.formLabel}>Pairing</label>
-          <TagInput tags={tags.pairing} onAdd={(v) => addTag('pairing', v)} onRemove={(i) => removeTag('pairing', i)} placeholder="Ex: Harry/Hermione" />
-        </div>
-      </div>
-
-      {/* Capa */}
-      <div className={styles.formGroup}>
-        <label className={styles.formLabel}>Imagem de Capa</label>
-        <div className={styles.coverUpload}>
-          {coverSrc
-            ? <img src={coverSrc} alt="Capa" className={styles.coverPreview} />
-            : <div className={styles.coverPlaceholder}>—</div>
-          }
-          <div>
-            <input ref={coverInputRef} type="file" accept="image/*" onChange={handleCoverChange} style={{ display: 'none' }} />
-            <Button variant="secondary" size="sm" type="button" onClick={() => coverInputRef.current?.click()}>Escolher Nova Capa</Button>
-            <p className={styles.formHint}>JPG, PNG, GIF, WEBP · Máx. 5MB · Proporção: 2:3</p>
-          </div>
-        </div>
-      </div>
-
-      <div className={styles.formActions}>
-        {!fanfic.is_draft && (
-          <Link to={`/fanfic/${fanfic.id}`} style={{ textDecoration: 'none' }}>
-            <Button type="button" variant="secondary" size="sm"><IconEye /> Ver Fanfic</Button>
-          </Link>
-        )}
-        <Button type="submit" isLoading={saving}>Salvar Alterações</Button>
-      </div>
-    </form>
+    </aside>
   );
 }
 
 // ─── Aba: Capítulos ─────────────────────────────────────────────────────
-function ChaptersTab({ fanfic }) {
+function ChaptersTab({ fanfic, initialChapterId }) {
   const toast = useToast();
   const queryClient = useQueryClient();
   const [chapterModal, setChapterModal] = useState(null); // null | chapter object | 'new'
@@ -613,6 +545,13 @@ function ChaptersTab({ fanfic }) {
     queryKey: ['dash-chapters', fanfic.id],
     queryFn: () => chapterApi.getAll(fanfic.id),
   });
+
+  // Abre o modal de edição direto quando vem de um link externo (ex: página do capítulo)
+  useEffect(() => {
+    if (!initialChapterId || chapters.length === 0 || chapterModal !== null) return;
+    const target = chapters.find((c) => c.id === Number(initialChapterId));
+    if (target) setChapterModal(target);
+  }, [initialChapterId, chapters.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const sorted = [...chapters].sort((a, b) => a.order - b.order);
 
@@ -1266,6 +1205,7 @@ function CommentsTab({ fanfic }) {
 // ─── Página Principal ────────────────────────────────────────────────────
 const TABS = [
   { key: 'info', label: 'Informações' },
+  { key: 'classifications', label: 'Classificações' },
   { key: 'chapters', label: 'Capítulos' },
   { key: 'questions', label: 'Modo Interativo' },
   { key: 'comments', label: 'Comentários' },
@@ -1282,6 +1222,7 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState('info');
   const [showNewModal, setShowNewModal] = useState(false);
   const [selectedFanficOverride, setSelectedFanficOverride] = useState(null);
+  const [initialChapterId, setInitialChapterId] = useState(null);
 
   const { data: myFanfics = [], isLoading } = useQuery({
     queryKey: ['my-fanfics', user?.user_id],
@@ -1290,13 +1231,17 @@ export default function DashboardPage() {
   });
 
   // Pré-seleciona fanfic via ?fanficId= (vindo da página de detalhes ou capítulo)
+  // Suporta também ?tab= e ?chapterId= para abrir direto em um capítulo específico
   useEffect(() => {
     const fanficId = searchParams.get('fanficId');
     if (fanficId && myFanfics.length > 0 && !selectedId) {
       const target = myFanfics.find((f) => f.id === Number(fanficId));
       if (target) {
         setSelectedId(target.id);
-        setActiveTab('info');
+        const tab = searchParams.get('tab');
+        setActiveTab(TABS.some((t) => t.key === tab) ? tab : 'info');
+        const chapterId = searchParams.get('chapterId');
+        if (chapterId) setInitialChapterId(Number(chapterId));
       }
     }
   }, [myFanfics.length, searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -1371,7 +1316,7 @@ export default function DashboardPage() {
                 {/* Publicadas */}
                 <div className={styles.sidebarGroupHeader}>
                   <p className={styles.sidebarGroupTitle}>
-                    Public Stories{' '}
+                    Publicadas{' '}
                     <span className={styles.sidebarGroupCount}>({published.length})</span>
                   </p>
                 </div>
@@ -1410,7 +1355,7 @@ export default function DashboardPage() {
                 {/* Rascunhos */}
                 <div className={`${styles.sidebarGroupHeader} ${styles.sidebarGroupBorderTop}`}>
                   <p className={styles.sidebarGroupTitle}>
-                    Drafts{' '}
+                    Rascunhos{' '}
                     <span className={styles.sidebarGroupCount}>({drafts.length})</span>
                   </p>
                 </div>
@@ -1450,35 +1395,40 @@ export default function DashboardPage() {
                 <p className={styles.noSelectionText}>Selecione uma história na lista ou crie uma nova.</p>
               </div>
             ) : (
-              <div className={styles.editorInner}>
-                <h1 className={styles.storyTitle}>{selectedFanfic.title}</h1>
+              <div className={styles.editorWithStatus}>
+                <div className={styles.editorMain}>
+                  <h1 className={styles.storyTitle}>{selectedFanfic.title}</h1>
 
-                <div className={styles.tabBar}>
-                  {TABS.map(({ key, label }) => (
+                  <div className={styles.tabBar}>
+                    {TABS.map(({ key, label }) => (
+                      <button
+                        key={key}
+                        className={`${styles.tabBtn} ${activeTab === key ? styles.tabActive : ''}`}
+                        onClick={() => setActiveTab(key)}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                    <div style={{ flex: 1 }} />
                     <button
-                      key={key}
-                      className={`${styles.tabBtn} ${activeTab === key ? styles.tabActive : ''}`}
-                      onClick={() => setActiveTab(key)}
+                      className={styles.deleteBtn}
+                      onClick={handleDelete}
+                      title="Excluir fanfic"
                     >
-                      {label}
+                      <IconTrash /> Excluir
                     </button>
-                  ))}
-                  <div style={{ flex: 1 }} />
-                  <button
-                    className={styles.deleteBtn}
-                    onClick={handleDelete}
-                    title="Excluir fanfic"
-                  >
-                    <IconTrash /> Excluir
-                  </button>
+                  </div>
+
+                  <div className={styles.tabContent}>
+                    {activeTab === 'info'            && <InfoTab           key={`info-${selectedFanfic.id}`} fanfic={selectedFanfic} onUpdated={handleFanficUpdated} />}
+                    {activeTab === 'classifications' && <ClassificacoesTab key={`cls-${selectedFanfic.id}`}  fanfic={selectedFanfic} onUpdated={handleFanficUpdated} />}
+                    {activeTab === 'chapters'        && <ChaptersTab       key={`ch-${selectedFanfic.id}`}   fanfic={selectedFanfic} initialChapterId={initialChapterId} />}
+                    {activeTab === 'questions'       && <QuestionsTab      key={`q-${selectedFanfic.id}`}    fanfic={selectedFanfic} onFanficUpdated={handleFanficUpdated} />}
+                    {activeTab === 'comments'        && <CommentsTab       key={`c-${selectedFanfic.id}`}    fanfic={selectedFanfic} />}
+                  </div>
                 </div>
 
-                <div className={styles.tabContent}>
-                  {activeTab === 'info'     && <InfoTab      key={`info-${selectedFanfic.id}`} fanfic={selectedFanfic} onUpdated={handleFanficUpdated} />}
-                  {activeTab === 'chapters' && <ChaptersTab  key={`ch-${selectedFanfic.id}`}   fanfic={selectedFanfic} />}
-                  {activeTab === 'questions'&& <QuestionsTab key={`q-${selectedFanfic.id}`}    fanfic={selectedFanfic} onFanficUpdated={handleFanficUpdated} />}
-                  {activeTab === 'comments' && <CommentsTab  key={`c-${selectedFanfic.id}`}    fanfic={selectedFanfic} />}
-                </div>
+                <StatusPanel key={`sp-${selectedFanfic.id}`} fanfic={selectedFanfic} onUpdated={handleFanficUpdated} />
               </div>
             )}
           </div>

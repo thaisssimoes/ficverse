@@ -54,7 +54,7 @@
 }
 
 .sidebarLabel {
-  font-size: 0.625rem;
+  font-size: var(--text-label);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.18em;
@@ -268,6 +268,150 @@
 
 .editorInner {
   max-width: 860px;
+}
+
+/* ── Editor + Status side panel ──────────── */
+.editorWithStatus {
+  display: flex;
+  gap: 2.5rem;
+  align-items: flex-start;
+  max-width: 1100px;
+}
+
+.editorMain {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── Info hero: capa + campos ────────────── */
+.infoHero {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+  margin-bottom: 1.75rem;
+}
+
+.coverTrigger {
+  position: relative;
+  cursor: pointer;
+  flex-shrink: 0;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.coverHeroImg {
+  width: 120px;
+  height: 180px;
+  object-fit: cover;
+  display: block;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+}
+
+.coverHeroEmpty {
+  width: 120px;
+  height: 180px;
+  background: var(--input-bg);
+  border: 1px dashed var(--border-color);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: var(--font-size-xs);
+  text-align: center;
+}
+
+.coverHoverLayer {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.48);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.18s;
+  border-radius: var(--radius-md);
+}
+
+.coverTrigger:hover .coverHoverLayer {
+  opacity: 1;
+}
+
+.coverHoverLabel {
+  color: #fff;
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  text-align: center;
+  padding: 0 0.5rem;
+}
+
+.infoHeroFields {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* ── Status aside ─────────────────────────── */
+.statusAside {
+  width: 210px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 2rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 0 var(--space-4);
+  margin-top: 4.5rem; /* alinha abaixo do título + tabBar */
+}
+
+.statusBlock {
+  padding: 0.875rem 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.statusBlock:last-child {
+  border-bottom: none;
+}
+
+.statusBlockLabel {
+  font-size: var(--text-label);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text-muted);
+  margin: 0 0 0.3rem;
+}
+
+.statusBlockValue {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.statusPublishBtn {
+  width: 100%;
+  background: none;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 0.5rem 0.75rem;
+  font-size: var(--font-size-sm);
+  font-family: var(--font-family);
+  color: var(--text-secondary);
+  cursor: pointer;
+  text-align: center;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.statusPublishBtn:hover:not(:disabled) {
+  border-color: var(--text-secondary);
+  color: var(--text-primary);
+}
+
+.statusPublishBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* Large serif story title */
@@ -782,7 +926,7 @@
 .commentsGroup { margin-bottom: var(--space-8); }
 
 .commentsGroupTitle {
-  font-size: var(--font-size-xs);
+  font-size: var(--text-label);
   font-weight: 600;
   color: var(--text-muted);
   text-transform: uppercase;
@@ -942,6 +1086,22 @@
 
 .tagChipRemove:hover { opacity: 1; }
 
+/* Cápsula neutra — espelha TagBadge, sem cor de tipo */
+.tagChipNeutral {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 3px var(--space-3);
+  background: var(--color-bg-elevated, var(--input-bg));
+  color: var(--color-text-secondary, var(--text-secondary));
+  border: 1px solid var(--color-border-subtle, var(--border-color));
+  border-radius: var(--radius-sm);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
 .warningSection {
   background: rgba(239, 68, 68, 0.04);
   border: 1px solid rgba(239, 68, 68, 0.18);
@@ -955,6 +1115,18 @@
   font-weight: 600;
   color: var(--color-error);
   margin-bottom: var(--space-4);
+}
+
+/* Label de grupo da aba Classificações — sem caixa colorida */
+.clsGroupLabel {
+  font-size: var(--text-label);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text-muted);
+  margin: 0 0 var(--space-4);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .emptyState {
@@ -986,4 +1158,8 @@
   .tabBar { overflow-x: auto; }
   .storyTitle { font-size: 1.5rem; }
   .chapterColHeader, .chapterRow { grid-template-columns: 1fr 100px 80px 64px; }
+  .editorWithStatus { flex-direction: column; }
+  .statusAside { width: 100%; position: static; margin-top: 0; }
+  .infoHero { gap: 1rem; }
+  .coverHeroImg, .coverHeroEmpty { width: 90px; height: 135px; }
 }
