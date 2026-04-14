@@ -9,7 +9,6 @@ import PageLayout from '../components/layout/PageLayout';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
-import ContentWarningModal from '../components/fanfic/ContentWarningModal';
 import AuthorHeader from '../components/editorial/AuthorHeader';
 import FeedList from '../components/editorial/FeedList';
 import styles from './FanficDetailPage.module.css';
@@ -273,8 +272,6 @@ export default function FanficDetailPage() {
   const toast = useToast();
   const queryClient = useQueryClient();
 
-  const [warningOpen, setWarningOpen] = useState(true);
-  const [contentVisible, setContentVisible] = useState(false);
   const [questionsOpen, setQuestionsOpen] = useState(false);
   const [selectedProfileId, setSelectedProfileId] = useState(() => {
     // Preferência específica para esta história tem prioridade
@@ -298,15 +295,6 @@ export default function FanficDetailPage() {
     queryKey: ['fanfic', id],
     queryFn: () => fanficApi.getById(id),
   });
-
-  // onSuccess foi removido no React Query v5 — usar useEffect
-  useEffect(() => {
-    if (!fanfic) return;
-    const key = `content_warning_confirmed_${fanfic.id}`;
-    const needs = fanfic.is_adult_content || hasRichContent(fanfic.disclaimer);
-    const confirmed = sessionStorage.getItem(key) === 'true';
-    if (!needs || confirmed) setContentVisible(true);
-  }, [fanfic]);
 
   const { data: chapters = [] } = useQuery({
     queryKey: ['chapters', id],
@@ -357,6 +345,12 @@ export default function FanficDetailPage() {
     onError: () => toast.error('Erro ao atualizar favorito.'),
   });
 
+  const chapterLikeMutation = useMutation({
+    mutationFn: (chapterId) => chapterApi.toggleLike(chapterId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['chapters', id] }),
+    onError: () => toast.error('Erro ao curtir capítulo.'),
+  });
+
   const saveAnswersMutation = useMutation({
     mutationFn: ({ answers }) => interactiveApi.saveAnswers(id, answers),
     // Invalida todas as queries de answers — garante que ChapterReaderPage (que usa fanfic_id
@@ -368,21 +362,6 @@ export default function FanficDetailPage() {
     mutationFn: (updates) => profileApi.updateProfile(readerProfile.id, updates),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['profiles'] }),
   });
-
-  // Content warning handlers
-  const handleWarningConfirm = () => {
-    if (fanfic) sessionStorage.setItem(`content_warning_confirmed_${fanfic.id}`, 'true');
-    setWarningOpen(false);
-    setContentVisible(true);
-  };
-
-  const handleWarningCancel = () => {
-    setWarningOpen(false);
-    navigate(-1);
-  };
-
-  const needsWarning = fanfic && (fanfic.is_adult_content || hasRichContent(fanfic.disclaimer));
-  const showWarning = needsWarning && warningOpen && !contentVisible;
 
   const handleSaveAnswers = async (inputs, saveToProfileMap, newProfileName = null, profileId = null) => {
     // Usa o perfil explicitamente selecionado no modal; fallback para readerProfile
@@ -526,14 +505,6 @@ export default function FanficDetailPage() {
 
   return (
     <PageLayout>
-      {/* Content Warning */}
-      <ContentWarningModal
-        fanfic={fanfic}
-        isOpen={showWarning}
-        onConfirm={handleWarningConfirm}
-        onCancel={handleWarningCancel}
-      />
-
       {/* Modal de perguntas sem resposta ao aplicar perfil */}
       {missingModalOpen && (
         <MissingQuestionsModal
@@ -562,8 +533,7 @@ export default function FanficDetailPage() {
         />
       )}
 
-      {contentVisible && (
-        <div className={styles.page}>
+      <div className={styles.page}>
           {/* Cabeçalho: capa + título + tags + sinopse */}
           <AuthorHeader
             fanfic={fanfic}
@@ -585,6 +555,19 @@ export default function FanficDetailPage() {
               </Link>
             }
           />
+
+          {/* Seção de trigger warning — visível apenas quando +18 */}
+          {fanfic.is_adult_content && (
+            <section className={styles.triggerWarningSection}>
+              <p className={styles.triggerWarningBadge}>+18 — Conteúdo Adulto</p>
+              {hasRichContent(fanfic.trigger_warnings) && (
+                <div
+                  className={styles.triggerWarningContent}
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(fanfic.trigger_warnings) }}
+                />
+              )}
+            </section>
+          )}
 
           {/* Seções proporcionais: aviso + modo de leitura */}
           <div className={styles.sectionsRow}>
@@ -611,18 +594,28 @@ export default function FanficDetailPage() {
                   >
                     Normal
                   </button>
-                  <button
-                    className={`${styles.modeBtn} ${readingMode === 'interactive' ? styles.modeBtnActive : ''}`}
-                    onClick={() => { setReadingMode('interactive'); if (isAuthenticated) setQuestionsOpen(true); }}
-                  >
-                    Interativa
-                  </button>
+                  <div className={styles.modeBtnGroup}>
+                    <button
+                      className={`${styles.modeBtn} ${readingMode === 'interactive' ? styles.modeBtnActive : ''}`}
+                      onClick={() => { setReadingMode('interactive'); if (isAuthenticated) setQuestionsOpen(true); }}
+                    >
+                      Interativa
+                    </button>
+                    {readingMode === 'interactive' && isAuthenticated && (
+                      <button
+                        className={styles.modeBtnEdit}
+                        onClick={() => setQuestionsOpen(true)}
+                        aria-label="Editar respostas interativas"
+                        title="Editar respostas"
+                      >
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
                 </div>
-                {readingMode === 'interactive' && isAuthenticated && (
-                  <button className={styles.configInteractiveBtn} onClick={() => setQuestionsOpen(true)}>
-                    Configurar modo interativo
-                  </button>
-                )}
                 {readingMode === 'interactive' && !isAuthenticated && (
                   <p className={styles.modeSelectorHint}>
                     <a href="/login" style={{ color: 'var(--color-accent-brand)' }}>Faça login</a> para personalizar sua leitura.
@@ -638,9 +631,13 @@ export default function FanficDetailPage() {
           </div>
 
           {/* Lista de capítulos — largura total */}
-          <FeedList chapters={sortedChapters} onReadChapter={readChapter} />
-        </div>
-      )}
+          <FeedList
+            chapters={sortedChapters}
+            onReadChapter={readChapter}
+            onLikeChapter={(chapterId) => chapterLikeMutation.mutate(chapterId)}
+            isAuthenticated={isAuthenticated}
+          />
+      </div>
     </PageLayout>
   );
 }

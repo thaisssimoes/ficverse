@@ -7,6 +7,7 @@
   margin-bottom: var(--space-10);
   padding-bottom: var(--space-8);
   border-bottom: 1px solid var(--color-border-subtle);
+  text-align: center;
 }
 
 /* Título da história — destaque máximo (Medium-style) */
@@ -31,6 +32,7 @@ a.storyTitle:hover {
 .backLink {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: var(--space-1);
   font-family: var(--font-sans);
   font-size: var(--text-xs);
@@ -44,16 +46,52 @@ a.storyTitle:hover {
   color: var(--color-accent-brand);
 }
 
-/* Linha do autor */
+/* Linha do autor + métricas */
 .authorLine {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: var(--space-2);
   font-family: var(--font-sans);
   font-size: var(--text-sm);
   color: var(--color-text-muted);
   margin: 0 0 var(--space-6);
+  flex-wrap: wrap;
 }
+
+/* Separador "·" entre autor e métricas */
+.metaDivider {
+  color: var(--color-border);
+  user-select: none;
+}
+
+/* Estatística genérica (views ou likes sem interação) */
+.metaStat {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+/* Botão de like no header */
+.likeBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: none;
+  border: none;
+  padding: 0.15rem 0.3rem;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+
+.likeBtn:hover { color: #ec4899; }
+.likeBtnActive { color: #ec4899; }
 
 /* Avatar circular do autor */
 .authorAvatar {
@@ -111,6 +149,7 @@ a.storyTitle:hover {
 /* Label do capítulo */
 .chapterLabel {
   display: block;
+  text-align: center;
   font-family: var(--font-sans);
   font-size: var(--text-xs);
   font-weight: 600;
@@ -129,12 +168,14 @@ a.storyTitle:hover {
   letter-spacing: var(--tracking-tight);
   color: var(--color-text-primary);
   margin: 0 0 var(--space-5);
+  text-align: center;
 }
 
 /* Linha de ações: badges de modo + botão de edição */
 .actions {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: var(--space-3);
   flex-wrap: wrap;
   margin-top: var(--space-2);

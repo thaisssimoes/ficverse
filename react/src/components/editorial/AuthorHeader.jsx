@@ -64,18 +64,6 @@ export default function AuthorHeader({
                 </Link>
                 <span className={styles.authorStripHandle}>@{authorUsername}</span>
               </div>
-              {isAuthenticated ? (
-                <button
-                  className={`${styles.favoriteBtn} ${favorited ? styles.favorited : ''}`}
-                  onClick={onFavorite}
-                  aria-label={favorited ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
-                >
-                  <IconHeart filled={favorited} />
-                  <span>{favoritesCount}</span>
-                </button>
-              ) : (
-                loginFavorite
-              )}
             </div>
           )}
         </div>
@@ -86,7 +74,22 @@ export default function AuthorHeader({
             <span className={styles.category}>{fanfic.category}</span>
           )}
 
-          <h1 className={styles.title}>{fanfic.title}</h1>
+          <div className={styles.titleRow}>
+            <h1 className={styles.title}>{fanfic.title}</h1>
+            <span className={`${styles.statusBadge} ${fanfic.is_complete ? styles.statusComplete : styles.statusOngoing}`}>
+              {fanfic.is_complete ? 'Completa' : 'Em andamento'}
+            </span>
+            {isAuthenticated ? (
+              <button
+                className={`${styles.heartBtn} ${favorited ? styles.heartBtnActive : ''}`}
+                onClick={onFavorite}
+                aria-label={favorited ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+              >
+                <IconHeart filled={favorited} />
+                <span className={styles.heartCount}>{favoritesCount}</span>
+              </button>
+            ) : loginFavorite}
+          </div>
 
           {/* Tags */}
           {(tagsByType.fandom.length > 0 || tagsByType.warning.length > 0 || tagsByType.pairing.length > 0) && (

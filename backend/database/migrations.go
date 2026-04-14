@@ -14,6 +14,9 @@ func RunSafeColumnMigrations(db *gorm.DB) {
 	migrateQuestionsColumns(db)
 	migrateCommentsColumns(db)
 	migrateCommentInteractionTables(db)
+	migrateChapterStatsColumns(db)
+	migrateChapterLikesTable(db)
+	migrateFanficExtraColumns(db)
 }
 
 // migrateCommentsColumns garante que comments tenha parent_id e likes_count.
@@ -34,6 +37,40 @@ func migrateCommentsColumns(db *gorm.DB) {
 				log.Printf("Added column '%s' to comments table.", c.name)
 			}
 		}
+	}
+}
+
+// migrateChapterStatsColumns garante que chapters tenha views_count e likes_count.
+func migrateChapterStatsColumns(db *gorm.DB) {
+	type col struct {
+		name string
+		ddl  string
+	}
+	cols := []col{
+		{name: "views_count", ddl: "ALTER TABLE chapters ADD COLUMN IF NOT EXISTS views_count INTEGER NOT NULL DEFAULT 0"},
+		{name: "likes_count", ddl: "ALTER TABLE chapters ADD COLUMN IF NOT EXISTS likes_count INTEGER NOT NULL DEFAULT 0"},
+	}
+	for _, c := range cols {
+		if !db.Migrator().HasColumn(&models.Chapter{}, c.name) {
+			if err := db.Exec(c.ddl).Error; err != nil {
+				log.Printf("Warning: could not add column '%s' to chapters: %v", c.name, err)
+			} else {
+				log.Printf("Added column '%s' to chapters table.", c.name)
+			}
+		}
+	}
+}
+
+// migrateChapterLikesTable cria a tabela chapter_likes se não existir.
+func migrateChapterLikesTable(db *gorm.DB) {
+	if err := db.Exec(`CREATE TABLE IF NOT EXISTS chapter_likes (
+		id         SERIAL PRIMARY KEY,
+		user_id    INTEGER NOT NULL,
+		chapter_id INTEGER NOT NULL,
+		created_at TIMESTAMPTZ DEFAULT NOW(),
+		UNIQUE(user_id, chapter_id)
+	)`).Error; err != nil {
+		log.Printf("Warning: could not create chapter_likes table: %v", err)
 	}
 }
 
@@ -58,6 +95,27 @@ func migrateCommentInteractionTables(db *gorm.DB) {
 		UNIQUE(user_id, comment_id)
 	)`).Error; err != nil {
 		log.Printf("Warning: could not create comment_reports table: %v", err)
+	}
+}
+
+// migrateFanficExtraColumns garante que fanfics tenha is_complete e activity_tag.
+func migrateFanficExtraColumns(db *gorm.DB) {
+	type col struct {
+		name string
+		ddl  string
+	}
+	cols := []col{
+		{name: "is_complete", ddl: "ALTER TABLE fanfics ADD COLUMN IF NOT EXISTS is_complete BOOLEAN NOT NULL DEFAULT false"},
+		{name: "activity_tag", ddl: "ALTER TABLE fanfics ADD COLUMN IF NOT EXISTS activity_tag VARCHAR(50) NOT NULL DEFAULT ''"},
+	}
+	for _, c := range cols {
+		if !db.Migrator().HasColumn(&models.Fanfic{}, c.name) {
+			if err := db.Exec(c.ddl).Error; err != nil {
+				log.Printf("Warning: could not add column '%s' to fanfics: %v", c.name, err)
+			} else {
+				log.Printf("Added column '%s' to fanfics table.", c.name)
+			}
+		}
 	}
 }
 

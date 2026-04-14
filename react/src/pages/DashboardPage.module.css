@@ -591,6 +591,64 @@
   flex-shrink: 0;
 }
 
+/* Radio buttons para status de conclusão */
+.radioGroup {
+  display: flex;
+  gap: var(--space-5);
+}
+
+.radioOption {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.radioOption input[type="radio"] {
+  accent-color: var(--color-accent-brand);
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+
+/* Tags de atividade — grid de botões radio-style */
+.activityTagGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.activityTagBtn {
+  padding: var(--space-1) var(--space-4);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-color);
+  background: none;
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.activityTagBtn:hover {
+  border-color: var(--color-accent-brand);
+  color: var(--color-accent-brand);
+}
+
+.activityTagBtnActive {
+  background-color: var(--color-accent-brand);
+  border-color: var(--color-accent-brand);
+  color: #fff;
+}
+
+.activityTagBtnActive:hover {
+  color: #fff;
+}
+
 .formActions {
   display: flex;
   gap: var(--space-3);

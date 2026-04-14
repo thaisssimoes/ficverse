@@ -5,13 +5,12 @@
 
 .content {
   font-family: var(--font-serif);
-  /* 18-20px fluido — regra de ouro para leitura longa */
-  font-size: clamp(1.0625rem, 1.2vw + 0.8rem, 1.25rem);
-  /* line-height 1.6 — "respiro" do Medium */
-  line-height: 1.6;
+  /* Herda o font-size do pai (controlado pelo ReadingToolbar).
+     Fallback: 17px caso não haja controle ativo. */
+  font-size: inherit;
+  line-height: inherit;
   color: var(--color-text-primary);
-  /* Sem max-width aqui — o ReadingEnvironment/ReadingContainer já controla */
-  text-align: left; /* padrão F de leitura */
+  text-align: left;
 }
 
 /* Parágrafos */

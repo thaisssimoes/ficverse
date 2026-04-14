@@ -223,6 +223,7 @@ function InfoTab({ fanfic, onUpdated }) {
   const toast = useToast();
   const [title, setTitle] = useState(fanfic.title);
   const [category, setCategory] = useState(fanfic.category);
+  const [isComplete, setIsComplete] = useState(fanfic.is_complete || false);
   const [coverFile, setCoverFile] = useState(null);
   const [coverPreview, setCoverPreview] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -253,6 +254,7 @@ function InfoTab({ fanfic, onUpdated }) {
         category,
         synopsis,
         disclaimer: disclaimerRef.current?.getContent() || '',
+        is_complete: isComplete,
       });
 
       if (coverFile) {
@@ -301,6 +303,19 @@ function InfoTab({ fanfic, onUpdated }) {
               {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
+          <div className={styles.formGroup} style={{ marginBottom: 0, marginTop: 'var(--space-5)' }}>
+            <label className={styles.formLabel}>Status de conclusão</label>
+            <div className={styles.radioGroup}>
+              <label className={styles.radioOption}>
+                <input type="radio" name="isComplete" checked={!isComplete} onChange={() => setIsComplete(false)} />
+                Em andamento
+              </label>
+              <label className={styles.radioOption}>
+                <input type="radio" name="isComplete" checked={isComplete} onChange={() => setIsComplete(true)} />
+                Completa
+              </label>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -327,10 +342,20 @@ function InfoTab({ fanfic, onUpdated }) {
 }
 
 // ─── Aba: Classificações ────────────────────────────────────────────────
+const ACTIVITY_TAGS = [
+  { value: 'ultimas-semanas', label: 'Últimas semanas' },
+  { value: 'ultimos-dias',    label: 'Últimos dias' },
+  { value: 'ultimos-caps',    label: 'Últimos capítulos' },
+  { value: 'em-pausa',        label: 'Em pausa' },
+  { value: 'retornando',      label: 'Retornando' },
+  { value: 'finalizando',     label: 'Finalizando' },
+];
+
 function ClassificacoesTab({ fanfic, onUpdated }) {
   const toast = useToast();
   const queryClient = useQueryClient();
   const [adultContent, setAdultContent] = useState(fanfic.is_adult_content || false);
+  const [activityTag, setActivityTag] = useState(fanfic.activity_tag || '');
   const [tags, setTags] = useState({ fandom: [], warning: [], pairing: [] });
   const [saving, setSaving] = useState(false);
   const triggerWarningsRef = useRef(null);
@@ -359,6 +384,7 @@ function ClassificacoesTab({ fanfic, onUpdated }) {
       const updated = await fanficApi.update(fanfic.id, {
         is_adult_content: adultContent,
         trigger_warnings: triggerWarningsRef.current?.getContent() || '',
+        activity_tag: activityTag,
       });
 
       try {
@@ -417,6 +443,24 @@ function ClassificacoesTab({ fanfic, onUpdated }) {
       <div className={styles.formGroup}>
         <label className={styles.formLabel}>Trigger Warnings</label>
         <QuillEditor key={`tw-${fanfic.id}`} ref={triggerWarningsRef} initialValue={fanfic.trigger_warnings || ''} placeholder="Liste conteúdos potencialmente perturbadores..." minHeight="80px" />
+      </div>
+
+      {/* Tag de atividade — apenas uma ativa por vez */}
+      <p className={styles.clsGroupLabel} style={{ marginTop: '1.5rem' }}>Tag de Atividade</p>
+      <div className={styles.formGroup}>
+        <p className={styles.formHint}>Indica o ritmo de atualização da história. Apenas uma pode estar ativa por vez.</p>
+        <div className={styles.activityTagGrid}>
+          {ACTIVITY_TAGS.map((t) => (
+            <button
+              key={t.value}
+              type="button"
+              className={`${styles.activityTagBtn} ${activityTag === t.value ? styles.activityTagBtnActive : ''}`}
+              onClick={() => setActivityTag(activityTag === t.value ? '' : t.value)}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Tags */}

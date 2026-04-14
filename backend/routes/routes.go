@@ -171,6 +171,8 @@ func Setup(router *gin.Engine, db *gorm.DB, cfg *config.Config, store storage.St
 			chapters.DELETE("/:id", auth.AuthMiddleware(authService), chapterHandler.Delete)
 			chapters.POST("/:id/publish", auth.AuthMiddleware(authService), chapterHandler.Publish)
 			chapters.POST("/:id/cover", auth.AuthMiddleware(authService), chapterHandler.UploadCover)
+			chapters.POST("/:id/view", chapterHandler.IncrementViews)
+			chapters.POST("/:id/like", auth.AuthMiddleware(authService), chapterHandler.ToggleChapterLike)
 
 			// Comment routes for chapters
 			chapters.GET("/:id/comments", auth.OptionalAuthMiddleware(authService), commentHandler.ListChapterComments)

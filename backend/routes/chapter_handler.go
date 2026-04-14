@@ -13,6 +13,7 @@ import (
 	"github.com/interactive-fanfic-platform/auth"
 	"github.com/interactive-fanfic-platform/chapter"
 	"github.com/interactive-fanfic-platform/fanfic"
+	"github.com/interactive-fanfic-platform/models"
 	"github.com/interactive-fanfic-platform/storage"
 	"gorm.io/gorm"
 )
@@ -84,6 +85,10 @@ func (h *ChapterHandler) ListByFanfic(c *gin.Context) {
 		return
 	}
 
+	if userID != 0 {
+		chapters, _ = h.service.EnrichWithLikes(userID, chapters)
+	}
+
 	c.JSON(http.StatusOK, chapters)
 }
 
@@ -125,6 +130,13 @@ func (h *ChapterHandler) GetByID(c *gin.Context) {
 			},
 		})
 		return
+	}
+
+	if userID != 0 {
+		liked, _ := h.service.EnrichWithLikes(userID, []models.Chapter{*chapterData})
+		if len(liked) > 0 {
+			chapterData = &liked[0]
+		}
 	}
 
 	c.JSON(http.StatusOK, chapterData)
@@ -659,4 +671,44 @@ func (h *ChapterHandler) UploadCover(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"cover_url": coverURL})
+}
+
+// IncrementViews incrementa o contador de visualizações de um capítulo.
+// POST /chapters/:id/view — não requer autenticação.
+func (h *ChapterHandler) IncrementViews(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: ErrorDetail{Code: "INVALID_ID", Message: "Invalid chapter ID"}})
+		return
+	}
+	if err := h.service.IncrementViews(id); err != nil {
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: ErrorDetail{Code: "DB_ERROR", Message: err.Error()}})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"ok": true})
+}
+
+// ToggleChapterLike alterna o like do usuário autenticado num capítulo.
+// POST /chapters/:id/like → { liked: bool, likes_count: int }
+func (h *ChapterHandler) ToggleChapterLike(c *gin.Context) {
+	user, exists := auth.GetCurrentUser(c)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, ErrorResponse{Error: ErrorDetail{Code: "UNAUTHORIZED", Message: "Authentication required"}})
+		return
+	}
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: ErrorDetail{Code: "INVALID_ID", Message: "Invalid chapter ID"}})
+		return
+	}
+	liked, count, err := h.service.ToggleLike(user.ID, id)
+	if err != nil {
+		if errors.Is(err, chapter.ErrChapterNotFound) {
+			c.JSON(http.StatusNotFound, ErrorResponse{Error: ErrorDetail{Code: "NOT_FOUND", Message: "Chapter not found"}})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: ErrorDetail{Code: "LIKE_ERROR", Message: err.Error()}})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"liked": liked, "likes_count": count})
 }

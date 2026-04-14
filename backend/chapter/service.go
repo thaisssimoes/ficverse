@@ -243,6 +243,39 @@ func (s *ChapterService) ListChapters(fanficID int, userID int) ([]models.Chapte
 	return chapters, nil
 }
 
+// IncrementViews incrementa as views de um capítulo.
+func (s *ChapterService) IncrementViews(chapterID int) error {
+	return s.repo.IncrementViews(chapterID)
+}
+
+// ToggleLike alterna o like do usuário num capítulo.
+func (s *ChapterService) ToggleLike(userID, chapterID int) (liked bool, count int, err error) {
+	if _, err = s.repo.GetByID(chapterID); err != nil {
+		return false, 0, err
+	}
+	return s.repo.ToggleLike(userID, chapterID)
+}
+
+// EnrichWithLikes popula LikedByMe em cada capítulo para um usuário específico.
+func (s *ChapterService) EnrichWithLikes(userID int, chapters []models.Chapter) ([]models.Chapter, error) {
+	ids := make([]int, len(chapters))
+	for i, c := range chapters {
+		ids[i] = c.ID
+	}
+	likedIDs, err := s.repo.LikedIDsByUser(userID, ids)
+	if err != nil {
+		return chapters, err
+	}
+	likedSet := make(map[int]bool, len(likedIDs))
+	for _, id := range likedIDs {
+		likedSet[id] = true
+	}
+	for i := range chapters {
+		chapters[i].LikedByMe = likedSet[chapters[i].ID]
+	}
+	return chapters, nil
+}
+
 // validateChapterInput validates chapter input data
 func (s *ChapterService) validateChapterInput(title, content string) error {
 	if strings.TrimSpace(title) == "" {

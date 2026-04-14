@@ -152,6 +152,8 @@ export const chapterApi = {
   delete: (id) => request(`/chapters/${id}`, { method: 'DELETE' }),
   publish: (id) => request(`/chapters/${id}/publish`, { method: 'POST' }),
   reorder: (fanficId, order) => request(`/fanfics/${fanficId}/chapters/reorder`, { method: 'PUT', body: JSON.stringify({ order }) }),
+  incrementView: (id) => request(`/chapters/${id}/view`, { method: 'POST' }),
+  toggleLike: (id) => request(`/chapters/${id}/like`, { method: 'POST' }),
   uploadCover: async (chapterId, file) => {
     const formData = new FormData();
     formData.append('cover', file);

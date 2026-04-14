@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { chapterApi, fanficApi, interactiveApi, commentApi } from '../services/api';
@@ -9,9 +9,9 @@ import LoadingSpinner from '../components/ui/LoadingSpinner';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
 import CommentsSection from '../components/fanfic/CommentsSection';
-import ReadingEnvironment from '../components/reading/ReadingEnvironment';
 import ReadingContent from '../components/reading/ReadingContent';
 import StoryHeader from '../components/reading/StoryHeader';
+import ReadingToolbar from '../components/reading/ReadingToolbar';
 import styles from './ChapterReaderPage.module.css';
 
 // Modal de perguntas (pendentes ou iniciais)
@@ -152,12 +152,69 @@ export default function ChapterReaderPage() {
     if (Object.keys(answers).length === 0) setQuestionsOpen(true);
   }, [mode, chapter?.fanfic_id, isAuthenticated, questions.length, loadingAnswers, fetchingAnswers]);
 
-  // Atualiza progresso de leitura
+  // Modo leitura — oculta nav lateral enquanto o capítulo estiver aberto
   useEffect(() => {
-    if (!isAuthenticated || !chapter || !fanfic) return;
+    document.body.classList.add('reading-mode');
+    return () => document.body.classList.remove('reading-mode');
+  }, []);
+
+  // Atualiza progresso de leitura e incrementa views
+  useEffect(() => {
+    if (!chapter) return;
+    chapterApi.incrementView(chapter.id).catch(() => {});
+    if (!isAuthenticated || !fanfic) return;
     const order = chapter.order || (allChapters.findIndex((c) => c.id === chapter.id) + 1);
     chapterApi.updateReadingProgress(fanfic.id, order).catch(() => {});
   }, [chapter?.id]);
+
+  // Tamanho da fonte — persiste no localStorage
+  const FONT_MIN = 14;
+  const FONT_MAX = 28;
+  const FONT_STEP = 1;
+  const FONT_DEFAULT = 24;
+  const [fontSize, setFontSize] = useState(() => {
+    const saved = Number(localStorage.getItem('lollipopfics_font_size'));
+    return saved >= FONT_MIN && saved <= FONT_MAX ? saved : FONT_DEFAULT;
+  });
+
+  const changeFontSize = (delta) => {
+    setFontSize((prev) => {
+      const next = Math.min(FONT_MAX, Math.max(FONT_MIN, prev + delta));
+      localStorage.setItem('lollipopfics_font_size', String(next));
+      return next;
+    });
+  };
+
+  // Botão de voltar ao topo
+  const [showBackToTop, setShowBackToTop] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setShowBackToTop(window.scrollY > 400);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+  const scrollToTop = useCallback(() => window.scrollTo({ top: 0, behavior: 'smooth' }), []);
+
+  // Like do capítulo com atualização otimista
+  const [chapterLiked, setChapterLiked] = useState(null); // null = usa o valor do servidor
+  const [chapterLikesCount, setChapterLikesCount] = useState(null);
+
+  const chapterLikeMutation = useMutation({
+    mutationFn: () => chapterApi.toggleLike(chapter.id),
+    onMutate: () => {
+      const prevLiked = chapterLiked ?? chapter?.liked_by_me ?? false;
+      const prevCount = chapterLikesCount ?? chapter?.likes_count ?? 0;
+      setChapterLiked(!prevLiked);
+      setChapterLikesCount(prevLiked ? Math.max(prevCount - 1, 0) : prevCount + 1);
+    },
+    onSuccess: (data) => {
+      setChapterLiked(data.liked);
+      setChapterLikesCount(data.likes_count);
+    },
+    onError: () => {
+      setChapterLiked(null);
+      setChapterLikesCount(null);
+    },
+  });
 
   // Mutations
   const saveAnswersMutation = useMutation({
@@ -221,7 +278,7 @@ export default function ChapterReaderPage() {
         />
       )}
 
-      <ReadingEnvironment>
+      <div className={styles.page}>
         {/* Header editorial do capítulo */}
         <StoryHeader
           title={chapter.title}
@@ -230,6 +287,12 @@ export default function ChapterReaderPage() {
           fanficId={fanfic?.id}
           author={fanfic?.author?.username}
           authorAvatar={fanfic?.author?.avatar_url}
+          viewsCount={chapter.views_count ?? 0}
+          commentsCount={comments.length}
+          likesCount={chapterLikesCount ?? chapter?.likes_count ?? 0}
+          likedByMe={chapterLiked ?? chapter?.liked_by_me ?? false}
+          onLike={() => chapterLikeMutation.mutate()}
+          isAuthenticated={isAuthenticated}
           mode={mode}
           actions={
             user && fanfic && user.user_id === fanfic.author_id ? (
@@ -240,10 +303,21 @@ export default function ChapterReaderPage() {
           }
         />
 
-        {/* Conteúdo com tipografia Lora — 18-20px, line-height 1.6 */}
-        <article>
-          <ReadingContent html={displayContent} />
-        </article>
+        {/* Área de leitura: toolbar sticky à esquerda + artigo centralizado */}
+        <div className={styles.readingArea}>
+          <ReadingToolbar
+            fontSize={fontSize}
+            fontMin={FONT_MIN}
+            fontMax={FONT_MAX}
+            onFontChange={changeFontSize}
+          />
+          <article
+            className={styles.articleColumn}
+            style={{ fontSize: `${fontSize}px`, lineHeight: 1.75 }}
+          >
+            <ReadingContent html={displayContent} />
+          </article>
+        </div>
 
         {/* Navegação entre capítulos */}
         <nav className={styles.nav}>
@@ -284,7 +358,19 @@ export default function ChapterReaderPage() {
           fanficAuthorId={fanfic?.author_id}
           isLoadingComments={loadingComments}
         />
-      </ReadingEnvironment>
+      </div>
+
+      {/* Botão voltar ao topo */}
+      <button
+        className={`${styles.backToTop} ${showBackToTop ? styles.backToTopVisible : ''}`}
+        onClick={scrollToTop}
+        aria-label="Voltar ao topo"
+        title="Voltar ao topo"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <polyline points="18 15 12 9 6 15" />
+        </svg>
+      </button>
     </PageLayout>
   );
 }

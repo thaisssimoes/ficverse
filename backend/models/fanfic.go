@@ -14,6 +14,8 @@ type Fanfic struct {
 	IsDraft         bool       `gorm:"index" json:"is_draft"`
 	IsAdultContent  bool       `gorm:"default:false" json:"is_adult_content"`
 	TriggerWarnings string     `gorm:"type:text" json:"trigger_warnings"`
+	IsComplete      bool       `gorm:"default:false" json:"is_complete"`
+	ActivityTag     string     `gorm:"size:50" json:"activity_tag"`
 	PublishedAt     *time.Time `gorm:"index" json:"published_at"`
 	CreatedAt       time.Time  `gorm:"autoCreateTime;index" json:"created_at"`
 	UpdatedAt       time.Time  `gorm:"autoUpdateTime" json:"updated_at"`
