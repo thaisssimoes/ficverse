@@ -88,7 +88,7 @@ func Setup(router *gin.Engine, db *gorm.DB, cfg *config.Config, store storage.St
 	fanficHandler := NewFanficHandler(db, store)
 	chapterHandler := NewChapterHandler(db, store)
 	interactiveHandler := NewInteractiveHandler(db)
-	commentHandler := NewCommentHandler(db)
+	commentHandler := NewCommentHandler(db, emailService)
 	searchHandler := NewSearchHandler(db)
 	notificationHandler := NewNotificationHandler(db)
 	readingListHandler := NewReadingListHandler(db)
@@ -145,7 +145,7 @@ func Setup(router *gin.Engine, db *gorm.DB, cfg *config.Config, store storage.St
 			fanfics.GET("/:id/pending-questions", auth.AuthMiddleware(authService), interactiveHandler.GetPendingQuestions)
 			
 			// Comment routes for fanfics
-			fanfics.GET("/:id/comments", commentHandler.ListFanficComments)
+			fanfics.GET("/:id/comments", auth.OptionalAuthMiddleware(authService), commentHandler.ListFanficComments)
 			fanfics.POST("/:id/comments", auth.AuthMiddleware(authService), commentHandler.CreateFanficComment)
 
 			// Favorite routes
@@ -173,7 +173,7 @@ func Setup(router *gin.Engine, db *gorm.DB, cfg *config.Config, store storage.St
 			chapters.POST("/:id/cover", auth.AuthMiddleware(authService), chapterHandler.UploadCover)
 
 			// Comment routes for chapters
-			chapters.GET("/:id/comments", commentHandler.ListChapterComments)
+			chapters.GET("/:id/comments", auth.OptionalAuthMiddleware(authService), commentHandler.ListChapterComments)
 			chapters.POST("/:id/comments", auth.AuthMiddleware(authService), commentHandler.CreateChapterComment)
 		}
 
@@ -189,6 +189,8 @@ func Setup(router *gin.Engine, db *gorm.DB, cfg *config.Config, store storage.St
 		{
 			comments.PUT("/:id", auth.AuthMiddleware(authService), commentHandler.Update)
 			comments.DELETE("/:id", auth.AuthMiddleware(authService), commentHandler.Delete)
+			comments.POST("/:id/like", auth.AuthMiddleware(authService), commentHandler.ToggleLike)
+			comments.POST("/:id/report", auth.AuthMiddleware(authService), commentHandler.ReportComment)
 		}
 
 		// Render stateless — motor de tags (sem auth, transformação pura)

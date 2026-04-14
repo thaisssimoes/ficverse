@@ -198,13 +198,15 @@ export const interactiveApi = {
 export const commentApi = {
   getFanficComments: (fanficId) => request(`/fanfics/${fanficId}/comments`),
   getChapterComments: (chapterId) => request(`/chapters/${chapterId}/comments`),
-  createFanficComment: (fanficId, content) =>
-    request(`/fanfics/${fanficId}/comments`, { method: 'POST', body: JSON.stringify({ content }) }),
-  createChapterComment: (chapterId, content) =>
-    request(`/chapters/${chapterId}/comments`, { method: 'POST', body: JSON.stringify({ content }) }),
+  createFanficComment: (fanficId, content, parentId = null) =>
+    request(`/fanfics/${fanficId}/comments`, { method: 'POST', body: JSON.stringify({ content, parent_id: parentId }) }),
+  createChapterComment: (chapterId, content, parentId = null) =>
+    request(`/chapters/${chapterId}/comments`, { method: 'POST', body: JSON.stringify({ content, parent_id: parentId }) }),
   update: (id, content) =>
     request(`/comments/${id}`, { method: 'PUT', body: JSON.stringify({ content }) }),
   delete: (id) => request(`/comments/${id}`, { method: 'DELETE' }),
+  toggleLike: (id) => request(`/comments/${id}/like`, { method: 'POST' }),
+  report: (id, reason) => request(`/comments/${id}/report`, { method: 'POST', body: JSON.stringify({ reason }) }),
 };
 
 // Notificações

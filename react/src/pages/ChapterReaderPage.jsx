@@ -169,7 +169,7 @@ export default function ChapterReaderPage() {
   });
 
   const addCommentMutation = useMutation({
-    mutationFn: (content) => commentApi.createChapterComment(id, content),
+    mutationFn: ({ content, parentId }) => commentApi.createChapterComment(id, content, parentId ?? null),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['chapter-comments', id] }),
   });
 
@@ -278,7 +278,7 @@ export default function ChapterReaderPage() {
         {/* Comentários */}
         <CommentsSection
           comments={comments}
-          onAddComment={(content) => addCommentMutation.mutateAsync(content)}
+          onAddComment={(content, parentId) => addCommentMutation.mutateAsync({ content, parentId })}
           onDeleteComment={(cid) => deleteCommentMutation.mutateAsync(cid)}
           onEditComment={(cid, content) => editCommentMutation.mutateAsync({ cid, content })}
           fanficAuthorId={fanfic?.author_id}

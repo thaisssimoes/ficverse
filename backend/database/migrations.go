@@ -12,6 +12,53 @@ import (
 // This runs on every startup (even when AUTO_MIGRATE=false) and is safe to run multiple times.
 func RunSafeColumnMigrations(db *gorm.DB) {
 	migrateQuestionsColumns(db)
+	migrateCommentsColumns(db)
+	migrateCommentInteractionTables(db)
+}
+
+// migrateCommentsColumns garante que comments tenha parent_id e likes_count.
+func migrateCommentsColumns(db *gorm.DB) {
+	type col struct {
+		name string
+		ddl  string
+	}
+	cols := []col{
+		{name: "parent_id", ddl: "ALTER TABLE comments ADD COLUMN IF NOT EXISTS parent_id INTEGER REFERENCES comments(id) ON DELETE CASCADE"},
+		{name: "likes_count", ddl: "ALTER TABLE comments ADD COLUMN IF NOT EXISTS likes_count INTEGER NOT NULL DEFAULT 0"},
+	}
+	for _, c := range cols {
+		if !db.Migrator().HasColumn(&models.Comment{}, c.name) {
+			if err := db.Exec(c.ddl).Error; err != nil {
+				log.Printf("Warning: could not add column '%s' to comments: %v", c.name, err)
+			} else {
+				log.Printf("Added column '%s' to comments table.", c.name)
+			}
+		}
+	}
+}
+
+// migrateCommentInteractionTables creates comment_likes and comment_reports if they don't exist.
+// Needed because AUTO_MIGRATE=false in production, so AutoMigrate never ran for these tables.
+func migrateCommentInteractionTables(db *gorm.DB) {
+	if err := db.Exec(`CREATE TABLE IF NOT EXISTS comment_likes (
+		id         SERIAL PRIMARY KEY,
+		user_id    INTEGER NOT NULL,
+		comment_id INTEGER NOT NULL,
+		created_at TIMESTAMPTZ DEFAULT NOW(),
+		UNIQUE(user_id, comment_id)
+	)`).Error; err != nil {
+		log.Printf("Warning: could not create comment_likes table: %v", err)
+	}
+	if err := db.Exec(`CREATE TABLE IF NOT EXISTS comment_reports (
+		id         SERIAL PRIMARY KEY,
+		user_id    INTEGER NOT NULL,
+		comment_id INTEGER NOT NULL,
+		reason     VARCHAR(100) NOT NULL,
+		created_at TIMESTAMPTZ DEFAULT NOW(),
+		UNIQUE(user_id, comment_id)
+	)`).Error; err != nil {
+		log.Printf("Warning: could not create comment_reports table: %v", err)
+	}
 }
 
 // migrateQuestionsColumns ensures the questions table has the interactive-mode columns.
@@ -48,6 +95,8 @@ func Migrate(db *gorm.DB) error {
 		&models.Question{},
 		&models.Answer{},
 		&models.Comment{},
+		&models.CommentLike{},
+		&models.CommentReport{},
 		&models.PendingQuestion{},
 		&models.Notification{},
 		&models.ReadingProgress{},
