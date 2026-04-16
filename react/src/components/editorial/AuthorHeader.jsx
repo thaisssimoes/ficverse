@@ -5,14 +5,14 @@ import TagBadge from '../ui/TagBadge';
 import styles from './AuthorHeader.module.css';
 
 const IconHeart = ({ filled = false }) => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill={filled ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill={filled ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
   </svg>
 );
 
 export default function AuthorHeader({
   fanfic,
-  tagsByType = { fandom: [], warning: [], pairing: [] },
+  tagsByType = { fandom: [], warning: [], pairing: [], subgenre: [] },
   favorited = false,
   favoritesCount = 0,
   onFavorite,
@@ -71,55 +71,38 @@ export default function AuthorHeader({
         {/* Coluna direita: categoria, título, tags, sinopse, ações */}
         <div className={styles.info}>
           {fanfic.category && (
-            <span className={styles.category}>{fanfic.category}</span>
-          )}
-
-          <div className={styles.titleRow}>
-            <h1 className={styles.title}>{fanfic.title}</h1>
-            <span className={`${styles.statusBadge} ${fanfic.is_complete ? styles.statusComplete : styles.statusOngoing}`}>
-              {fanfic.is_complete ? 'Completa' : 'Em andamento'}
-            </span>
-            {isAuthenticated ? (
-              <button
-                className={`${styles.heartBtn} ${favorited ? styles.heartBtnActive : ''}`}
-                onClick={onFavorite}
-                aria-label={favorited ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
-              >
-                <IconHeart filled={favorited} />
-                <span className={styles.heartCount}>{favoritesCount}</span>
-              </button>
-            ) : loginFavorite}
-          </div>
-
-          {/* Tags */}
-          {(tagsByType.fandom.length > 0 || tagsByType.warning.length > 0 || tagsByType.pairing.length > 0) && (
-            <div className={styles.tagGroups}>
-              {tagsByType.fandom.length > 0 && (
-                <div className={styles.tagGroup}>
-                  <span className={styles.tagGroupLabel}>Fandom:</span>
-                  <div className={styles.tagList}>
-                    {tagsByType.fandom.map((t) => <TagBadge key={t.id} tag={t} clickable />)}
-                  </div>
-                </div>
-              )}
-              {tagsByType.warning.length > 0 && (
-                <div className={styles.tagGroup}>
-                  <span className={styles.tagGroupLabel}>Avisos:</span>
-                  <div className={styles.tagList}>
-                    {tagsByType.warning.map((t) => <TagBadge key={t.id} tag={t} clickable />)}
-                  </div>
-                </div>
-              )}
-              {tagsByType.pairing.length > 0 && (
-                <div className={styles.tagGroup}>
-                  <span className={styles.tagGroupLabel}>Casais:</span>
-                  <div className={styles.tagList}>
-                    {tagsByType.pairing.map((t) => <TagBadge key={t.id} tag={t} clickable />)}
-                  </div>
-                </div>
+            <div className={styles.categoryBlock}>
+              <span className={styles.category}>{fanfic.category}</span>
+              {tagsByType.subgenre?.length > 0 && (
+                <span className={styles.subgenres}>
+                  {tagsByType.subgenre.map((t) => t.name).join(', ')}
+                </span>
               )}
             </div>
           )}
+
+          <div className={styles.titleRow}>
+            <h1 className={styles.title}>
+              {fanfic.title}
+              {isAuthenticated ? (
+                <button
+                  className={`${styles.heartBtn} ${favorited ? styles.heartBtnActive : ''}`}
+                  onClick={onFavorite}
+                  aria-label={favorited ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+                >
+                  <IconHeart filled={favorited} />
+                  <span className={styles.heartCount}>{favoritesCount}</span>
+                </button>
+              ) : loginFavorite}
+            </h1>
+            {(() => {
+              const label = fanfic.is_complete ? 'Completa' : fanfic.is_hiatus ? 'Hiatus' : 'Em andamento';
+              const cls   = fanfic.is_complete ? styles.statusComplete
+                          : fanfic.is_hiatus   ? styles.statusHiatus
+                          :                      styles.statusOngoing;
+              return <span className={`${styles.statusBadge} ${cls}`}>{label}</span>;
+            })()}
+          </div>
 
           {/* Sinopse */}
           {showSynopsis && fanfic.synopsis && (
@@ -128,6 +111,30 @@ export default function AuthorHeader({
               dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(fanfic.synopsis) }}
             />
           )}
+
+          {/* Tags: status + fandom, pairing, subgênero — abaixo da sinopse */}
+          {(() => {
+            const statusKey   = fanfic.is_complete ? 'complete' : fanfic.is_hiatus ? 'hiatus' : 'ongoing';
+            const statusLabel = fanfic.is_complete ? 'Completa' : fanfic.is_hiatus ? 'Hiatus' : 'Em andamento';
+            const allTags     = [...tagsByType.fandom, ...tagsByType.pairing, ...tagsByType.subgenre];
+            return (
+              <div className={styles.tagGroups}>
+                <div className={styles.tagGroup}>
+                  <span className={styles.tagGroupLabel}>Tags:</span>
+                  <div className={styles.tagList}>
+                    <Link
+                      to={`/explore?status=${statusKey}`}
+                      className={`${styles.statusTag} ${styles[`statusTag_${statusKey}`]}`}
+                      title={`Ver histórias: ${statusLabel}`}
+                    >
+                      {statusLabel}
+                    </Link>
+                    {allTags.map((t) => <TagBadge key={t.id} tag={t} clickable />)}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
 
         </div>
       </div>

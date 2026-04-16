@@ -3,7 +3,7 @@
    ============================================ */
 
 .section {
-  margin-top: var(--space-8);
+  margin-top: var(--space-10);
   margin-bottom: var(--space-8);
 }
 
@@ -56,15 +56,16 @@
   flex: 1;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: var(--space-3);
   min-width: 0;
 }
 
 .chapterTitle {
-  font-family: var(--font-sans);
-  font-size: var(--text-base);
-  font-weight: 500;
-  color: var(--color-text-primary);
+  font-family: var(--font-serif);
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--color-text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -103,12 +104,33 @@
 }
 
 .statBtn:hover {
-  color: #ec4899;
+  color: #e11d48;
 }
 
 .statBtnLiked {
-  color: #ec4899;
+  color: #e11d48;
 }
+
+/* Botão de like — maior e à direita do título */
+.likeBtn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  padding: var(--space-1) var(--space-2);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: color var(--transition-fast);
+}
+
+.likeBtn:hover { color: #e11d48; }
+
+.likeBtnLiked { color: #e11d48; }
 
 .badgeDraft {
   font-family: var(--font-sans);

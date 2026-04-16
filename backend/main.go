@@ -2,8 +2,10 @@ package main
 
 import (
 	"log"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/interactive-fanfic-platform/chapter"
 	"github.com/interactive-fanfic-platform/config"
 	"github.com/interactive-fanfic-platform/database"
 	"github.com/interactive-fanfic-platform/routes"
@@ -45,6 +47,16 @@ func main() {
 		SupabaseBucket: cfg.SupabaseBucket,
 	})
 	log.Printf("Storage provider: %s", cfg.StorageProvider)
+
+	// Background job: publish scheduled chapters every minute
+	chapterSvc := chapter.NewChapterService(db)
+	go func() {
+		ticker := time.NewTicker(time.Minute)
+		defer ticker.Stop()
+		for range ticker.C {
+			chapterSvc.PublishScheduledChapters()
+		}
+	}()
 
 	// Setup router
 	router := gin.Default()

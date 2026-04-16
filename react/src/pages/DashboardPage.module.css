@@ -447,6 +447,19 @@
   color: var(--text-muted);
 }
 
+.noSelectionGuideLink {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-accent-brand);
+  text-decoration: none;
+  transition: opacity var(--transition-fast);
+}
+
+.noSelectionGuideLink:hover {
+  opacity: 0.7;
+}
+
 /* ── Tab bar ─────────────────────────── */
 .tabBar {
   display: flex;
@@ -1176,6 +1189,70 @@
 }
 
 /* Label de grupo da aba Classificações — sem caixa colorida */
+/* Linha label + botão copiar */
+.clsLabelRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.clsLabelHint {
+  font-weight: 400;
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+}
+
+/* Botão copiar tags */
+.copyTagsBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  transition: color var(--transition-fast), background var(--transition-fast);
+}
+.copyTagsBtn:hover:not(:disabled) {
+  color: var(--color-accent-brand);
+  background: rgba(0, 88, 113, 0.07);
+}
+.copyTagsBtn:disabled { opacity: 0.3; cursor: default; }
+
+/* Dropdown de sugestões de tags */
+.tagSuggestions {
+  position: absolute;
+  top: calc(100% - var(--space-2));
+  left: 0;
+  right: 0;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  z-index: 100;
+  list-style: none;
+  margin: 0;
+  padding: var(--space-1) 0;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.tagSuggestionItem {
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+.tagSuggestionItem:hover {
+  background: rgba(0, 88, 113, 0.07);
+  color: var(--color-accent-brand);
+}
+
 .clsGroupLabel {
   font-size: var(--text-label);
   font-weight: 700;

@@ -8,6 +8,114 @@
   padding: 0 var(--space-6) var(--space-16);
 }
 
+/* ── Gate de conteúdo adulto ── */
+.ageGate {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  padding: var(--space-8) var(--space-6);
+}
+
+.ageGateCard {
+  max-width: 480px;
+  width: 100%;
+  text-align: center;
+  padding: var(--space-10) var(--space-8);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+}
+
+.ageGateBadge {
+  display: inline-block;
+  background: #e11d48;
+  color: #fff;
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  margin-bottom: var(--space-5);
+}
+
+.ageGateTitle {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 400;
+  color: var(--color-text-primary);
+  margin: 0 0 var(--space-4);
+}
+
+.ageGateText {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  line-height: 1.7;
+  margin: 0 0 var(--space-4);
+}
+
+.ageGateWarnings {
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  background: rgba(245, 158, 11, 0.07);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  margin: 0 0 var(--space-6);
+  line-height: 1.6;
+  text-align: left;
+}
+
+.ageGateActions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.ageGateConfirm {
+  width: 100%;
+  padding: var(--space-3) var(--space-6);
+  background: var(--color-accent-brand);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-full);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity var(--transition-fast);
+}
+
+.ageGateConfirm:hover { opacity: 0.88; }
+
+.ageGateDontShow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.ageGateBack {
+  background: none;
+  border: none;
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color var(--transition-fast);
+}
+
+.ageGateBack:hover { color: var(--color-text-secondary); }
+
 .error {
   text-align: center;
   color: var(--color-text-muted);
@@ -15,44 +123,47 @@
   font-family: var(--font-sans);
 }
 
-/* Seção de trigger warning — só aparece quando is_adult_content = true */
-.triggerWarningSection {
-  margin-top: var(--space-6);
-  padding: var(--space-4) var(--space-5);
-  background-color: rgba(239, 68, 68, 0.06);
-  border: 1px solid rgba(239, 68, 68, 0.25);
-  border-radius: var(--radius-md);
+/* Aviso +18 — linha tipográfica centralizada */
+.adultWarning {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
-.triggerWarningBadge {
-  font-family: var(--font-sans);
-  font-size: var(--text-label);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: #ef4444;
-  margin: 0;
-}
-
-.triggerWarningContent {
-  font-family: var(--font-sans);
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 48px 0 16px;
+  font-family: var(--font-serif);
   font-size: var(--text-sm);
-  color: var(--color-text-secondary);
-  line-height: var(--leading-ui, 1.6);
+  color: #A65D4F;
+  letter-spacing: 0.08em;
 }
 
-.triggerWarningContent p { margin: 0 0 var(--space-1); }
-.triggerWarningContent p:last-child { margin: 0; }
+.adultWarningIcon { font-size: 1em; }
+
+.adultWarningDivider { opacity: 0.35; }
+
+/* Tags de trigger warning — pills abaixo da linha +18 */
+.triggerWarningTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  justify-content: center;
+  margin: 0 0 32px;
+}
+
+.triggerWarningTag {
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  color: #A65D4F;
+  border: 1px solid rgba(166, 93, 79, 0.35);
+  border-radius: var(--radius-full);
+  padding: 2px var(--space-3);
+}
 
 /* Seções empilhadas verticalmente — disclaimer em cima, modo de leitura embaixo */
 .sectionsRow {
   display: flex;
   flex-direction: column;
-  gap: var(--space-8);
-  margin-top: var(--space-8);
+  gap: var(--space-12);
+  margin-top: var(--space-10);
   width: 100%;
 }
 
@@ -113,8 +224,8 @@
 }
 
 .favoriteBtn:hover {
-  border-color: #ec4899;
-  color: #ec4899;
+  border-color: #e11d48;
+  color: #e11d48;
 }
 
 /* ============================================
@@ -197,6 +308,12 @@
 
 .modeBtnActive:hover {
   color: #fff;
+}
+
+.modeBtnDisabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 .modeSelectorHint {

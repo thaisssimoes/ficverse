@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import DOMPurify from 'dompurify';
-import { fanficApi, chapterApi, interactiveApi, tagApi, profileApi } from '../services/api';
+import { fanficApi, chapterApi, interactiveApi, profileApi, tagApi } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
 import PageLayout from '../components/layout/PageLayout';
@@ -19,72 +19,46 @@ function hasRichContent(html) {
   return html.replace(/<[^>]*>/g, '').trim().length > 0;
 }
 
-// Modal para perguntas sem resposta ao aplicar perfil
-function MissingQuestionsModal({ isOpen, onClose, questions, profileName, onUpdateProfile, onSaveLocal }) {
-  const [inputs, setInputs] = useState(() => {
-    const init = {};
-    questions.forEach((q) => { init[q.placeholder] = ''; });
-    return init;
-  });
-  const [errors, setErrors] = useState([]);
+// Remove tags HTML — necessário para legado do QuillEditor em trigger_warnings
+function stripHtml(html) {
+  return html ? html.replace(/<[^>]*>/g, '') : '';
+}
 
-  // Reinicia inputs quando as perguntas mudam (ex: perfil diferente)
-  useEffect(() => {
-    const init = {};
-    questions.forEach((q) => { init[q.placeholder] = ''; });
-    setInputs(init);
-    setErrors([]);
-  }, [questions]);
-
-  const validate = () => {
-    const empty = Object.entries(inputs).filter(([, v]) => !v.trim()).map(([k]) => k);
-    if (empty.length) { setErrors(empty); return false; }
-    setErrors([]);
-    return true;
-  };
-
+// Gate de confirmação de idade para conteúdo +18
+function AgeGate({ fanfic, onConfirm, onBack }) {
+  const [dontShowAgain, setDontShowAgain] = useState(false);
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Perguntas sem resposta"
-      size="lg"
-      footer={
-        <>
-          <Button variant="secondary" onClick={onClose}>Cancelar</Button>
-          <Button variant="secondary" onClick={() => { if (validate()) onSaveLocal(inputs); }}>
-            Salvar Local
-          </Button>
-          <Button onClick={() => { if (validate()) onUpdateProfile(inputs); }}>
-            Atualizar Perfil {profileName}
-          </Button>
-        </>
-      }
-    >
-      <p className={styles.modalDesc}>
-        Existem perguntas sem resposta para o perfil <strong>{profileName}</strong>. Preencha para continuar:
-      </p>
-      {errors.length > 0 && (
-        <p className={styles.validationMsg}>Por favor, responda todas as perguntas antes de continuar.</p>
-      )}
-      <div className={styles.questionsList}>
-        {questions.map((q, i) => (
-          <div key={q.id} className={styles.questionItem}>
-            <label className={styles.questionLabel}>{i + 1}. {q.question_text}</label>
+    <div className={styles.ageGate}>
+      <div className={styles.ageGateCard}>
+        <span className={styles.ageGateBadge}>+18</span>
+        <h2 className={styles.ageGateTitle}>Conteúdo adulto</h2>
+        <p className={styles.ageGateText}>
+          Esta história contém conteúdo destinado a maiores de 18 anos.
+          Ao continuar, você confirma que tem 18 anos ou mais.
+        </p>
+        {fanfic.trigger_warnings && fanfic.trigger_warnings.replace(/<[^>]*>/g, '').trim() && (
+          <p className={styles.ageGateWarnings}>
+            <strong>Avisos de conteúdo:</strong> {fanfic.trigger_warnings.replace(/<[^>]*>/g, '')}
+          </p>
+        )}
+        <div className={styles.ageGateActions}>
+          <button className={styles.ageGateConfirm} onClick={() => onConfirm(dontShowAgain)}>
+            Tenho 18 anos ou mais — Continuar
+          </button>
+          <label className={styles.ageGateDontShow}>
             <input
-              type="text"
-              className={`${styles.questionInput} ${errors.includes(q.placeholder) ? styles.inputError : ''}`}
-              value={inputs[q.placeholder] || ''}
-              onChange={(e) => {
-                setInputs((p) => ({ ...p, [q.placeholder]: e.target.value }));
-                setErrors((err) => err.filter((x) => x !== q.placeholder));
-              }}
-              placeholder="Digite sua resposta..."
+              type="checkbox"
+              checked={dontShowAgain}
+              onChange={(e) => setDontShowAgain(e.target.checked)}
             />
-          </div>
-        ))}
+            Não mostrar novamente para esta história
+          </label>
+          <button className={styles.ageGateBack} onClick={onBack}>
+            Voltar
+          </button>
+        </div>
       </div>
-    </Modal>
+    </div>
   );
 }
 
@@ -273,6 +247,9 @@ export default function FanficDetailPage() {
   const queryClient = useQueryClient();
 
   const [questionsOpen, setQuestionsOpen] = useState(false);
+  const [ageConfirmed, setAgeConfirmed] = useState(
+    () => localStorage.getItem(`lollipopfics_age_ok_${id}`) === '1'
+  );
   const [selectedProfileId, setSelectedProfileId] = useState(() => {
     // Preferência específica para esta história tem prioridade
     const fanficPref = localStorage.getItem(`lollipopfics_fanfic_${id}_profile_id`);
@@ -285,10 +262,14 @@ export default function FanficDetailPage() {
     setSelectedProfileId(newId);
     localStorage.setItem('lollipopfics_selected_profile_id', String(newId));
   };
-  const [missingModalOpen, setMissingModalOpen] = useState(false);
-  const [pendingApplyAnswers, setPendingApplyAnswers] = useState({});
-  const [missingQuestions, setMissingQuestions] = useState([]);
-  const [readingMode, setReadingMode] = useState('interactive');
+  const [readingMode, setReadingMode] = useState(() => {
+    return localStorage.getItem(`lollipopfics_fanfic_${id}_reading_mode`) || 'interactive';
+  });
+
+  const handleSetReadingMode = (mode) => {
+    setReadingMode(mode);
+    localStorage.setItem(`lollipopfics_fanfic_${id}_reading_mode`, mode);
+  };
 
   // Queries
   const { data: fanfic, isLoading: loadingFanfic } = useQuery({
@@ -313,6 +294,18 @@ export default function FanficDetailPage() {
     queryFn: () => interactiveApi.getQuestions(id),
     enabled: !!fanfic && fanfic.interactive_mode,
   });
+
+  // Modo Normal só funciona se todas as variáveis tiverem resposta padrão definida
+  const hasAllDefaults = questions.length > 0 && questions.every(
+    (q) => q.default_answer && q.default_answer.trim() !== ''
+  );
+
+  // Se o modo salvo era 'normal' mas o autor removeu os padrões, volta para interativo
+  useEffect(() => {
+    if (!hasAllDefaults && readingMode === 'normal') {
+      handleSetReadingMode('interactive');
+    }
+  }, [hasAllDefaults]);
 
   const { data: existingAnswers = {} } = useQuery({
     queryKey: ['answers', id],
@@ -341,8 +334,23 @@ export default function FanficDetailPage() {
   // Mutations
   const favoriteMutation = useMutation({
     mutationFn: () => fanficApi.toggleFavorite(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['favorite-status', id] }),
-    onError: () => toast.error('Erro ao atualizar favorito.'),
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ['favorite-status', id] });
+      const prev = queryClient.getQueryData(['favorite-status', id]);
+      queryClient.setQueryData(['favorite-status', id], (old) => ({
+        ...old,
+        favorited: !old?.favorited,
+        favorites_count: (old?.favorites_count ?? 0) + (old?.favorited ? -1 : 1),
+      }));
+      return { prev };
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(['favorite-status', id], data);
+    },
+    onError: (_err, _vars, context) => {
+      queryClient.setQueryData(['favorite-status', id], context?.prev);
+      toast.error('Erro ao atualizar favorito.');
+    },
   });
 
   const chapterLikeMutation = useMutation({
@@ -356,11 +364,6 @@ export default function FanficDetailPage() {
     // Invalida todas as queries de answers — garante que ChapterReaderPage (que usa fanfic_id
     // numérico) também receba os dados atualizados, não só a query local com id string.
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['answers'] }),
-  });
-
-  const updateProfileMutation = useMutation({
-    mutationFn: (updates) => profileApi.updateProfile(readerProfile.id, updates),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['profiles'] }),
   });
 
   const handleSaveAnswers = async (inputs, saveToProfileMap, newProfileName = null, profileId = null) => {
@@ -445,32 +448,10 @@ export default function FanficDetailPage() {
     });
 
     if (missing.length > 0) {
-      setPendingApplyAnswers(merged);
-      setMissingQuestions(missing);
-      setMissingModalOpen(true);
+      setQuestionsOpen(true);
     } else {
       doApplyAnswers(merged);
     }
-  };
-
-  const handleUpdateProfile = async (filledInputs) => {
-    const allAnswers = { ...pendingApplyAnswers, ...filledInputs };
-    // Atualiza o perfil com os valores padrão preenchidos
-    const profileUpdates = { ...readerProfile };
-    missingQuestions.forEach((q) => {
-      if (q.variable_type === 'standard' && filledInputs[q.placeholder]) {
-        profileUpdates[q.standard_key] = filledInputs[q.placeholder];
-      }
-    });
-    await updateProfileMutation.mutateAsync(profileUpdates);
-    await doApplyAnswers(allAnswers);
-    setMissingModalOpen(false);
-  };
-
-  const handleSaveLocal = async (filledInputs) => {
-    const allAnswers = { ...pendingApplyAnswers, ...filledInputs };
-    await doApplyAnswers(allAnswers);
-    setMissingModalOpen(false);
   };
 
   const readChapter = (chapterId) => {
@@ -489,9 +470,10 @@ export default function FanficDetailPage() {
     .sort((a, b) => a.order - b.order);
 
   const tagsByType = {
-    fandom: tags.filter((t) => t.type === 'fandom'),
-    warning: tags.filter((t) => t.type === 'warning'),
-    pairing: tags.filter((t) => t.type === 'pairing'),
+    fandom:   tags.filter((t) => t.type === 'fandom'),
+    warning:  tags.filter((t) => t.type === 'warning'),
+    pairing:  tags.filter((t) => t.type === 'pairing'),
+    subgenre: tags.filter((t) => t.type === 'subgenre'),
   };
 
   const pendingQuestions = questions.filter((q) => {
@@ -503,20 +485,23 @@ export default function FanficDetailPage() {
   if (loadingFanfic) return <PageLayout><LoadingSpinner fullPage /></PageLayout>;
   if (!fanfic) return <PageLayout><p className={styles.error}>Fanfic não encontrada.</p></PageLayout>;
 
+  if (fanfic.is_adult_content && !ageConfirmed) {
+    return (
+      <PageLayout>
+        <AgeGate
+          fanfic={fanfic}
+          onConfirm={(dontShowAgain) => {
+            if (dontShowAgain) localStorage.setItem(`lollipopfics_age_ok_${id}`, '1');
+            setAgeConfirmed(true);
+          }}
+          onBack={() => navigate(-1)}
+        />
+      </PageLayout>
+    );
+  }
+
   return (
     <PageLayout>
-      {/* Modal de perguntas sem resposta ao aplicar perfil */}
-      {missingModalOpen && (
-        <MissingQuestionsModal
-          isOpen={missingModalOpen}
-          onClose={() => setMissingModalOpen(false)}
-          questions={missingQuestions}
-          profileName={readerProfile.name}
-          onUpdateProfile={handleUpdateProfile}
-          onSaveLocal={handleSaveLocal}
-        />
-      )}
-
       {/* Questions Modal */}
       {questionsOpen && (
         <QuestionsModal
@@ -538,7 +523,7 @@ export default function FanficDetailPage() {
           <AuthorHeader
             fanfic={fanfic}
             tagsByType={tagsByType}
-            favorited={favoriteStatus?.favorited}
+            favorited={!!favoriteStatus?.favorited}
             favoritesCount={favoriteStatus?.favorites_count ?? 0}
             onFavorite={() => favoriteMutation.mutate()}
             isAuthor={isAuthor}
@@ -556,20 +541,26 @@ export default function FanficDetailPage() {
             }
           />
 
-          {/* Seção de trigger warning — visível apenas quando +18 */}
+          {/* Aviso +18 — linha tipográfica sempre visível quando is_adult_content */}
           {fanfic.is_adult_content && (
-            <section className={styles.triggerWarningSection}>
-              <p className={styles.triggerWarningBadge}>+18 — Conteúdo Adulto</p>
-              {hasRichContent(fanfic.trigger_warnings) && (
-                <div
-                  className={styles.triggerWarningContent}
-                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(fanfic.trigger_warnings) }}
-                />
-              )}
-            </section>
+            <div className={styles.adultWarning}>
+              <span className={styles.adultWarningIcon}>⚠</span>
+              <span>+18</span>
+              <span className={styles.adultWarningDivider}>|</span>
+              <span>CONTEÚDO ADULTO</span>
+            </div>
           )}
+          {fanfic.is_adult_content && (() => {
+            const pills = stripHtml(fanfic.trigger_warnings || '').split(',').map((t) => t.trim()).filter(Boolean);
+            return pills.length > 0 ? (
+              <div className={styles.triggerWarningTags}>
+                {pills.map((t, i) => <span key={i} className={styles.triggerWarningTag}>{t}</span>)}
+              </div>
+            ) : null;
+          })()}
 
-          {/* Seções proporcionais: aviso + modo de leitura */}
+          {/* Seções proporcionais: aviso + modo de leitura — só renderiza quando há conteúdo */}
+          {(hasRichContent(fanfic.disclaimer) || (fanfic.interactive_mode && questions.length > 0)) && (
           <div className={styles.sectionsRow}>
 
             {/* Aviso do autor */}
@@ -589,15 +580,17 @@ export default function FanficDetailPage() {
                 <p className={styles.detailSectionLabel}>Modo de Leitura</p>
                 <div className={styles.modeBtns}>
                   <button
-                    className={`${styles.modeBtn} ${readingMode === 'normal' ? styles.modeBtnActive : ''}`}
-                    onClick={() => setReadingMode('normal')}
+                    className={`${styles.modeBtn} ${readingMode === 'normal' ? styles.modeBtnActive : ''} ${!hasAllDefaults ? styles.modeBtnDisabled : ''}`}
+                    onClick={hasAllDefaults ? () => handleSetReadingMode('normal') : undefined}
+                    disabled={!hasAllDefaults}
+                    title={!hasAllDefaults ? 'O autor não definiu respostas padrão — o modo normal não está disponível.' : undefined}
                   >
                     Normal
                   </button>
                   <div className={styles.modeBtnGroup}>
                     <button
                       className={`${styles.modeBtn} ${readingMode === 'interactive' ? styles.modeBtnActive : ''}`}
-                      onClick={() => { setReadingMode('interactive'); if (isAuthenticated) setQuestionsOpen(true); }}
+                      onClick={() => { handleSetReadingMode('interactive'); if (isAuthenticated) setQuestionsOpen(true); }}
                     >
                       Interativa
                     </button>
@@ -616,12 +609,17 @@ export default function FanficDetailPage() {
                     )}
                   </div>
                 </div>
-                {readingMode === 'interactive' && !isAuthenticated && (
+                {!hasAllDefaults && (
+                  <p className={styles.modeSelectorHint} style={{ color: 'var(--color-text-muted)' }}>
+                    Modo normal indisponível — o autor ainda não definiu respostas padrão para todas as variáveis.
+                  </p>
+                )}
+                {hasAllDefaults && readingMode === 'interactive' && !isAuthenticated && (
                   <p className={styles.modeSelectorHint}>
                     <a href="/login" style={{ color: 'var(--color-accent-brand)' }}>Faça login</a> para personalizar sua leitura.
                   </p>
                 )}
-                {readingMode === 'normal' && (
+                {hasAllDefaults && readingMode === 'normal' && (
                   <p className={styles.modeSelectorHint}>
                     A história é lida com os valores padrão definidos pelo autor.
                   </p>
@@ -629,6 +627,7 @@ export default function FanficDetailPage() {
               </section>
             )}
           </div>
+          )}
 
           {/* Lista de capítulos — largura total */}
           <FeedList

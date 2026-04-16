@@ -7,22 +7,17 @@ const IconArrowLeft = () => (
   </svg>
 );
 
-const IconZap = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-  </svg>
-);
 
-const IconBook = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-  </svg>
-);
-
-const IconHeart = ({ filled = false }) => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill={filled ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+const IconHeart = ({ filled = false, size = 14 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill={filled ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+  </svg>
+);
+
+const IconPencil = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
   </svg>
 );
 
@@ -53,8 +48,7 @@ const IconBubble = () => (
  * @param {boolean}   [likedByMe]     - Se o usuário atual curtiu
  * @param {function}  [onLike]        - Callback para curtir/descurtir
  * @param {boolean}   [isAuthenticated]
- * @param {'interactive'|'non-interactive'} mode
- * @param {ReactNode} [actions]
+ * @param {string}    [editHref]        - URL para editar o capítulo (só mostrado ao autor)
  */
 export default function StoryHeader({
   title,
@@ -69,8 +63,7 @@ export default function StoryHeader({
   likedByMe = false,
   onLike,
   isAuthenticated = false,
-  mode = 'non-interactive',
-  actions,
+  editHref,
 }) {
   const initial = author?.charAt(0)?.toUpperCase() ?? '?';
 
@@ -113,21 +106,10 @@ export default function StoryHeader({
             {commentsCount}
           </span>
 
-          {isAuthenticated && onLike ? (
-            <button
-              className={`${styles.likeBtn} ${likedByMe ? styles.likeBtnActive : ''}`}
-              onClick={onLike}
-              aria-label={likedByMe ? 'Descurtir capítulo' : 'Curtir capítulo'}
-            >
-              <IconHeart filled={likedByMe} />
-              {likesCount}
-            </button>
-          ) : (
-            <span className={styles.metaStat}>
-              <IconHeart />
-              {likesCount}
-            </span>
-          )}
+          <span className={styles.metaStat}>
+            <IconHeart filled={likedByMe} />
+            {likesCount}
+          </span>
         </div>
       )}
 
@@ -138,15 +120,22 @@ export default function StoryHeader({
       {chapterOrder && (
         <span className={styles.chapterLabel}>Capítulo {chapterOrder}</span>
       )}
-      <h2 className={styles.chapterTitle}>{title}</h2>
-
-      <div className={styles.actions}>
-        {mode === 'interactive' ? (
-          <span className={styles.badgeInteractive}><IconZap /> Modo Interativo</span>
-        ) : (
-          <span className={styles.badgeNormal}><IconBook /> Modo Normal</span>
+      <div className={styles.chapterTitleRow}>
+        <h2 className={styles.chapterTitle}>{title}</h2>
+        {editHref && (
+          <Link to={editHref} className={styles.editBtn} title="Editar capítulo" aria-label="Editar capítulo">
+            <IconPencil />
+          </Link>
         )}
-        {actions}
+        {isAuthenticated && onLike && (
+          <button
+            className={`${styles.chapterHeartBtn} ${likedByMe ? styles.chapterHeartBtnActive : ''}`}
+            onClick={onLike}
+            aria-label={likedByMe ? 'Descurtir capítulo' : 'Curtir capítulo'}
+          >
+            <IconHeart filled={likedByMe} size={18} />
+          </button>
+        )}
       </div>
     </header>
   );

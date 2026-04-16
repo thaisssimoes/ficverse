@@ -38,16 +38,18 @@ func NewChapterHandler(db *gorm.DB, store storage.StorageService) *ChapterHandle
 
 // CreateChapterRequest represents chapter creation request
 type CreateChapterRequest struct {
-	Title   string `json:"title" binding:"required"`
-	Content string `json:"content" binding:"required"`
-	IsDraft bool   `json:"is_draft"`
+	Title       string  `json:"title" binding:"required"`
+	Content     string  `json:"content" binding:"required"`
+	IsDraft     bool    `json:"is_draft"`
+	ScheduledAt *string `json:"scheduled_at"`
 }
 
 // UpdateChapterRequest represents chapter update request
 type UpdateChapterRequest struct {
-	Title   string `json:"title"`
-	Content string `json:"content"`
-	IsDraft *bool  `json:"is_draft"`
+	Title       string  `json:"title"`
+	Content     string  `json:"content"`
+	IsDraft     *bool   `json:"is_draft"`
+	ScheduledAt *string `json:"scheduled_at"`
 }
 
 // ReorderChaptersRequest represents chapter reordering request
@@ -213,8 +215,27 @@ func (h *ChapterHandler) Create(c *gin.Context) {
 		return
 	}
 
+	// Parse scheduled_at if provided
+	var scheduledAt *time.Time
+	if req.ScheduledAt != nil && *req.ScheduledAt != "" {
+		if t, err := time.Parse(time.RFC3339, *req.ScheduledAt); err == nil {
+			scheduledAt = &t
+		}
+	}
+
+	// Enforce 5-chapter schedule limit
+	if scheduledAt != nil && h.service.CountScheduledChapters(fanficID) >= 5 {
+		c.JSON(http.StatusBadRequest, ErrorResponse{
+			Error: ErrorDetail{
+				Code:    "SCHEDULE_LIMIT",
+				Message: "Máximo de 5 capítulos agendados por vez",
+			},
+		})
+		return
+	}
+
 	// Create chapter with draft status from request
-	newChapter, err := h.service.CreateChapter(fanficID, req.Title, req.Content, req.IsDraft)
+	newChapter, err := h.service.CreateChapter(fanficID, req.Title, req.Content, req.IsDraft, scheduledAt)
 	if err != nil {
 		statusCode := http.StatusBadRequest
 		code := "CREATION_ERROR"
@@ -320,8 +341,21 @@ func (h *ChapterHandler) Update(c *gin.Context) {
 		return
 	}
 
+	// Parse scheduled_at if provided
+	var scheduledAt *time.Time
+	clearSchedule := false
+	if req.ScheduledAt != nil {
+		if *req.ScheduledAt == "" {
+			clearSchedule = true
+		} else {
+			if t, err := time.Parse(time.RFC3339, *req.ScheduledAt); err == nil {
+				scheduledAt = &t
+			}
+		}
+	}
+
 	// Update chapter
-	updatedChapter, err := h.service.UpdateChapter(id, req.Title, req.Content, req.IsDraft)
+	updatedChapter, err := h.service.UpdateChapter(id, req.Title, req.Content, req.IsDraft, scheduledAt, clearSchedule)
 	if err != nil {
 		statusCode := http.StatusBadRequest
 		code := "UPDATE_ERROR"

@@ -288,9 +288,9 @@
 
 /* Like ativo */
 .commentActionLiked {
-  color: #ec4899;
+  color: #e11d48;
 }
-.commentActionLiked:hover { color: #ec4899 !important; }
+.commentActionLiked:hover { color: #e11d48 !important; }
 
 /* Denúncia */
 .commentActionReport:hover {

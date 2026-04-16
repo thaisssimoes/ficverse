@@ -4,14 +4,14 @@ import "time"
 
 // Standard variable keys available for all fanfics
 const (
-	StandardKeyFirstName     = "first_name"
-	StandardKeyLastName      = "last_name"
-	StandardKeyNickname      = "nickname"
-	StandardKeyEyeColor      = "eye_color"
-	StandardKeyHairColor     = "hair_color"
-	StandardKeyFavoriteColor = "favorite_color"
-	StandardKeyFavoriteFood  = "favorite_food"
-	StandardKeyAge           = "age"
+	StandardKeyFirstName     = "primeiro_nome"
+	StandardKeyLastName      = "sobrenome"
+	StandardKeyNickname      = "apelido"
+	StandardKeyEyeColor      = "cor_olhos"
+	StandardKeyHairColor     = "cor_cabelo"
+	StandardKeyFavoriteColor = "cor_favorita"
+	StandardKeyFavoriteFood  = "comida_favorita"
+	StandardKeyAge           = "idade"
 )
 
 // StandardVariables is the ordered list of all standard variable definitions

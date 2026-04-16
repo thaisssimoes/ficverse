@@ -82,7 +82,7 @@ import { fanficApi, chapterApi, interactiveApi, commentApi, tagApi, profileApi }
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
 import { formatTimestamp, formatAbsoluteDate } from '../utils/formatters';
-import { CATEGORIES } from '../constants';
+import { CATEGORIES, TAG_SUGGESTIONS } from '../constants';
 import PageLayout from '../components/layout/PageLayout';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import Button from '../components/ui/Button';
@@ -90,48 +90,99 @@ import Modal from '../components/ui/Modal';
 import QuillEditor from '../components/editor/QuillEditor';
 import styles from './DashboardPage.module.css';
 
-// ─── Tag Input (reutilizado em vários lugares) ─────────────────────────
-function TagInput({ tags, onAdd, onRemove, maxTags = 5, placeholder = 'Digite e pressione Enter', neutral = false }) {
+
+// Remove HTML de dados legados do QuillEditor
+function stripHtml(html) {
+  if (!html) return '';
+  return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+// ─── TagInputWithSuggestions ───────────────────────────────────────────
+function TagInputWithSuggestions({ tags, onAdd, onRemove, suggestions = [], placeholder = 'Digite e pressione Enter', maxTags, neutral = false, tagType }) {
   const [value, setValue] = useState('');
+  const [open, setOpen] = useState(false);
+  const [dbSuggestions, setDbSuggestions] = useState([]);
+  const wrapRef = useRef(null);
+
+  const staticFiltered = value.length >= 3
+    ? suggestions.filter((s) => s.toLowerCase().includes(value.toLowerCase()) && !tags.includes(s))
+    : [];
+
+  const allSuggestions = [...new Set([...staticFiltered, ...dbSuggestions.filter((s) => !tags.includes(s))])];
+
+  // Busca sugestões do banco ao digitar 3+ chars
+  useEffect(() => {
+    if (value.length < 3 || !tagType) { setDbSuggestions([]); return; }
+    const timer = setTimeout(async () => {
+      try {
+        const results = await tagApi.search(value, tagType);
+        setDbSuggestions((results || []).map((t) => t.name));
+      } catch { setDbSuggestions([]); }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [value, tagType]);
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       const trimmed = value.trim();
-      if (trimmed && tags.length < maxTags) {
+      if (trimmed && (!maxTags || tags.length < maxTags) && !tags.includes(trimmed)) {
         onAdd(trimmed);
         setValue('');
+        setOpen(false);
       }
+    } else if (e.key === 'Escape') {
+      setOpen(false);
     }
   };
 
+  const handleSuggestionClick = (s) => {
+    if (!maxTags || tags.length < maxTags) {
+      onAdd(s);
+      setValue('');
+      setOpen(false);
+    }
+  };
+
+  // Fecha ao clicar fora
+  useEffect(() => {
+    const handler = (e) => { if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
   const chipClass = neutral ? styles.tagChipNeutral : styles.tagChip;
+  const limitReached = maxTags != null && tags.length >= maxTags;
 
   return (
-    <div>
+    <div ref={wrapRef} style={{ position: 'relative' }}>
       <div className={styles.tagInputRow}>
         <input
           type="text"
           className={styles.formInput}
           value={value}
-          onChange={(e) => setValue(e.target.value)}
+          onChange={(e) => { setValue(e.target.value); setOpen(true); }}
           onKeyDown={handleKeyDown}
-          placeholder={`${placeholder} (máx. ${maxTags})`}
-          disabled={tags.length >= maxTags}
+          onFocus={() => value.length >= 3 && setOpen(true)}
+          placeholder={limitReached ? `Máximo de ${maxTags} tags` : placeholder}
+          disabled={limitReached}
         />
       </div>
+      {open && allSuggestions.length > 0 && (
+        <ul className={styles.tagSuggestions}>
+          {allSuggestions.slice(0, 8).map((s) => (
+            <li key={s} className={styles.tagSuggestionItem} onMouseDown={() => handleSuggestionClick(s)}>
+              {s}
+            </li>
+          ))}
+        </ul>
+      )}
       {tags.length > 0 && (
         <div className={styles.tagChips}>
           {tags.map((t, i) => (
             <span key={i} className={chipClass}>
               {t}
-              <button
-                type="button"
-                className={styles.tagChipRemove}
-                onClick={() => onRemove(i)}
-              >
-                ×
-              </button>
+              <button type="button" className={styles.tagChipRemove} onClick={() => onRemove(i)}>×</button>
             </span>
           ))}
         </div>
@@ -223,7 +274,12 @@ function InfoTab({ fanfic, onUpdated }) {
   const toast = useToast();
   const [title, setTitle] = useState(fanfic.title);
   const [category, setCategory] = useState(fanfic.category);
-  const [isComplete, setIsComplete] = useState(fanfic.is_complete || false);
+  const [status, setStatus] = useState(
+    fanfic.is_complete ? 'complete' : fanfic.is_hiatus ? 'hiatus' : 'ongoing'
+  );
+  const [hiatusDate, setHiatusDate] = useState(
+    fanfic.hiatus_until ? fanfic.hiatus_until.slice(0, 10) : ''
+  );
   const [coverFile, setCoverFile] = useState(null);
   const [coverPreview, setCoverPreview] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -254,7 +310,11 @@ function InfoTab({ fanfic, onUpdated }) {
         category,
         synopsis,
         disclaimer: disclaimerRef.current?.getContent() || '',
-        is_complete: isComplete,
+        is_complete: status === 'complete',
+        is_hiatus: status === 'hiatus',
+        hiatus_until: status === 'hiatus' && hiatusDate
+          ? new Date(hiatusDate + 'T00:00:00').toISOString()
+          : null,
       });
 
       if (coverFile) {
@@ -304,17 +364,32 @@ function InfoTab({ fanfic, onUpdated }) {
             </select>
           </div>
           <div className={styles.formGroup} style={{ marginBottom: 0, marginTop: 'var(--space-5)' }}>
-            <label className={styles.formLabel}>Status de conclusão</label>
+            <label className={styles.formLabel}>Status</label>
             <div className={styles.radioGroup}>
               <label className={styles.radioOption}>
-                <input type="radio" name="isComplete" checked={!isComplete} onChange={() => setIsComplete(false)} />
+                <input type="radio" name="status" checked={status === 'ongoing'} onChange={() => setStatus('ongoing')} />
                 Em andamento
               </label>
               <label className={styles.radioOption}>
-                <input type="radio" name="isComplete" checked={isComplete} onChange={() => setIsComplete(true)} />
+                <input type="radio" name="status" checked={status === 'complete'} onChange={() => setStatus('complete')} />
                 Completa
               </label>
+              <label className={styles.radioOption}>
+                <input type="radio" name="status" checked={status === 'hiatus'} onChange={() => setStatus('hiatus')} />
+                Hiatus
+              </label>
             </div>
+            {status === 'hiatus' && (
+              <div className={styles.formGroup} style={{ marginTop: 'var(--space-3)', marginBottom: 0 }}>
+                <label className={styles.formLabel}>Data de retorno (opcional)</label>
+                <input
+                  type="date"
+                  className={styles.formInput}
+                  value={hiatusDate}
+                  onChange={(e) => setHiatusDate(e.target.value)}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -332,7 +407,7 @@ function InfoTab({ fanfic, onUpdated }) {
       <div className={styles.formActions}>
         {!fanfic.is_draft && (
           <Link to={`/fanfic/${fanfic.id}`} style={{ textDecoration: 'none' }}>
-            <Button type="button" variant="secondary" size="sm"><IconEye /> Ver Fanfic</Button>
+            <Button type="button" variant="secondary"><IconEye /> Ver Fanfic</Button>
           </Link>
         )}
         <Button type="submit" isLoading={saving}>Salvar Alterações</Button>
@@ -342,23 +417,38 @@ function InfoTab({ fanfic, onUpdated }) {
 }
 
 // ─── Aba: Classificações ────────────────────────────────────────────────
-const ACTIVITY_TAGS = [
-  { value: 'ultimas-semanas', label: 'Últimas semanas' },
-  { value: 'ultimos-dias',    label: 'Últimos dias' },
-  { value: 'ultimos-caps',    label: 'Últimos capítulos' },
-  { value: 'em-pausa',        label: 'Em pausa' },
-  { value: 'retornando',      label: 'Retornando' },
-  { value: 'finalizando',     label: 'Finalizando' },
-];
+
+function CopyTagsBtn({ tags }) {
+  const toast = useToast();
+  const handleCopy = () => {
+    if (!tags.length) return;
+    navigator.clipboard.writeText(tags.join(', ')).then(
+      () => toast.success('Tags copiadas!'),
+      () => toast.error('Erro ao copiar.'),
+    );
+  };
+  return (
+    <button type="button" className={styles.copyTagsBtn} onClick={handleCopy} title="Copiar tags" disabled={!tags.length}>
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+      </svg>
+      Copiar
+    </button>
+  );
+}
 
 function ClassificacoesTab({ fanfic, onUpdated }) {
   const toast = useToast();
   const queryClient = useQueryClient();
   const [adultContent, setAdultContent] = useState(fanfic.is_adult_content || false);
-  const [activityTag, setActivityTag] = useState(fanfic.activity_tag || '');
-  const [tags, setTags] = useState({ fandom: [], warning: [], pairing: [] });
+  // trigger_warnings agora é lista de tags (legado HTML → strip)
+  const [twTags, setTwTags] = useState(() => {
+    const raw = stripHtml(fanfic.trigger_warnings || '');
+    return raw ? raw.split(',').map((s) => s.trim()).filter(Boolean) : [];
+  });
+  const [tags, setTags] = useState({ fandom: [], pairing: [], subgenre: [] });
   const [saving, setSaving] = useState(false);
-  const triggerWarningsRef = useRef(null);
 
   const { data: existingTags } = useQuery({
     queryKey: ['fanfic-tags', fanfic.id],
@@ -368,9 +458,9 @@ function ClassificacoesTab({ fanfic, onUpdated }) {
   useEffect(() => {
     if (!existingTags) return;
     setTags({
-      fandom:  existingTags.filter((t) => t.type === 'fandom').map((t) => t.name),
-      warning: existingTags.filter((t) => t.type === 'warning').map((t) => t.name),
-      pairing: existingTags.filter((t) => t.type === 'pairing').map((t) => t.name),
+      fandom:   existingTags.filter((t) => t.type === 'fandom').map((t) => t.name),
+      pairing:  existingTags.filter((t) => t.type === 'pairing').map((t) => t.name),
+      subgenre: existingTags.filter((t) => t.type === 'subgenre').map((t) => t.name),
     });
   }, [existingTags]);
 
@@ -383,24 +473,21 @@ function ClassificacoesTab({ fanfic, onUpdated }) {
     try {
       const updated = await fanficApi.update(fanfic.id, {
         is_adult_content: adultContent,
-        trigger_warnings: triggerWarningsRef.current?.getContent() || '',
-        activity_tag: activityTag,
+        trigger_warnings: twTags.join(', '),
       });
 
       try {
         const oldTags = existingTags || [];
         const newTagNames = [
           ...tags.fandom.map((n) => ({ name: n, type: 'fandom' })),
-          ...tags.warning.map((n) => ({ name: n, type: 'warning' })),
           ...tags.pairing.map((n) => ({ name: n, type: 'pairing' })),
+          ...tags.subgenre.map((n) => ({ name: n, type: 'subgenre' })),
         ];
         const oldTagNames = oldTags.map((t) => t.name.toLowerCase());
         const newTagNamesLower = newTagNames.map((t) => t.name.toLowerCase());
-
         for (const old of oldTags) {
-          if (!newTagNamesLower.includes(old.name.toLowerCase())) {
+          if (!newTagNamesLower.includes(old.name.toLowerCase()))
             await tagApi.removeFromFanfic(fanfic.id, old.id).catch(() => {});
-          }
         }
         for (const { name, type } of newTagNames) {
           if (!oldTagNames.includes(name.toLowerCase())) {
@@ -430,7 +517,7 @@ function ClassificacoesTab({ fanfic, onUpdated }) {
 
   return (
     <form onSubmit={handleSave}>
-      {/* Avisos */}
+      {/* Avisos de Conteúdo */}
       <p className={styles.clsGroupLabel}>Avisos de Conteúdo</p>
 
       <div className={styles.formGroup}>
@@ -440,43 +527,59 @@ function ClassificacoesTab({ fanfic, onUpdated }) {
         </label>
       </div>
 
+      {/* Trigger Warnings — tags ilimitadas */}
       <div className={styles.formGroup}>
-        <label className={styles.formLabel}>Trigger Warnings</label>
-        <QuillEditor key={`tw-${fanfic.id}`} ref={triggerWarningsRef} initialValue={fanfic.trigger_warnings || ''} placeholder="Liste conteúdos potencialmente perturbadores..." minHeight="80px" />
+        <div className={styles.clsLabelRow}>
+          <label className={styles.formLabel}>Trigger Warnings</label>
+          <CopyTagsBtn tags={twTags} />
+        </div>
+        <TagInputWithSuggestions
+          tags={twTags}
+          onAdd={(v) => setTwTags((p) => [...p, v])}
+          onRemove={(i) => setTwTags((p) => p.filter((_, idx) => idx !== i))}
+          suggestions={TAG_SUGGESTIONS.triggerWarning}
+          placeholder="Ex: Violência, Abuso..."
+          neutral
+        />
       </div>
 
-      {/* Tag de atividade — apenas uma ativa por vez */}
-      <p className={styles.clsGroupLabel} style={{ marginTop: '1.5rem' }}>Tag de Atividade</p>
+      {/* Subgêneros */}
+      <p className={styles.clsGroupLabel} style={{ marginTop: '1.5rem' }}>Subgêneros</p>
+
       <div className={styles.formGroup}>
-        <p className={styles.formHint}>Indica o ritmo de atualização da história. Apenas uma pode estar ativa por vez.</p>
-        <div className={styles.activityTagGrid}>
-          {ACTIVITY_TAGS.map((t) => (
-            <button
-              key={t.value}
-              type="button"
-              className={`${styles.activityTagBtn} ${activityTag === t.value ? styles.activityTagBtnActive : ''}`}
-              onClick={() => setActivityTag(activityTag === t.value ? '' : t.value)}
-            >
-              {t.label}
-            </button>
-          ))}
+        <div className={styles.clsLabelRow}>
+          <label className={styles.formLabel}>
+            Subgêneros
+            <span className={styles.clsLabelHint}> (máx. 3)</span>
+          </label>
+          <CopyTagsBtn tags={tags.subgenre} />
         </div>
+        <TagInputWithSuggestions neutral tagType="subgenre" tags={tags.subgenre}
+          onAdd={(v) => addTag('subgenre', v)} onRemove={(i) => removeTag('subgenre', i)}
+          suggestions={TAG_SUGGESTIONS.subgenre} placeholder="Ex: Romance, Horror" maxTags={3} />
       </div>
 
       {/* Tags */}
       <p className={styles.clsGroupLabel} style={{ marginTop: '1.5rem' }}>Tags</p>
 
       <div className={styles.formGroup}>
-        <label className={styles.formLabel}>Fandom</label>
-        <TagInput neutral tags={tags.fandom} onAdd={(v) => addTag('fandom', v)} onRemove={(i) => removeTag('fandom', i)} placeholder="Ex: Harry Potter" />
+        <div className={styles.clsLabelRow}>
+          <label className={styles.formLabel}>Fandom</label>
+          <CopyTagsBtn tags={tags.fandom} />
+        </div>
+        <TagInputWithSuggestions neutral tagType="fandom" tags={tags.fandom}
+          onAdd={(v) => addTag('fandom', v)} onRemove={(i) => removeTag('fandom', i)}
+          suggestions={TAG_SUGGESTIONS.fandom} placeholder="Ex: Harry Potter" maxTags={10} />
       </div>
+
       <div className={styles.formGroup}>
-        <label className={styles.formLabel}>Avisos</label>
-        <TagInput neutral tags={tags.warning} onAdd={(v) => addTag('warning', v)} onRemove={(i) => removeTag('warning', i)} placeholder="Ex: Violência" />
-      </div>
-      <div className={styles.formGroup}>
-        <label className={styles.formLabel}>Pairing</label>
-        <TagInput neutral tags={tags.pairing} onAdd={(v) => addTag('pairing', v)} onRemove={(i) => removeTag('pairing', i)} placeholder="Ex: Harry/Hermione" />
+        <div className={styles.clsLabelRow}>
+          <label className={styles.formLabel}>Pairing</label>
+          <CopyTagsBtn tags={tags.pairing} />
+        </div>
+        <TagInputWithSuggestions neutral tagType="pairing" tags={tags.pairing}
+          onAdd={(v) => addTag('pairing', v)} onRemove={(i) => removeTag('pairing', i)}
+          suggestions={TAG_SUGGESTIONS.pairing} placeholder="Ex: M/F" maxTags={5} />
       </div>
 
       <div className={styles.formActions}>
@@ -579,7 +682,7 @@ function StatusPanel({ fanfic, onUpdated }) {
 }
 
 // ─── Aba: Capítulos ─────────────────────────────────────────────────────
-function ChaptersTab({ fanfic, initialChapterId }) {
+function ChaptersTab({ fanfic, initialChapterId, onModalClose }) {
   const toast = useToast();
   const queryClient = useQueryClient();
   const [chapterModal, setChapterModal] = useState(null); // null | chapter object | 'new'
@@ -637,6 +740,17 @@ function ChaptersTab({ fanfic, initialChapterId }) {
     }
   };
 
+  const handleCancelSchedule = async (chapterId) => {
+    setOpenMenuId(null);
+    try {
+      await chapterApi.update(chapterId, { scheduled_at: null });
+      invalidate();
+      toast.success('Agendamento cancelado.');
+    } catch (err) {
+      toast.error(err.message || 'Erro ao cancelar agendamento.');
+    }
+  };
+
   if (isLoading) return <LoadingSpinner />;
 
   const publishedChapters = sorted.filter((ch) => !ch.is_draft);
@@ -672,7 +786,9 @@ function ChaptersTab({ fanfic, initialChapterId }) {
                   {formatAbsoluteDate(ch.created_at)}
                 </p>
                 <p className={styles.chapterRowStatus}>
-                  {ch.is_draft ? 'Rascunho' : 'Publicado'}
+                  {ch.scheduled_at
+                    ? `Agendado · ${formatAbsoluteDate(ch.scheduled_at)}`
+                    : ch.is_draft ? 'Rascunho' : 'Publicado'}
                 </p>
                 <div className={styles.chapterRowActions}>
                   {/* Publicar (apenas rascunhos) */}
@@ -724,6 +840,14 @@ function ChaptersTab({ fanfic, initialChapterId }) {
                             Salvar como Rascunho
                           </button>
                         )}
+                        {ch.scheduled_at && (
+                          <button
+                            className={styles.chapterDropdownItem}
+                            onClick={(e) => { e.stopPropagation(); handleCancelSchedule(ch.id); }}
+                          >
+                            Cancelar agendamento
+                          </button>
+                        )}
                         <button
                           className={`${styles.chapterDropdownItem} ${styles.chapterDropdownDanger}`}
                           onClick={(e) => { e.stopPropagation(); handleDelete(ch.id); }}
@@ -744,8 +868,8 @@ function ChaptersTab({ fanfic, initialChapterId }) {
         <ChapterModal
           fanficId={fanfic.id}
           chapter={chapterModal === 'new' ? null : chapterModal}
-          onClose={() => setChapterModal(null)}
-          onSaved={() => { invalidate(); setChapterModal(null); }}
+          onClose={() => { setChapterModal(null); onModalClose?.(); }}
+          onSaved={() => { invalidate(); setChapterModal(null); onModalClose?.(); }}
         />
       )}
     </>
@@ -757,6 +881,10 @@ function ChapterModal({ fanficId, chapter, onClose, onSaved }) {
   const toast = useToast();
   const [title, setTitle] = useState(chapter?.title || '');
   const [isDraft, setIsDraft] = useState(chapter?.is_draft ?? true);
+  const [scheduleMode, setScheduleMode] = useState(!!chapter?.scheduled_at);
+  const [scheduledAt, setScheduledAt] = useState(
+    chapter?.scheduled_at ? chapter.scheduled_at.slice(0, 16) : ''
+  );
   const [saving, setSaving] = useState(false);
   const [coverFile, setCoverFile] = useState(null);
   const [coverPreview, setCoverPreview] = useState(chapter?.cover_url || null);
@@ -783,11 +911,19 @@ function ChapterModal({ fanficId, chapter, onClose, onSaved }) {
     }
     setSaving(true);
     try {
+      const payload = { title: title.trim(), content, is_draft: isDraft };
+      if (scheduleMode && scheduledAt) {
+        payload.is_draft = true;
+        payload.scheduled_at = new Date(scheduledAt).toISOString();
+      } else {
+        payload.scheduled_at = null;
+      }
+
       let savedChapter;
       if (isEdit) {
-        savedChapter = await chapterApi.update(chapter.id, { title: title.trim(), content, is_draft: isDraft });
+        savedChapter = await chapterApi.update(chapter.id, payload);
       } else {
-        savedChapter = await chapterApi.create(fanficId, { title: title.trim(), content, is_draft: isDraft });
+        savedChapter = await chapterApi.create(fanficId, payload);
       }
 
       // Upload da capa do capítulo, se selecionada
@@ -840,12 +976,30 @@ function ChapterModal({ fanficId, chapter, onClose, onSaved }) {
       {/* Upload de imagem de capítulo — desabilitado por ora */}
 
       <label className={styles.checkboxGroup}>
-        <input type="checkbox" checked={isDraft} onChange={(e) => setIsDraft(e.target.checked)} />
+        <input type="checkbox" checked={isDraft} onChange={(e) => setIsDraft(e.target.checked)} disabled={scheduleMode} />
         Salvar como Rascunho
         <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)', fontWeight: 400 }}>
           — Rascunhos não são visíveis para os leitores
         </span>
       </label>
+
+      <label className={styles.checkboxGroup} style={{ marginTop: 'var(--space-3)' }}>
+        <input type="checkbox" checked={scheduleMode} onChange={(e) => setScheduleMode(e.target.checked)} />
+        Agendar publicação
+      </label>
+      {scheduleMode && (
+        <div className={styles.formGroup} style={{ marginTop: 'var(--space-3)' }}>
+          <label className={styles.formLabel}>Data e hora de publicação</label>
+          <input
+            type="datetime-local"
+            className={styles.formInput}
+            value={scheduledAt}
+            onChange={(e) => setScheduledAt(e.target.value)}
+            min={new Date().toISOString().slice(0, 16)}
+          />
+          <p className={styles.formHint}>Máximo de 5 capítulos agendados por vez.</p>
+        </div>
+      )}
     </Modal>
   );
 }
@@ -1025,16 +1179,20 @@ function QuestionModal({ fanficId, question, pendingStd, onClose, onSaved }) {
   const [defaultAnswer, setDefaultAnswer] = useState(question?.default_answer || '');
   const [skipDefault, setSkipDefault] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [placeholderError, setPlaceholderError] = useState('');
 
   const handleSave = async () => {
     if (!isPendingStd && !isStandard && (!text.trim() || !placeholder.trim())) {
       toast.error('Preencha todos os campos.');
       return;
     }
-    if (!isEdit && !isPendingStd && !/^[a-zA-Z0-9_]+$/.test(placeholder)) {
-      toast.error('Placeholder: apenas letras, números e underscores.');
+    if (!isEdit && !isPendingStd && !/^[a-z0-9_-]+$/.test(placeholder)) {
+      setPlaceholderError(
+        'Nome de variável inválido. Use apenas letras minúsculas (a-z), números (0-9), hífen (-) e underscore (_). Espaços e acentos não são permitidos.'
+      );
       return;
     }
+    setPlaceholderError('');
     const finalDefault = skipDefault ? '' : defaultAnswer.trim();
     setSaving(true);
     try {
@@ -1115,12 +1273,19 @@ function QuestionModal({ fanficId, question, pendingStd, onClose, onSaved }) {
           <input
             className={styles.formInput}
             value={placeholder}
-            onChange={(e) => setPlaceholder(e.target.value.replace(/[^a-zA-Z0-9_]/g, ''))}
+            onChange={(e) => {
+              setPlaceholder(e.target.value.replace(/[^a-z0-9_-]/g, '').toLowerCase());
+              setPlaceholderError('');
+            }}
             placeholder="Ex: espada_magica"
           />
-          <p className={styles.formHint}>
-            Apenas letras, números e underscores. Use no capítulo como <code style={{ color: 'var(--tag-fandom-color)' }}>{'{{'}{placeholder || 'variavel'}{'}}'}</code>
-          </p>
+          {placeholderError ? (
+            <p className={styles.formHint} style={{ color: '#e11d48', fontWeight: 600 }}>{placeholderError}</p>
+          ) : (
+            <p className={styles.formHint}>
+              Apenas letras minúsculas, números, hífen e underscore. Sem espaços ou acentos. Use no capítulo como <code style={{ color: 'var(--tag-fandom-color)' }}>{'{{'}{placeholder || 'variavel'}{'}}'}</code>
+            </p>
+          )}
         </div>
       )}
 
@@ -1259,7 +1424,7 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const toast = useToast();
   const queryClient = useQueryClient();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [filterStatus, setFilterStatus] = useState('all');
   const [selectedId, setSelectedId] = useState(null);
@@ -1275,10 +1440,16 @@ export default function DashboardPage() {
   });
 
   // Pré-seleciona fanfic via ?fanficId= (vindo da página de detalhes ou capítulo)
-  // Suporta também ?tab= e ?chapterId= para abrir direto em um capítulo específico
+  // Suporta também ?tab= e ?chapterId= para abrir direto em um capítulo específico.
+  // Se não há fanficId na URL (ex: clicou em "Minhas histórias"), limpa a seleção.
   useEffect(() => {
     const fanficId = searchParams.get('fanficId');
-    if (fanficId && myFanfics.length > 0 && !selectedId) {
+    if (!fanficId) {
+      setSelectedId(null);
+      setSelectedFanficOverride(null);
+      return;
+    }
+    if (myFanfics.length > 0) {
       const target = myFanfics.find((f) => f.id === Number(fanficId));
       if (target) {
         setSelectedId(target.id);
@@ -1437,6 +1608,9 @@ export default function DashboardPage() {
               <div className={styles.noSelection}>
                 <h1 className={styles.noSelectionHeading}>Minhas Histórias</h1>
                 <p className={styles.noSelectionText}>Selecione uma história na lista ou crie uma nova.</p>
+                <Link to="/como-publicar" className={styles.noSelectionGuideLink}>
+                  Como publicar uma história →
+                </Link>
               </div>
             ) : (
               <div className={styles.editorWithStatus}>
@@ -1466,7 +1640,7 @@ export default function DashboardPage() {
                   <div className={styles.tabContent}>
                     {activeTab === 'info'            && <InfoTab           key={`info-${selectedFanfic.id}`} fanfic={selectedFanfic} onUpdated={handleFanficUpdated} />}
                     {activeTab === 'classifications' && <ClassificacoesTab key={`cls-${selectedFanfic.id}`}  fanfic={selectedFanfic} onUpdated={handleFanficUpdated} />}
-                    {activeTab === 'chapters'        && <ChaptersTab       key={`ch-${selectedFanfic.id}`}   fanfic={selectedFanfic} initialChapterId={initialChapterId} />}
+                    {activeTab === 'chapters'        && <ChaptersTab       key={`ch-${selectedFanfic.id}`}   fanfic={selectedFanfic} initialChapterId={initialChapterId} onModalClose={() => setSearchParams((p) => { const n = new URLSearchParams(p); n.delete('chapterId'); return n; })} />}
                     {activeTab === 'questions'       && <QuestionsTab      key={`q-${selectedFanfic.id}`}    fanfic={selectedFanfic} onFanficUpdated={handleFanficUpdated} />}
                     {activeTab === 'comments'        && <CommentsTab       key={`c-${selectedFanfic.id}`}    fanfic={selectedFanfic} />}
                   </div>

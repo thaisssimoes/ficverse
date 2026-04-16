@@ -12,7 +12,7 @@ const IconFileText = () => (
 );
 
 const IconHeart = ({ filled = false }) => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill={filled ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill={filled ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
   </svg>
 );
@@ -45,21 +45,15 @@ export default function FeedList({ chapters = [], onReadChapter, onLikeChapter, 
             <span className={styles.chapterNum}>Cap. {ch.order}</span>
 
             <div className={styles.chapterInfo}>
-              <span className={styles.chapterTitle}>{ch.title}</span>
-              {ch.is_draft && (
-                <span className={styles.badgeDraft}><IconFileText /> Rascunho</span>
-              )}
-            </div>
-
-            {/* Estatísticas do capítulo */}
-            <div className={styles.stats}>
-              <span className={styles.statItem}>
-                <IconEye />
-                {ch.views_count ?? 0}
-              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', minWidth: 0 }}>
+                <span className={styles.chapterTitle}>{ch.title}</span>
+                {ch.is_draft && (
+                  <span className={styles.badgeDraft}><IconFileText /> Rascunho</span>
+                )}
+              </div>
               {onLikeChapter && isAuthenticated ? (
                 <button
-                  className={`${styles.statBtn} ${ch.liked_by_me ? styles.statBtnLiked : ''}`}
+                  className={`${styles.likeBtn} ${ch.liked_by_me ? styles.likeBtnLiked : ''}`}
                   onClick={() => onLikeChapter(ch.id)}
                   aria-label={ch.liked_by_me ? 'Descurtir capítulo' : 'Curtir capítulo'}
                 >
@@ -67,11 +61,19 @@ export default function FeedList({ chapters = [], onReadChapter, onLikeChapter, 
                   {ch.likes_count ?? 0}
                 </button>
               ) : (
-                <span className={styles.statItem}>
+                <span className={styles.likeBtn}>
                   <IconHeart />
                   {ch.likes_count ?? 0}
                 </span>
               )}
+            </div>
+
+            {/* Visualizações */}
+            <div className={styles.stats}>
+              <span className={styles.statItem}>
+                <IconEye />
+                {ch.views_count ?? 0}
+              </span>
             </div>
 
             <Button size="sm" onClick={() => onReadChapter(ch.id)}>Ler</Button>

@@ -89,7 +89,7 @@ func (s *FanficService) CreateFanfic(authorID int, title, synopsis, disclaimer, 
 }
 
 // UpdateFanfic updates fanfic metadata
-func (s *FanficService) UpdateFanfic(fanficID, authorID int, title, synopsis, disclaimer, category string, coverURL string, interactiveMode *bool, isAdultContent *bool, triggerWarnings string) (*models.Fanfic, error) {
+func (s *FanficService) UpdateFanfic(fanficID, authorID int, title, synopsis, disclaimer, category string, coverURL string, interactiveMode *bool, isAdultContent *bool, triggerWarnings string, isComplete *bool, isHiatus *bool, hiatusUntil *time.Time, activityTag string) (*models.Fanfic, error) {
 	// Get existing fanfic
 	fanfic, err := s.repo.GetByID(fanficID)
 	if err != nil {
@@ -145,6 +145,19 @@ func (s *FanficService) UpdateFanfic(fanficID, authorID int, title, synopsis, di
 
 	if triggerWarnings != "" {
 		fanfic.TriggerWarnings = strings.TrimSpace(triggerWarnings)
+	}
+
+	if isComplete != nil {
+		fanfic.IsComplete = *isComplete
+	}
+
+	if isHiatus != nil {
+		fanfic.IsHiatus = *isHiatus
+	}
+	fanfic.HiatusUntil = hiatusUntil
+
+	if activityTag != "" {
+		fanfic.ActivityTag = strings.TrimSpace(activityTag)
 	}
 
 	if err := s.repo.Update(fanfic); err != nil {

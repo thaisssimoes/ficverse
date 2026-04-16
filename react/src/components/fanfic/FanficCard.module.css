@@ -80,6 +80,11 @@
   color: #fff;
 }
 
+.statusHiatus {
+  background: rgba(245, 158, 11, 0.8);
+  color: #fff;
+}
+
 .info {
   padding: 1rem;
   display: flex;

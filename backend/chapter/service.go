@@ -3,6 +3,7 @@ package chapter
 import (
 	"errors"
 	"strings"
+	"time"
 
 	"github.com/interactive-fanfic-platform/models"
 	"gorm.io/gorm"
@@ -29,7 +30,7 @@ func NewChapterService(db *gorm.DB) *ChapterService {
 }
 
 // CreateChapter creates a new chapter with automatic ordering and optional draft status
-func (s *ChapterService) CreateChapter(fanficID int, title, content string, isDraft bool) (*models.Chapter, error) {
+func (s *ChapterService) CreateChapter(fanficID int, title, content string, isDraft bool, scheduledAt *time.Time) (*models.Chapter, error) {
 	// Validate input
 	if err := s.validateChapterInput(title, content); err != nil {
 		return nil, err
@@ -37,6 +38,11 @@ func (s *ChapterService) CreateChapter(fanficID int, title, content string, isDr
 
 	if fanficID <= 0 {
 		return nil, ErrInvalidFanfic
+	}
+
+	// Scheduled chapters are always drafts until published
+	if scheduledAt != nil {
+		isDraft = true
 	}
 
 	// Get the next order number
@@ -47,11 +53,12 @@ func (s *ChapterService) CreateChapter(fanficID int, title, content string, isDr
 
 	// Create chapter
 	chapter := &models.Chapter{
-		FanficID: fanficID,
-		Title:    strings.TrimSpace(title),
-		Content:  strings.TrimSpace(content),
-		Order:    maxOrder + 1,
-		IsDraft:  isDraft,
+		FanficID:    fanficID,
+		Title:       strings.TrimSpace(title),
+		Content:     strings.TrimSpace(content),
+		Order:       maxOrder + 1,
+		IsDraft:     isDraft,
+		ScheduledAt: scheduledAt,
 	}
 
 	if err := s.repo.Create(chapter); err != nil {
@@ -61,8 +68,25 @@ func (s *ChapterService) CreateChapter(fanficID int, title, content string, isDr
 	return chapter, nil
 }
 
-// UpdateChapter updates chapter title, content, and draft status, preserving ID and order
-func (s *ChapterService) UpdateChapter(chapterID int, title, content string, isDraft *bool) (*models.Chapter, error) {
+// CountScheduledChapters returns the number of scheduled (unpublished) chapters for a fanfic.
+func (s *ChapterService) CountScheduledChapters(fanficID int) int {
+	var count int64
+	s.db.Model(&models.Chapter{}).
+		Where("fanfic_id = ? AND scheduled_at IS NOT NULL AND is_draft = true", fanficID).
+		Count(&count)
+	return int(count)
+}
+
+// PublishScheduledChapters publishes chapters whose scheduled_at has passed.
+func (s *ChapterService) PublishScheduledChapters() {
+	now := time.Now()
+	s.db.Model(&models.Chapter{}).
+		Where("scheduled_at IS NOT NULL AND scheduled_at <= ? AND is_draft = true", now).
+		Updates(map[string]interface{}{"is_draft": false, "scheduled_at": nil})
+}
+
+// UpdateChapter updates chapter title, content, draft status and schedule, preserving ID and order
+func (s *ChapterService) UpdateChapter(chapterID int, title, content string, isDraft *bool, scheduledAt *time.Time, clearSchedule bool) (*models.Chapter, error) {
 	// Get existing chapter
 	chapter, err := s.repo.GetByID(chapterID)
 	if err != nil {
@@ -87,6 +111,14 @@ func (s *ChapterService) UpdateChapter(chapterID int, title, content string, isD
 	// Update draft status if provided
 	if isDraft != nil {
 		chapter.IsDraft = *isDraft
+	}
+
+	// Update scheduled_at
+	if scheduledAt != nil {
+		chapter.ScheduledAt = scheduledAt
+		chapter.IsDraft = true // scheduled chapters are always drafts
+	} else if clearSchedule {
+		chapter.ScheduledAt = nil
 	}
 
 	// Update chapter

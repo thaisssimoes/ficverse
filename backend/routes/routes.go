@@ -149,7 +149,7 @@ func Setup(router *gin.Engine, db *gorm.DB, cfg *config.Config, store storage.St
 			fanfics.POST("/:id/comments", auth.AuthMiddleware(authService), commentHandler.CreateFanficComment)
 
 			// Favorite routes
-			fanfics.GET("/:id/favorite", favoriteHandler.GetFavoriteStatus)
+			fanfics.GET("/:id/favorite", auth.OptionalAuthMiddleware(authService), favoriteHandler.GetFavoriteStatus)
 			fanfics.POST("/:id/favorite", auth.AuthMiddleware(authService), favoriteHandler.ToggleFavorite)
 		}
 

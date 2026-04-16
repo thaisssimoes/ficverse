@@ -254,6 +254,14 @@ export default function ChapterReaderPage() {
       ? renderResult.rendered_html
       : defaultRenderResult?.rendered_html ?? (chapter?.content ?? '');
 
+  // Em modo interativo autenticado, só exibe o conteúdo quando a renderização
+  // com as respostas do leitor estiver pronta — evita que tags {{variavel}}
+  // apareçam no texto antes das substituições serem aplicadas.
+  const isContentReady =
+    mode !== 'interactive' ||
+    !isAuthenticated ||
+    (hasAnswers && !!renderResult?.rendered_html);
+
   // Navegação entre capítulos
   const sorted = [...allChapters].sort((a, b) => a.order - b.order);
   const currentIndex = sorted.findIndex((c) => c.id === parseInt(id));
@@ -293,13 +301,10 @@ export default function ChapterReaderPage() {
           likedByMe={chapterLiked ?? chapter?.liked_by_me ?? false}
           onLike={() => chapterLikeMutation.mutate()}
           isAuthenticated={isAuthenticated}
-          mode={mode}
-          actions={
-            user && fanfic && user.user_id === fanfic.author_id ? (
-              <Link to={`/dashboard?fanficId=${fanfic.id}&tab=chapters&chapterId=${chapter.id}`}>
-                <Button variant="secondary" size="sm">✏️ Editar capítulo</Button>
-              </Link>
-            ) : null
+          editHref={
+            user && fanfic && user.user_id === fanfic.author_id
+              ? `/dashboard?fanficId=${fanfic.id}&tab=chapters&chapterId=${chapter.id}`
+              : undefined
           }
         />
 
@@ -315,7 +320,10 @@ export default function ChapterReaderPage() {
             className={styles.articleColumn}
             style={{ fontSize: `${fontSize}px`, lineHeight: 1.75 }}
           >
-            <ReadingContent html={displayContent} />
+            {isContentReady
+              ? <ReadingContent html={displayContent} />
+              : <LoadingSpinner text="Carregando história..." />
+            }
           </article>
         </div>
 

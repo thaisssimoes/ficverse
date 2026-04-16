@@ -17,6 +17,9 @@ func RunSafeColumnMigrations(db *gorm.DB) {
 	migrateChapterStatsColumns(db)
 	migrateChapterLikesTable(db)
 	migrateFanficExtraColumns(db)
+	migrateTagUniqueIndex(db)
+	migrateHiatusColumns(db)
+	migrateScheduledChapters(db)
 }
 
 // migrateCommentsColumns garante que comments tenha parent_id e likes_count.
@@ -174,6 +177,28 @@ func Migrate(db *gorm.DB) error {
 
 	log.Println("Migrations completed successfully!")
 	return nil
+}
+
+// migrateTagUniqueIndex drops the old global unique index on tags.name and replaces
+// it with a composite unique index on (name, type), allowing the same tag name in different types.
+func migrateTagUniqueIndex(db *gorm.DB) {
+	// Drop old single-column unique index (GORM may have generated either name)
+	for _, idx := range []string{"idx_tags_name", "uni_tags_name"} {
+		db.Exec(fmt.Sprintf("DROP INDEX IF EXISTS %s", idx))
+	}
+	// Create composite unique index if it doesn't exist yet
+	if err := db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_tag_name_type ON tags(name, type)`).Error; err != nil {
+		log.Printf("Warning: could not create composite tag unique index: %v", err)
+	}
+}
+
+func migrateHiatusColumns(db *gorm.DB) {
+	db.Exec(`ALTER TABLE fanfics ADD COLUMN IF NOT EXISTS is_hiatus BOOLEAN NOT NULL DEFAULT false`)
+	db.Exec(`ALTER TABLE fanfics ADD COLUMN IF NOT EXISTS hiatus_until TIMESTAMPTZ`)
+}
+
+func migrateScheduledChapters(db *gorm.DB) {
+	db.Exec(`ALTER TABLE chapters ADD COLUMN IF NOT EXISTS scheduled_at TIMESTAMPTZ`)
 }
 
 func migrateReaderProfiles(db *gorm.DB) {

@@ -52,16 +52,12 @@ func (h *TagHandler) CreateTag(c *gin.Context) {
 		return
 	}
 
-	newTag, err := h.service.CreateTag(req.Name, req.Type)
+	newTag, err := h.service.GetOrCreateTag(req.Name, req.Type)
 	if err != nil {
 		statusCode := http.StatusBadRequest
 		code := "CREATION_ERROR"
 
-		if errors.Is(err, tag.ErrTagNameRequired) {
-			code = "TAG_NAME_REQUIRED"
-		} else if errors.Is(err, tag.ErrTagTypeRequired) {
-			code = "TAG_TYPE_REQUIRED"
-		} else if errors.Is(err, tag.ErrInvalidTagType) {
+		if errors.Is(err, tag.ErrInvalidTagType) {
 			code = "INVALID_TAG_TYPE"
 		}
 
@@ -74,7 +70,7 @@ func (h *TagHandler) CreateTag(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, newTag)
+	c.JSON(http.StatusOK, newTag)
 }
 
 // ListTagsByType lists all tags of a specific type

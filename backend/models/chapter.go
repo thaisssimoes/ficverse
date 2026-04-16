@@ -9,8 +9,9 @@ type Chapter struct {
 	Content     string    `gorm:"type:text;not null" json:"content"`
 	CoverURL    string    `gorm:"size:512" json:"cover_url"`
 	Order       int       `gorm:"not null;index" json:"order"`
-	IsDraft     bool      `gorm:"not null" json:"is_draft"`
-	ViewsCount  int       `gorm:"default:0" json:"views_count"`
+	IsDraft     bool       `gorm:"not null" json:"is_draft"`
+	ScheduledAt *time.Time `gorm:"index" json:"scheduled_at,omitempty"`
+	ViewsCount  int        `gorm:"default:0" json:"views_count"`
 	LikesCount  int       `gorm:"default:0" json:"likes_count"`
 	CreatedAt   time.Time `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt   time.Time `gorm:"autoUpdateTime" json:"updated_at"`

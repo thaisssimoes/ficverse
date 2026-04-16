@@ -40,7 +40,7 @@ type CreateFanficRequest struct {
 	Category        string `json:"category" binding:"required"`
 	InteractiveMode bool   `json:"interactive_mode"`
 	IsDraft         *bool  `json:"is_draft"`
-	IsAdultContent  bool   `json:"adult_content"`
+	IsAdultContent  bool   `json:"is_adult_content"`
 	TriggerWarnings string `json:"trigger_warnings"`
 }
 
@@ -51,9 +51,13 @@ type UpdateFanficRequest struct {
 	Disclaimer      string  `json:"disclaimer"`
 	Category        string  `json:"category"`
 	InteractiveMode *bool   `json:"interactive_mode"`
-	IsAdultContent  *bool   `json:"adult_content"`
+	IsAdultContent  *bool   `json:"is_adult_content"`
 	TriggerWarnings string  `json:"trigger_warnings"`
 	CoverURL        string  `json:"cover_url"`
+	IsComplete      *bool   `json:"is_complete"`
+	IsHiatus        *bool   `json:"is_hiatus"`
+	HiatusUntil     *string `json:"hiatus_until"`
+	ActivityTag     string  `json:"activity_tag"`
 }
 
 // ListByCategory lists all fanfics grouped by category
@@ -201,6 +205,13 @@ func (h *FanficHandler) Update(c *gin.Context) {
 		return
 	}
 
+	var hiatusUntil *time.Time
+	if req.HiatusUntil != nil && *req.HiatusUntil != "" {
+		if t, err := time.Parse(time.RFC3339, *req.HiatusUntil); err == nil {
+			hiatusUntil = &t
+		}
+	}
+
 	updatedFanfic, err := h.service.UpdateFanfic(
 		id,
 		user.ID,
@@ -212,6 +223,10 @@ func (h *FanficHandler) Update(c *gin.Context) {
 		req.InteractiveMode,
 		req.IsAdultContent,
 		req.TriggerWarnings,
+		req.IsComplete,
+		req.IsHiatus,
+		hiatusUntil,
+		req.ActivityTag,
 	)
 	if err != nil {
 		statusCode := http.StatusBadRequest
