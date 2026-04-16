@@ -1,76 +1,73 @@
-/* ============================================
-   ReadingContent — tipografia de leitura longa (Lora)
-   Trata o HTML rico injetado pelo editor Quill
-   ============================================ */
+/* ============================================================
+   ChapterReader — renderiza o HTML final do motor Go.
+   Herda os tokens de design do sistema (CSS custom properties).
+   ============================================================ */
 
-.content {
+.chapterReader {
   font-family: var(--font-serif);
-  /* Herda o font-size do pai (controlado pelo ReadingToolbar).
-     Fallback: 17px caso não haja controle ativo. */
-  font-size: inherit;
-  line-height: inherit;
+  /* 18-20 px fluido — intervalo ideal para leitura longa */
+  font-size: clamp(1.0625rem, 1.2vw + 0.8rem, 1.25rem);
+  line-height: 1.6;
   color: var(--color-text-primary);
   text-align: left;
 }
 
 /* Parágrafos */
-.content p {
+.chapterReader p {
   margin-bottom: 1.5em;
 }
 
+/* Ênfase */
+.chapterReader strong,
+.chapterReader b {
+  font-weight: 700;
+}
+
+.chapterReader em,
+.chapterReader i {
+  font-style: italic;
+}
+
 /* Títulos dentro do conteúdo */
-.content h1 {
+.chapterReader h1 {
   font-family: var(--font-display);
   font-size: var(--text-3xl);
   font-weight: 400;
   line-height: var(--leading-tight);
   letter-spacing: var(--tracking-tight);
-  margin-top: 2em;
-  margin-bottom: 0.5em;
+  margin: 2em 0 0.5em;
 }
 
-.content h2 {
+.chapterReader h2 {
   font-family: var(--font-display);
   font-size: var(--text-2xl);
   font-weight: 400;
   line-height: var(--leading-snug);
   letter-spacing: -0.015em;
-  margin-top: 1.75em;
-  margin-bottom: 0.5em;
+  margin: 1.75em 0 0.5em;
 }
 
-.content h3 {
+.chapterReader h3 {
   font-family: var(--font-serif);
   font-size: var(--text-xl);
   font-weight: 600;
-  margin-top: 1.5em;
-  margin-bottom: 0.4em;
+  margin: 1.5em 0 0.4em;
 }
 
-/* Ênfase */
-.content strong {
-  font-weight: 700;
-  color: var(--color-text-primary);
-}
-
-.content em {
-  font-style: italic;
-}
-
-/* Links dentro do conteúdo */
-.content a {
+/* Links */
+.chapterReader a {
   color: var(--color-accent-brand);
   text-decoration: underline;
   text-decoration-color: transparent;
   transition: text-decoration-color var(--transition-fast);
 }
 
-.content a:hover {
+.chapterReader a:hover {
   text-decoration-color: var(--color-accent-brand);
 }
 
 /* Citação em bloco */
-.content blockquote {
+.chapterReader blockquote {
   border-left: 3px solid var(--color-accent-brand);
   margin: 1.5em 0;
   padding: 0.5em 0 0.5em 1.25em;
@@ -79,25 +76,25 @@
 }
 
 /* Listas */
-.content ul,
-.content ol {
+.chapterReader ul,
+.chapterReader ol {
   padding-left: 1.5em;
   margin-bottom: 1.25em;
 }
 
-.content li {
+.chapterReader li {
   margin-bottom: 0.4em;
 }
 
 /* Imagens */
-.content img {
+.chapterReader img {
   max-width: 100%;
   border-radius: var(--radius-md);
   margin: 1.5em 0;
 }
 
 /* Código inline */
-.content code {
+.chapterReader code {
   font-size: 0.9em;
   background-color: var(--color-bg-elevated);
   padding: 0.1em 0.35em;
@@ -106,7 +103,7 @@
 }
 
 /* Linha horizontal */
-.content hr {
+.chapterReader hr {
   border: none;
   border-top: 1px solid var(--color-border-subtle);
   margin: 2.5em 0;

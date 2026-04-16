@@ -16,11 +16,25 @@ var (
 )
 
 const (
-	MaxTagsPerType = 5
-	TagTypeFandom  = "fandom"
-	TagTypeWarning = "warning"
-	TagTypePairing = "pairing"
+	TagTypeFandom   = "fandom"
+	TagTypeWarning  = "warning"
+	TagTypePairing  = "pairing"
+	TagTypeSubgenre = "subgenre"
 )
+
+var maxTagsForType = map[string]int{
+	TagTypeFandom:   10,
+	TagTypeWarning:  10,
+	TagTypePairing:  5,
+	TagTypeSubgenre: 3,
+}
+
+func getMaxTagsForType(tagType string) int {
+	if m, ok := maxTagsForType[tagType]; ok {
+		return m
+	}
+	return 5
+}
 
 // TagRepository handles database operations for tags
 type TagRepository struct {
@@ -168,8 +182,8 @@ func (r *TagRepository) AddTagsToFanfic(fanficID int, tagIDs []int) error {
 		}
 		
 		if !alreadyExists {
-			if tagCountByType[tag.Type] >= MaxTagsPerType {
-				return fmt.Errorf("%w: %s (max %d)", ErrTagLimitExceeded, tag.Type, MaxTagsPerType)
+			if tagCountByType[tag.Type] >= getMaxTagsForType(tag.Type) {
+				return fmt.Errorf("%w: %s (max %d)", ErrTagLimitExceeded, tag.Type, getMaxTagsForType(tag.Type))
 			}
 			tagCountByType[tag.Type]++
 		}
@@ -257,5 +271,5 @@ func (r *TagRepository) SearchFanficsByTags(tagIDs []int) ([]models.Fanfic, erro
 
 // isValidTagType checks if a tag type is valid
 func isValidTagType(tagType string) bool {
-	return tagType == TagTypeFandom || tagType == TagTypeWarning || tagType == TagTypePairing
+	return tagType == TagTypeFandom || tagType == TagTypeWarning || tagType == TagTypePairing || tagType == TagTypeSubgenre
 }

@@ -4,14 +4,14 @@ import "time"
 
 // Standard variable keys available for all fanfics
 const (
-	StandardKeyFirstName     = "first_name"
-	StandardKeyLastName      = "last_name"
-	StandardKeyNickname      = "nickname"
-	StandardKeyEyeColor      = "eye_color"
-	StandardKeyHairColor     = "hair_color"
-	StandardKeyFavoriteColor = "favorite_color"
-	StandardKeyFavoriteFood  = "favorite_food"
-	StandardKeyAge           = "age"
+	StandardKeyFirstName     = "primeiro_nome"
+	StandardKeyLastName      = "sobrenome"
+	StandardKeyNickname      = "apelido"
+	StandardKeyEyeColor      = "cor_olhos"
+	StandardKeyHairColor     = "cor_cabelo"
+	StandardKeyFavoriteColor = "cor_favorita"
+	StandardKeyFavoriteFood  = "comida_favorita"
+	StandardKeyAge           = "idade"
 )
 
 // StandardVariables is the ordered list of all standard variable definitions
@@ -40,8 +40,10 @@ type Question struct {
 	// VariableType: "standard" or "custom"
 	VariableType string `gorm:"size:50;not null;default:'custom'" json:"variable_type"`
 	// StandardKey: key from StandardVariables (only set when VariableType == "standard")
-	StandardKey string    `gorm:"size:100" json:"standard_key,omitempty"`
-	CreatedAt   time.Time `gorm:"autoCreateTime" json:"created_at"`
+	StandardKey string `gorm:"size:100" json:"standard_key,omitempty"`
+	// DefaultAnswer: resposta padrão usada no modo normal de leitura
+	DefaultAnswer string    `gorm:"type:text" json:"default_answer,omitempty"`
+	CreatedAt     time.Time `gorm:"autoCreateTime" json:"created_at"`
 
 	Fanfic Fanfic `gorm:"foreignKey:FanficID" json:"fanfic,omitempty"`
 }

@@ -84,7 +84,7 @@ func TestProperty_QuestionsPersistedWithPlaceholders(t *testing.T) {
 				fanfic := createTestFanfic(t, db, user.ID)
 
 				// Create question
-				question, err := service.CreateQuestion(fanfic.ID, questionText, placeholder)
+				question, err := service.CreateQuestion(fanfic.ID, questionText, placeholder, "custom", "", "")
 				if err != nil {
 					return false
 				}
@@ -148,7 +148,7 @@ func TestProperty_NewQuestionsCreatePendingStatus(t *testing.T) {
 				fanfic := createTestFanfic(t, db, author.ID)
 
 				// Create initial question
-				_, err := service.CreateQuestion(fanfic.ID, "Initial Question", "initial_placeholder")
+				_, err := service.CreateQuestion(fanfic.ID, "Initial Question", "initial_placeholder", "custom", "", "")
 				if err != nil {
 					return false
 				}
@@ -169,7 +169,7 @@ func TestProperty_NewQuestionsCreatePendingStatus(t *testing.T) {
 				}
 
 				// Add new question
-				newQuestion, err := service.CreateQuestion(fanfic.ID, questionText, placeholder)
+				newQuestion, err := service.CreateQuestion(fanfic.ID, questionText, placeholder, "custom", "", "")
 				if err != nil {
 					return false
 				}
@@ -226,7 +226,7 @@ func TestProperty_QuestionDeletionRemovesData(t *testing.T) {
 				fanfic := createTestFanfic(t, db, user.ID)
 
 				// Create question
-				question, err := service.CreateQuestion(fanfic.ID, questionText, placeholder)
+				question, err := service.CreateQuestion(fanfic.ID, questionText, placeholder, "custom", "", "")
 				if err != nil {
 					return false
 				}
@@ -287,7 +287,7 @@ func TestProperty_PlaceholderValidation(t *testing.T) {
 
 				// Create questions for all placeholders
 				for _, placeholder := range placeholders {
-					_, err := service.CreateQuestion(fanfic.ID, "Question for "+placeholder, placeholder)
+					_, err := service.CreateQuestion(fanfic.ID, "Question for "+placeholder, placeholder, "custom", "", "")
 					if err != nil {
 						return false
 					}

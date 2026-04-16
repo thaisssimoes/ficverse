@@ -3,9 +3,7 @@ package routes
 import (
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
-	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -15,6 +13,8 @@ import (
 	"github.com/interactive-fanfic-platform/auth"
 	"github.com/interactive-fanfic-platform/chapter"
 	"github.com/interactive-fanfic-platform/fanfic"
+	"github.com/interactive-fanfic-platform/models"
+	"github.com/interactive-fanfic-platform/storage"
 	"gorm.io/gorm"
 )
 
@@ -23,29 +23,33 @@ type ChapterHandler struct {
 	service       *chapter.ChapterService
 	fanficService *fanfic.FanficService
 	db            *gorm.DB
+	store         storage.StorageService
 }
 
 // NewChapterHandler creates a new chapter handler
-func NewChapterHandler(db *gorm.DB) *ChapterHandler {
+func NewChapterHandler(db *gorm.DB, store storage.StorageService) *ChapterHandler {
 	return &ChapterHandler{
 		service:       chapter.NewChapterService(db),
 		fanficService: fanfic.NewFanficService(db),
 		db:            db,
+		store:         store,
 	}
 }
 
 // CreateChapterRequest represents chapter creation request
 type CreateChapterRequest struct {
-	Title   string `json:"title" binding:"required"`
-	Content string `json:"content" binding:"required"`
-	IsDraft bool   `json:"is_draft"`
+	Title       string  `json:"title" binding:"required"`
+	Content     string  `json:"content" binding:"required"`
+	IsDraft     bool    `json:"is_draft"`
+	ScheduledAt *string `json:"scheduled_at"`
 }
 
 // UpdateChapterRequest represents chapter update request
 type UpdateChapterRequest struct {
-	Title   string `json:"title"`
-	Content string `json:"content"`
-	IsDraft *bool  `json:"is_draft"`
+	Title       string  `json:"title"`
+	Content     string  `json:"content"`
+	IsDraft     *bool   `json:"is_draft"`
+	ScheduledAt *string `json:"scheduled_at"`
 }
 
 // ReorderChaptersRequest represents chapter reordering request
@@ -81,6 +85,10 @@ func (h *ChapterHandler) ListByFanfic(c *gin.Context) {
 			},
 		})
 		return
+	}
+
+	if userID != 0 {
+		chapters, _ = h.service.EnrichWithLikes(userID, chapters)
 	}
 
 	c.JSON(http.StatusOK, chapters)
@@ -124,6 +132,13 @@ func (h *ChapterHandler) GetByID(c *gin.Context) {
 			},
 		})
 		return
+	}
+
+	if userID != 0 {
+		liked, _ := h.service.EnrichWithLikes(userID, []models.Chapter{*chapterData})
+		if len(liked) > 0 {
+			chapterData = &liked[0]
+		}
 	}
 
 	c.JSON(http.StatusOK, chapterData)
@@ -200,8 +215,27 @@ func (h *ChapterHandler) Create(c *gin.Context) {
 		return
 	}
 
+	// Parse scheduled_at if provided
+	var scheduledAt *time.Time
+	if req.ScheduledAt != nil && *req.ScheduledAt != "" {
+		if t, err := time.Parse(time.RFC3339, *req.ScheduledAt); err == nil {
+			scheduledAt = &t
+		}
+	}
+
+	// Enforce 5-chapter schedule limit
+	if scheduledAt != nil && h.service.CountScheduledChapters(fanficID) >= 5 {
+		c.JSON(http.StatusBadRequest, ErrorResponse{
+			Error: ErrorDetail{
+				Code:    "SCHEDULE_LIMIT",
+				Message: "Máximo de 5 capítulos agendados por vez",
+			},
+		})
+		return
+	}
+
 	// Create chapter with draft status from request
-	newChapter, err := h.service.CreateChapter(fanficID, req.Title, req.Content, req.IsDraft)
+	newChapter, err := h.service.CreateChapter(fanficID, req.Title, req.Content, req.IsDraft, scheduledAt)
 	if err != nil {
 		statusCode := http.StatusBadRequest
 		code := "CREATION_ERROR"
@@ -307,8 +341,21 @@ func (h *ChapterHandler) Update(c *gin.Context) {
 		return
 	}
 
+	// Parse scheduled_at if provided
+	var scheduledAt *time.Time
+	clearSchedule := false
+	if req.ScheduledAt != nil {
+		if *req.ScheduledAt == "" {
+			clearSchedule = true
+		} else {
+			if t, err := time.Parse(time.RFC3339, *req.ScheduledAt); err == nil {
+				scheduledAt = &t
+			}
+		}
+	}
+
 	// Update chapter
-	updatedChapter, err := h.service.UpdateChapter(id, req.Title, req.Content, req.IsDraft)
+	updatedChapter, err := h.service.UpdateChapter(id, req.Title, req.Content, req.IsDraft, scheduledAt, clearSchedule)
 	if err != nil {
 		statusCode := http.StatusBadRequest
 		code := "UPDATE_ERROR"
@@ -638,37 +685,64 @@ func (h *ChapterHandler) UploadCover(c *gin.Context) {
 	}
 
 	ext := strings.ToLower(filepath.Ext(header.Filename))
-	allowed := map[string]bool{".jpg": true, ".jpeg": true, ".png": true, ".webp": true, ".gif": true}
-	if !allowed[ext] {
+	mimeByExt := map[string]string{".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp", ".gif": "image/gif"}
+	contentType, ok := mimeByExt[ext]
+	if !ok {
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: ErrorDetail{Code: "UPLOAD_ERROR", Message: "Formato não suportado (jpg, png, webp, gif)"}})
 		return
 	}
 
-	dir := "./uploads/chapter-covers"
-	if err := os.MkdirAll(dir, 0755); err != nil {
-		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: ErrorDetail{Code: "UPLOAD_ERROR", Message: "Erro ao criar diretório"}})
-		return
-	}
-
-	filename := fmt.Sprintf("%d_%d%s", id, time.Now().UnixNano(), ext)
-	dst := filepath.Join(dir, filename)
-	out, err := os.Create(dst)
+	key := fmt.Sprintf("chapter-covers/%d_%d%s", id, time.Now().UnixNano(), ext)
+	coverURL, err := h.store.Upload(c.Request.Context(), key, file, header.Size, contentType)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: ErrorDetail{Code: "UPLOAD_ERROR", Message: "Erro ao salvar arquivo"}})
-		return
-	}
-	defer out.Close()
-
-	if _, err := io.Copy(out, file); err != nil {
-		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: ErrorDetail{Code: "UPLOAD_ERROR", Message: "Erro ao gravar arquivo"}})
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: ErrorDetail{Code: "UPLOAD_ERROR", Message: "Erro ao fazer upload da imagem"}})
 		return
 	}
 
-	coverURL := "/uploads/chapter-covers/" + filename
 	if err := h.db.Table("chapters").Where("id = ?", id).Update("cover_url", coverURL).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: ErrorDetail{Code: "DB_ERROR", Message: "Erro ao salvar capa"}})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"cover_url": coverURL})
+}
+
+// IncrementViews incrementa o contador de visualizações de um capítulo.
+// POST /chapters/:id/view — não requer autenticação.
+func (h *ChapterHandler) IncrementViews(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: ErrorDetail{Code: "INVALID_ID", Message: "Invalid chapter ID"}})
+		return
+	}
+	if err := h.service.IncrementViews(id); err != nil {
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: ErrorDetail{Code: "DB_ERROR", Message: err.Error()}})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"ok": true})
+}
+
+// ToggleChapterLike alterna o like do usuário autenticado num capítulo.
+// POST /chapters/:id/like → { liked: bool, likes_count: int }
+func (h *ChapterHandler) ToggleChapterLike(c *gin.Context) {
+	user, exists := auth.GetCurrentUser(c)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, ErrorResponse{Error: ErrorDetail{Code: "UNAUTHORIZED", Message: "Authentication required"}})
+		return
+	}
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: ErrorDetail{Code: "INVALID_ID", Message: "Invalid chapter ID"}})
+		return
+	}
+	liked, count, err := h.service.ToggleLike(user.ID, id)
+	if err != nil {
+		if errors.Is(err, chapter.ErrChapterNotFound) {
+			c.JSON(http.StatusNotFound, ErrorResponse{Error: ErrorDetail{Code: "NOT_FOUND", Message: "Chapter not found"}})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: ErrorDetail{Code: "LIKE_ERROR", Message: err.Error()}})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"liked": liked, "likes_count": count})
 }

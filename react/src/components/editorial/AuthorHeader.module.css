@@ -8,7 +8,7 @@
   grid-template-columns: 220px 1fr;
   gap: var(--space-10);
   align-items: flex-start;
-  padding: var(--space-10) 0 var(--space-8);
+  padding: var(--space-10) 0 var(--space-4);
 }
 
 @media (max-width: 640px) {
@@ -16,6 +16,13 @@
     grid-template-columns: 1fr;
     gap: var(--space-6);
   }
+}
+
+/* Coluna esquerda: capa + strip do autor */
+.coverCol {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
 }
 
 /* Capa */
@@ -47,6 +54,102 @@
   color: #fff;
 }
 
+/* Strip do autor — abaixo da capa */
+.authorStrip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.authorAvatarLink {
+  display: flex;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  overflow: hidden;
+  text-decoration: none;
+  background: linear-gradient(135deg, var(--color-accent-alt) 0%, var(--color-accent-brand) 100%);
+  transition: opacity var(--transition-fast);
+}
+
+.authorAvatarLink:hover {
+  opacity: 0.85;
+}
+
+.authorAvatarImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.authorAvatarInitial {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  color: #fff;
+}
+
+.authorStripInfo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.authorStripName {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color var(--transition-fast);
+}
+
+.authorStripName:hover {
+  color: var(--color-accent-brand);
+}
+
+.authorStripHandle {
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.followBtn {
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  padding: var(--space-1) var(--space-3);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.followBtn:hover {
+  border-color: var(--color-accent-brand);
+  color: var(--color-accent-brand);
+  background-color: rgba(0, 88, 113, 0.04);
+}
+
 /* Informações */
 .info {
   display: flex;
@@ -55,13 +158,36 @@
   padding-top: var(--space-2);
 }
 
+.categoryBlock {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
 .category {
   font-family: var(--font-sans);
-  font-size: var(--text-xs);
-  font-weight: 500;
+  font-size: var(--text-sm);
+  font-weight: 600;
   color: var(--color-accent-brand);
   letter-spacing: var(--tracking-wide);
   text-transform: uppercase;
+}
+
+.subgenres {
+  font-family: var(--font-serif);
+  font-size: 0.7rem;
+  font-style: italic;
+  color: var(--color-text-muted);
+  letter-spacing: 0.01em;
+}
+
+/* Linha título + coração */
+.titleRow {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
 }
 
 .title {
@@ -71,6 +197,108 @@
   line-height: var(--leading-tight);
   letter-spacing: var(--tracking-tight);
   color: var(--color-text-primary);
+  flex: 1;
+  min-width: 0;
+}
+
+/* Badge de status de conclusão (ao lado do título) */
+.statusBadge {
+  flex-shrink: 0;
+  align-self: center;
+  font-family: var(--font-sans);
+  font-size: var(--text-label);
+  text-decoration: none;
+  cursor: pointer;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  padding: 3px var(--space-3);
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+
+.statusComplete {
+  background-color: rgba(34, 197, 94, 0.1);
+  color: #16a34a;
+}
+
+.statusOngoing {
+  background-color: rgba(0, 88, 113, 0.08);
+  color: var(--color-accent-brand);
+}
+
+.statusHiatus {
+  background-color: rgba(245, 158, 11, 0.1);
+  color: #d97706;
+}
+
+/* Tag de status na lista de tags — visual idêntico ao TagBadge */
+.statusTag {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px var(--space-3);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+  cursor: pointer;
+}
+
+.statusTag:hover {
+  filter: brightness(0.92);
+}
+
+.statusTag_ongoing {
+  background-color: rgba(0, 88, 113, 0.08);
+  color: var(--color-accent-brand);
+  border-color: rgba(0, 88, 113, 0.2);
+}
+
+.statusTag_complete {
+  background-color: rgba(34, 197, 94, 0.08);
+  color: #16a34a;
+  border-color: rgba(34, 197, 94, 0.25);
+}
+
+.statusTag_hiatus {
+  background-color: rgba(245, 158, 11, 0.08);
+  color: #d97706;
+  border-color: rgba(245, 158, 11, 0.25);
+}
+
+/* Coração inline dentro do h1 */
+.heartBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: none;
+  border: none;
+  padding: 0.15rem 0.25rem;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  transition: color var(--transition-fast);
+  vertical-align: middle;
+  margin-left: var(--space-3);
+}
+
+.heartBtn:hover {
+  color: #e11d48;
+}
+
+.heartBtnActive {
+  color: #e11d48 !important;
+}
+
+.heartCount {
+  font-size: var(--text-xs);
+  font-weight: 600;
 }
 
 .author {
@@ -130,35 +358,6 @@
   margin-top: var(--space-2);
 }
 
-/* Botão favoritar */
-.favoriteBtn {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-5);
-  background-color: var(--color-bg-elevated);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  color: var(--color-text-secondary);
-  font-family: var(--font-sans);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  cursor: pointer;
-  min-height: 44px;
-  transition: all var(--transition-fast);
-  text-decoration: none;
-}
-
-.favoriteBtn:hover {
-  border-color: #ec4899;
-  color: #ec4899;
-}
-
-.favorited {
-  background-color: rgba(236, 72, 153, 0.1);
-  border-color: #ec4899;
-  color: #ec4899;
-}
 
 /* Barra do autor */
 .authorBar {

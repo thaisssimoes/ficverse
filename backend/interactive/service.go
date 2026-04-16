@@ -31,7 +31,7 @@ func NewInteractiveService(db *gorm.DB) *InteractiveService {
 }
 
 // CreateQuestion creates a new question and marks existing readers as having pending questions
-func (s *InteractiveService) CreateQuestion(fanficID int, questionText, placeholder, variableType, standardKey string) (*models.Question, error) {
+func (s *InteractiveService) CreateQuestion(fanficID int, questionText, placeholder, variableType, standardKey, defaultAnswer string) (*models.Question, error) {
 	// Validate input
 	if strings.TrimSpace(questionText) == "" {
 		return nil, ErrQuestionTextRequired
@@ -51,11 +51,12 @@ func (s *InteractiveService) CreateQuestion(fanficID int, questionText, placehol
 	err := s.db.Transaction(func(tx *gorm.DB) error {
 		// Create question
 		question = &models.Question{
-			FanficID:     fanficID,
-			QuestionText: strings.TrimSpace(questionText),
-			Placeholder:  strings.TrimSpace(placeholder),
-			VariableType: variableType,
-			StandardKey:  standardKey,
+			FanficID:      fanficID,
+			QuestionText:  strings.TrimSpace(questionText),
+			Placeholder:   strings.TrimSpace(placeholder),
+			VariableType:  variableType,
+			StandardKey:   standardKey,
+			DefaultAnswer: strings.TrimSpace(defaultAnswer),
 		}
 
 		txRepo := NewInteractiveRepository(tx)
@@ -92,7 +93,7 @@ func (s *InteractiveService) CreateQuestion(fanficID int, questionText, placehol
 }
 
 // UpdateQuestion updates a question
-func (s *InteractiveService) UpdateQuestion(questionID int, authorID int, questionText string) (*models.Question, error) {
+func (s *InteractiveService) UpdateQuestion(questionID int, authorID int, questionText, defaultAnswer string) (*models.Question, error) {
 	// Get existing question with fanfic preloaded
 	question, err := s.repo.GetQuestionByIDWithFanfic(questionID)
 	if err != nil {
@@ -111,6 +112,7 @@ func (s *InteractiveService) UpdateQuestion(questionID int, authorID int, questi
 		}
 		question.QuestionText = strings.TrimSpace(questionText)
 	}
+	question.DefaultAnswer = strings.TrimSpace(defaultAnswer)
 
 	if err := s.repo.UpdateQuestion(question); err != nil {
 		return nil, err

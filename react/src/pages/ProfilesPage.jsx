@@ -9,40 +9,40 @@ import LoadingSpinner from '../components/ui/LoadingSpinner';
 import styles from './ProfilesPage.module.css';
 
 const FIELDS = [
-  { key: 'first_name',     label: 'Nome',             placeholder: 'Ex: Ana' },
-  { key: 'last_name',      label: 'Sobrenome',         placeholder: 'Ex: Silva' },
-  { key: 'nickname',       label: 'Apelido / S/N',     placeholder: 'Como a história te chama' },
-  { key: 'eye_color',      label: 'Cor dos Olhos',     placeholder: 'Ex: castanho' },
-  { key: 'hair_color',     label: 'Cor do Cabelo',     placeholder: 'Ex: preto' },
-  { key: 'favorite_color', label: 'Cor Favorita',      placeholder: 'Ex: roxo' },
-  { key: 'favorite_food',  label: 'Comida Favorita',   placeholder: 'Ex: pizza' },
-  { key: 'age',            label: 'Idade',              placeholder: 'Ex: 22' },
+  { key: 'primeiro_nome',   label: 'Nome',           placeholder: 'Ex: Ana' },
+  { key: 'sobrenome',       label: 'Sobrenome',       placeholder: 'Ex: Silva' },
+  { key: 'apelido',         label: 'Apelido / S/N',   placeholder: 'Como a história te chama' },
+  { key: 'cor_olhos',       label: 'Cor dos Olhos',   placeholder: 'Ex: castanho' },
+  { key: 'cor_cabelo',      label: 'Cor do Cabelo',   placeholder: 'Ex: preto' },
+  { key: 'cor_favorita',    label: 'Cor Favorita',    placeholder: 'Ex: roxo' },
+  { key: 'comida_favorita', label: 'Comida Favorita', placeholder: 'Ex: pizza' },
+  { key: 'idade',           label: 'Idade',            placeholder: 'Ex: 22' },
 ];
 
 const emptyForm = () => ({
   name: '',
-  first_name: '',
-  last_name: '',
-  nickname: '',
-  eye_color: '',
-  hair_color: '',
-  favorite_color: '',
-  favorite_food: '',
-  age: '',
+  primeiro_nome: '',
+  sobrenome: '',
+  apelido: '',
+  cor_olhos: '',
+  cor_cabelo: '',
+  cor_favorita: '',
+  comida_favorita: '',
+  idade: '',
 });
 
 function ProfileModal({ profile, onClose, onSaved }) {
   const toast = useToast();
   const [form, setForm] = useState(profile ? {
     name: profile.name,
-    first_name: profile.first_name,
-    last_name: profile.last_name,
-    nickname: profile.nickname,
-    eye_color: profile.eye_color,
-    hair_color: profile.hair_color,
-    favorite_color: profile.favorite_color,
-    favorite_food: profile.favorite_food,
-    age: profile.age || '',
+    primeiro_nome:   profile.primeiro_nome   || '',
+    sobrenome:       profile.sobrenome        || '',
+    apelido:         profile.apelido          || '',
+    cor_olhos:       profile.cor_olhos        || '',
+    cor_cabelo:      profile.cor_cabelo       || '',
+    cor_favorita:    profile.cor_favorita     || '',
+    comida_favorita: profile.comida_favorita  || '',
+    idade:           profile.idade            || '',
   } : emptyForm());
   const [saving, setSaving] = useState(false);
   const isEdit = !!profile;
@@ -165,18 +165,18 @@ export default function ProfilesPage() {
             {profiles.map((p) => (
               <div key={p.id} className={styles.card}>
                 <div className={styles.cardAvatar}>
-                  {p.nickname?.charAt(0) || p.first_name?.charAt(0) || '?'}
+                  {p.apelido?.charAt(0) || p.primeiro_nome?.charAt(0) || '?'}
                 </div>
                 <div className={styles.cardBody}>
                   <h3 className={styles.cardName}>{p.name}</h3>
                   <div className={styles.cardFields}>
-                    {p.first_name && <span><strong>Nome:</strong> {p.first_name} {p.last_name}</span>}
-                    {p.nickname && <span><strong>S/N:</strong> {p.nickname}</span>}
-                    {p.eye_color && <span><strong>Olhos:</strong> {p.eye_color}</span>}
-                    {p.hair_color && <span><strong>Cabelo:</strong> {p.hair_color}</span>}
-                    {p.favorite_color && <span><strong>Cor fav.:</strong> {p.favorite_color}</span>}
-                    {p.favorite_food && <span><strong>Comida fav.:</strong> {p.favorite_food}</span>}
-                    {p.age && <span><strong>Idade:</strong> {p.age}</span>}
+                    {p.primeiro_nome && <span><strong>Nome:</strong> {p.primeiro_nome} {p.sobrenome}</span>}
+                    {p.apelido && <span><strong>S/N:</strong> {p.apelido}</span>}
+                    {p.cor_olhos && <span><strong>Olhos:</strong> {p.cor_olhos}</span>}
+                    {p.cor_cabelo && <span><strong>Cabelo:</strong> {p.cor_cabelo}</span>}
+                    {p.cor_favorita && <span><strong>Cor fav.:</strong> {p.cor_favorita}</span>}
+                    {p.comida_favorita && <span><strong>Comida fav.:</strong> {p.comida_favorita}</span>}
+                    {p.idade && <span><strong>Idade:</strong> {p.idade}</span>}
                   </div>
                 </div>
                 <div className={styles.cardActions}>

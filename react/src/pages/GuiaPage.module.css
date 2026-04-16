@@ -1,0 +1,270 @@
+/* ============================================
+   GuiaPage — página de guia de publicação
+   ============================================ */
+
+.page {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-6) var(--space-16);
+}
+
+/* Header */
+.header {
+  text-align: center;
+  padding: var(--space-10) 0 var(--space-12);
+  border-bottom: 1px solid var(--color-border-subtle);
+  margin-bottom: var(--space-12);
+}
+
+.eyebrow {
+  font-family: var(--font-sans);
+  font-size: var(--text-label);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--color-accent-brand);
+  margin: 0 0 var(--space-3);
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 400;
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-text-primary);
+  margin: 0 0 var(--space-4);
+}
+
+.subtitle {
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  color: var(--color-text-secondary);
+  line-height: 1.7;
+  max-width: 520px;
+  margin: 0 auto var(--space-6);
+}
+
+/* Índice */
+.toc {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.tocLink {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-accent-brand);
+  text-decoration: none;
+  border: 1.5px solid var(--color-accent-brand);
+  border-radius: var(--radius-full);
+  padding: var(--space-1) var(--space-4);
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.tocLink:hover {
+  background-color: var(--color-accent-brand);
+  color: #fff;
+}
+
+.tocDot {
+  display: none;
+}
+
+/* Seções */
+.section {
+  margin-bottom: var(--space-16);
+}
+
+.sectionTitle {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 400;
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-text-primary);
+  margin: 0 0 var(--space-4);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.sectionIntro {
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  color: var(--color-text-secondary);
+  line-height: 1.7;
+  margin: 0 0 var(--space-8);
+}
+
+/* Passos */
+.step {
+  display: flex;
+  gap: var(--space-5);
+  margin-bottom: var(--space-8);
+}
+
+.stepNumber {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--color-accent-brand);
+  color: #fff;
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+}
+
+.stepBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.stepTitle {
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 var(--space-3);
+}
+
+.stepContent {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  line-height: 1.7;
+}
+
+.stepContent p { margin: 0 0 var(--space-3); }
+.stepContent p:last-child { margin: 0; }
+
+.stepContent ul { padding-left: var(--space-5); margin: 0 0 var(--space-3); }
+
+/* Dica em destaque */
+.tip {
+  margin-top: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: rgba(0, 88, 113, 0.06);
+  border-left: 3px solid var(--color-accent-brand);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+/* Exemplo de texto */
+.example {
+  margin: var(--space-3) 0;
+  padding: var(--space-4);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  font-family: var(--font-serif);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  line-height: 1.7;
+}
+
+.example p { margin: 0; }
+
+/* Código inline */
+.stepContent code,
+.example code,
+.tip code {
+  font-size: 0.88em;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-subtle);
+  padding: 1px 5px;
+  border-radius: var(--radius-sm);
+  font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+  color: var(--color-accent-brand);
+}
+
+/* Lista de tipos de variáveis */
+.varList {
+  margin: var(--space-2) 0 var(--space-3);
+}
+
+.varList li {
+  margin-bottom: var(--space-2);
+}
+
+/* Inline link */
+.inlineLink {
+  color: var(--color-accent-brand);
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  transition: text-decoration-color var(--transition-fast);
+}
+
+.inlineLink:hover {
+  text-decoration-color: var(--color-accent-brand);
+}
+
+/* Grid de dicas gerais */
+.tipsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-4);
+}
+
+.tipCard {
+  padding: var(--space-5);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.tipCardTitle {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0 0 var(--space-2);
+}
+
+.tipCard p {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Rodapé da página */
+.footer {
+  text-align: center;
+  padding: var(--space-10) 0 var(--space-4);
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.footer p {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  margin: 0 0 var(--space-4);
+}
+
+.ctaBtn {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-3) var(--space-6);
+  background: var(--color-accent-brand);
+  color: #fff;
+  border-radius: var(--radius-full);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-decoration: none;
+  transition: opacity var(--transition-fast);
+}
+
+.ctaBtn:hover { opacity: 0.85; }

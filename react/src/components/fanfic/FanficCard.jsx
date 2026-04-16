@@ -16,8 +16,11 @@ export default function FanficCard({ fanfic }) {
           </div>
         )}
         {fanfic.interactive_mode && (
-          <span className={styles.interactiveBadge}>⚡ Interativa</span>
+          <span className={styles.interactiveBadge}>Interativa</span>
         )}
+        <span className={`${styles.statusBadge} ${fanfic.is_complete ? styles.statusComplete : fanfic.is_hiatus ? styles.statusHiatus : styles.statusOngoing}`}>
+          {fanfic.is_complete ? 'Completa' : fanfic.is_hiatus ? 'Hiatus' : 'Em andamento'}
+        </span>
       </div>
       <div className={styles.info}>
         {fanfic.category && <span className={styles.category}>{fanfic.category}</span>}

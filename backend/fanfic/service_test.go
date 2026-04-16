@@ -199,7 +199,7 @@ func TestUpdateFanfic(t *testing.T) {
 	newTitle := "Updated Title"
 	newSynopsis := "Updated Synopsis"
 	newCategory := "Aventura"
-	updatedFanfic, err := service.UpdateFanfic(fanfic.ID, authorID, newTitle, newSynopsis, "", newCategory, "", nil, nil, "")
+	updatedFanfic, err := service.UpdateFanfic(fanfic.ID, authorID, newTitle, newSynopsis, "", newCategory, "", nil, nil, "", nil, nil, nil, "")
 	if err != nil {
 		t.Fatalf("Failed to update fanfic: %v", err)
 	}
@@ -266,7 +266,7 @@ func TestUnauthorizedUpdate(t *testing.T) {
 	}
 
 	// Try to update as different user
-	_, err = service.UpdateFanfic(fanfic.ID, otherUser.ID, "Hacked Title", "", "", "", "", nil, nil, "")
+	_, err = service.UpdateFanfic(fanfic.ID, otherUser.ID, "Hacked Title", "", "", "", "", nil, nil, "", nil, "")
 	if err != ErrUnauthorized {
 		t.Errorf("Expected ErrUnauthorized, got %v", err)
 	}

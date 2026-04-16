@@ -150,6 +150,72 @@
   background-color: rgba(167, 139, 250, 0.12);
 }
 
+/* Grupo de nav com submenu */
+.navGroup {
+  display: flex;
+  flex-direction: column;
+}
+
+.navGroupHeader {
+  display: flex;
+  align-items: center;
+}
+
+/* O link principal ocupa todo o espaço disponível */
+.navGroupLink {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Chevron que abre/fecha o submenu */
+.navChevron {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: color var(--transition-fast), transform var(--transition-fast);
+  padding: 0;
+}
+
+.navChevron:hover { color: var(--color-text-primary); }
+
+.navChevronOpen {
+  transform: rotate(180deg);
+}
+
+/* Sub-item recuado */
+.navSubItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3) var(--space-2) calc(var(--space-3) + 26px);
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+  min-height: 36px;
+}
+
+.navSubItem:hover {
+  background-color: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+}
+
+.navSubItemActive {
+  color: var(--color-accent-brand);
+  background-color: rgba(0, 88, 113, 0.06);
+}
+
 .navDivider {
   height: 1px;
   background-color: var(--color-border-subtle);

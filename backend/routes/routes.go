@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/interactive-fanfic-platform/auth"
 	"github.com/interactive-fanfic-platform/config"
+	"github.com/interactive-fanfic-platform/storage"
 	"gorm.io/gorm"
 )
 
@@ -63,7 +64,7 @@ func CORSMiddleware() gin.HandlerFunc {
 }
 
 // Setup configures all routes and middleware
-func Setup(router *gin.Engine, db *gorm.DB, cfg *config.Config) {
+func Setup(router *gin.Engine, db *gorm.DB, cfg *config.Config, store storage.StorageService) {
 	// Add CORS middleware
 	router.Use(CORSMiddleware())
 	
@@ -84,17 +85,17 @@ func Setup(router *gin.Engine, db *gorm.DB, cfg *config.Config) {
 
 	// Create handlers
 	authHandler := NewAuthHandler(authService)
-	fanficHandler := NewFanficHandler(db)
-	chapterHandler := NewChapterHandler(db)
+	fanficHandler := NewFanficHandler(db, store)
+	chapterHandler := NewChapterHandler(db, store)
 	interactiveHandler := NewInteractiveHandler(db)
-	commentHandler := NewCommentHandler(db)
+	commentHandler := NewCommentHandler(db, emailService)
 	searchHandler := NewSearchHandler(db)
 	notificationHandler := NewNotificationHandler(db)
 	readingListHandler := NewReadingListHandler(db)
 	tagHandler := NewTagHandler(db)
 	favoriteHandler := NewFavoriteHandler(db)
 	readerProfileHandler := NewReaderProfileHandler(db)
-	userHandler := NewUserHandler(db, authService)
+	userHandler := NewUserHandler(db, authService, store)
 	wallHandler := NewWallHandler(db)
 
 	// API routes
@@ -123,6 +124,7 @@ func Setup(router *gin.Engine, db *gorm.DB, cfg *config.Config) {
 			fanfics.DELETE("/:id", auth.AuthMiddleware(authService), fanficHandler.Delete)
 			fanfics.POST("/:id/publish", auth.AuthMiddleware(authService), fanficHandler.Publish)
 			fanfics.POST("/:id/unpublish", auth.AuthMiddleware(authService), fanficHandler.Unpublish)
+			fanfics.POST("/:id/cover", auth.AuthMiddleware(authService), fanficHandler.UploadCover)
 			
 			// Tag routes under fanfics
 			fanfics.GET("/:id/tags", tagHandler.GetFanficTags)
@@ -143,11 +145,11 @@ func Setup(router *gin.Engine, db *gorm.DB, cfg *config.Config) {
 			fanfics.GET("/:id/pending-questions", auth.AuthMiddleware(authService), interactiveHandler.GetPendingQuestions)
 			
 			// Comment routes for fanfics
-			fanfics.GET("/:id/comments", commentHandler.ListFanficComments)
+			fanfics.GET("/:id/comments", auth.OptionalAuthMiddleware(authService), commentHandler.ListFanficComments)
 			fanfics.POST("/:id/comments", auth.AuthMiddleware(authService), commentHandler.CreateFanficComment)
 
 			// Favorite routes
-			fanfics.GET("/:id/favorite", favoriteHandler.GetFavoriteStatus)
+			fanfics.GET("/:id/favorite", auth.OptionalAuthMiddleware(authService), favoriteHandler.GetFavoriteStatus)
 			fanfics.POST("/:id/favorite", auth.AuthMiddleware(authService), favoriteHandler.ToggleFavorite)
 		}
 
@@ -169,9 +171,11 @@ func Setup(router *gin.Engine, db *gorm.DB, cfg *config.Config) {
 			chapters.DELETE("/:id", auth.AuthMiddleware(authService), chapterHandler.Delete)
 			chapters.POST("/:id/publish", auth.AuthMiddleware(authService), chapterHandler.Publish)
 			chapters.POST("/:id/cover", auth.AuthMiddleware(authService), chapterHandler.UploadCover)
+			chapters.POST("/:id/view", chapterHandler.IncrementViews)
+			chapters.POST("/:id/like", auth.AuthMiddleware(authService), chapterHandler.ToggleChapterLike)
 
 			// Comment routes for chapters
-			chapters.GET("/:id/comments", commentHandler.ListChapterComments)
+			chapters.GET("/:id/comments", auth.OptionalAuthMiddleware(authService), commentHandler.ListChapterComments)
 			chapters.POST("/:id/comments", auth.AuthMiddleware(authService), commentHandler.CreateChapterComment)
 		}
 
@@ -187,7 +191,12 @@ func Setup(router *gin.Engine, db *gorm.DB, cfg *config.Config) {
 		{
 			comments.PUT("/:id", auth.AuthMiddleware(authService), commentHandler.Update)
 			comments.DELETE("/:id", auth.AuthMiddleware(authService), commentHandler.Delete)
+			comments.POST("/:id/like", auth.AuthMiddleware(authService), commentHandler.ToggleLike)
+			comments.POST("/:id/report", auth.AuthMiddleware(authService), commentHandler.ReportComment)
 		}
+
+		// Render stateless — motor de tags (sem auth, transformação pura)
+		api.POST("/interactive/render", interactiveHandler.Render)
 
 		// Search routes
 		search := api.Group("/search")

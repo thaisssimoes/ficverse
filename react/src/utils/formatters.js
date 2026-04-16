@@ -22,3 +22,13 @@ export function formatDate(dateString) {
     year: 'numeric',
   });
 }
+
+// Formata data absoluta com hora (ex: "15/01/2026 às 14:30")
+export function formatAbsoluteDate(dateString) {
+  if (!dateString) return '—';
+  return new Date(dateString).toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+}

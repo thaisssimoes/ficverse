@@ -1,0 +1,84 @@
+/* ============================================
+   ReadingToolbar — caixinha flutuante de leitura
+   Posicionada à direita da coluna de texto,
+   sempre visível durante o scroll.
+   ============================================ */
+
+.toolbar {
+  /* Sticky: acompanha o scroll sem sair do fluxo — relativo ao .readingArea */
+  position: sticky;
+  top: 8rem;
+  align-self: flex-start;
+  flex-shrink: 0;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-xl);
+  padding: var(--space-3) var(--space-3);
+  box-shadow: none;
+
+  transition: background var(--transition-base);
+}
+
+/* Em telas sem espaço lateral, esconde para não comprimir o artigo */
+@media (max-width: 860px) {
+  .toolbar {
+    display: none;
+  }
+}
+
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  background: none;
+  border: none;
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: color var(--transition-fast), background var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.btn:hover:not(:disabled) {
+  color: var(--color-accent-brand);
+  background: rgba(0, 88, 113, 0.07);
+}
+
+.btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+/* Separador entre tema e fonte */
+.divider {
+  width: 20px;
+  height: 1px;
+  background: var(--color-border-subtle);
+  margin: var(--space-1) 0;
+}
+
+/* Letras "A" de tamanhos diferentes representam a escala */
+.fontLabel {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  line-height: 1;
+  color: inherit;
+  user-select: none;
+}
+
+/* Valor numérico da fonte */
+.fontValue {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: var(--color-text-muted);
+  user-select: none;
+  letter-spacing: -0.02em;
+}

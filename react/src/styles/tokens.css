@@ -37,6 +37,7 @@
   --font-sans:      'Inter', 'DM Sans', system-ui, sans-serif;
 
   /* Escala tipográfica (usando clamp para fluidez) */
+  --text-label: 0.700rem;                                  /* 14px — títulos de seção uppercase */
   --text-xs:   0.75rem;                                    /* 12px — microcopy, labels */
   --text-sm:   0.875rem;                                   /* 14px — metadados */
   --text-base: clamp(1.0625rem, 1.2vw + 0.8rem, 1.25rem); /* 17-20px — corpo de leitura */

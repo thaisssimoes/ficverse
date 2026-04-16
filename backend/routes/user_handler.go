@@ -2,9 +2,7 @@ package routes
 
 import (
 	"fmt"
-	"io"
 	"net/http"
-	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -13,6 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/interactive-fanfic-platform/auth"
 	"github.com/interactive-fanfic-platform/models"
+	"github.com/interactive-fanfic-platform/storage"
 	"gorm.io/gorm"
 )
 
@@ -20,10 +19,11 @@ import (
 type UserHandler struct {
 	db          *gorm.DB
 	authService *auth.AuthService
+	store       storage.StorageService
 }
 
-func NewUserHandler(db *gorm.DB, authService *auth.AuthService) *UserHandler {
-	return &UserHandler{db: db, authService: authService}
+func NewUserHandler(db *gorm.DB, authService *auth.AuthService, store storage.StorageService) *UserHandler {
+	return &UserHandler{db: db, authService: authService, store: store}
 }
 
 // PublicProfileResponse is the public-facing profile payload
@@ -124,31 +124,21 @@ func (h *UserHandler) uploadImage(c *gin.Context, field string, maxSizeBytes int
 	}
 
 	ext := strings.ToLower(filepath.Ext(header.Filename))
-	allowed := map[string]bool{".jpg": true, ".jpeg": true, ".png": true, ".webp": true}
-	if !allowed[ext] {
+	mimeByExt := map[string]string{".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp"}
+	contentType, ok := mimeByExt[ext]
+	if !ok {
 		return "", fmt.Errorf("formato não suportado (use jpg, png ou webp)")
 	}
 
-	dir := "./uploads/" + field + "s"
-	if err := os.MkdirAll(dir, 0755); err != nil {
-		return "", fmt.Errorf("erro ao criar diretório: %w", err)
-	}
-
 	userID := c.GetInt("user_id")
-	filename := fmt.Sprintf("%d_%d%s", userID, time.Now().UnixNano(), ext)
-	dst := filepath.Join(dir, filename)
+	key := fmt.Sprintf("%ss/%d_%d%s", field, userID, time.Now().UnixNano(), ext)
 
-	out, err := os.Create(dst)
+	url, err := h.store.Upload(c.Request.Context(), key, file, header.Size, contentType)
 	if err != nil {
-		return "", fmt.Errorf("erro ao salvar arquivo: %w", err)
-	}
-	defer out.Close()
-
-	if _, err := io.Copy(out, file); err != nil {
-		return "", fmt.Errorf("erro ao gravar arquivo: %w", err)
+		return "", fmt.Errorf("erro ao fazer upload: %w", err)
 	}
 
-	return "/uploads/" + field + "s/" + filename, nil
+	return url, nil
 }
 
 // UploadAvatar — POST /api/user/avatar

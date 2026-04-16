@@ -59,6 +59,9 @@ CREATE TABLE IF NOT EXISTS questions (
     fanfic_id INTEGER NOT NULL REFERENCES fanfics(id) ON DELETE CASCADE,
     question_text TEXT NOT NULL,
     placeholder VARCHAR(255) NOT NULL,
+    variable_type VARCHAR(50) NOT NULL DEFAULT 'custom',
+    standard_key VARCHAR(100),
+    default_answer TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 

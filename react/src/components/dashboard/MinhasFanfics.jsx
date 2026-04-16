@@ -373,7 +373,7 @@ export default function MinhasFanfics() {
         {/* PUBLIC STORIES */}
         <div className="px-5 pb-2">
           <p className="text-sm font-semibold text-gray-200">
-            Public Stories{' '}
+            Publicadas{' '}
             <span className="text-gray-500 font-normal">({published.length})</span>
           </p>
         </div>
@@ -420,7 +420,7 @@ export default function MinhasFanfics() {
         {/* DRAFTS */}
         <div className="px-5 pt-3 pb-2 border-t border-gray-800/70">
           <p className="text-sm font-semibold text-gray-200">
-            Drafts{' '}
+            Rascunhos{' '}
             <span className="text-gray-500 font-normal">({drafts.length})</span>
           </p>
         </div>

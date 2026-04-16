@@ -119,15 +119,15 @@ export const fanficApi = {
   delete: (id) => request(`/fanfics/${id}`, { method: 'DELETE' }),
   publish: (id) => request(`/fanfics/${id}/publish`, { method: 'POST' }),
   unpublish: (id) => request(`/fanfics/${id}/unpublish`, { method: 'POST' }),
-  uploadCover: async (file) => {
+  uploadCover: async (fanficId, file) => {
     const formData = new FormData();
     formData.append('cover', file);
     const token = localStorage.getItem('auth_token');
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
-    const response = await fetch(`${API_BASE_URL}/upload/cover`, { method: 'POST', headers, body: formData });
+    const response = await fetch(`${API_BASE_URL}/fanfics/${fanficId}/cover`, { method: 'POST', headers, body: formData });
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
-      throw new Error(error.message || 'Falha no upload da imagem');
+      throw new Error(error.error?.message || error.message || 'Falha no upload da imagem');
     }
     return response.json();
   },
@@ -152,6 +152,8 @@ export const chapterApi = {
   delete: (id) => request(`/chapters/${id}`, { method: 'DELETE' }),
   publish: (id) => request(`/chapters/${id}/publish`, { method: 'POST' }),
   reorder: (fanficId, order) => request(`/fanfics/${fanficId}/chapters/reorder`, { method: 'PUT', body: JSON.stringify({ order }) }),
+  incrementView: (id) => request(`/chapters/${id}/view`, { method: 'POST' }),
+  toggleLike: (id) => request(`/chapters/${id}/like`, { method: 'POST' }),
   uploadCover: async (chapterId, file) => {
     const formData = new FormData();
     formData.append('cover', file);
@@ -184,19 +186,29 @@ export const interactiveApi = {
   updateAnswers: (fanficId, answers) =>
     request(`/fanfics/${fanficId}/answers`, { method: 'PUT', body: JSON.stringify({ answers }) }),
   getPendingQuestions: (fanficId) => request(`/fanfics/${fanficId}/pending-questions`),
+
+  // Renderiza o conteúdo com as tags {{ }} substituídas via motor Go.
+  // Stateless — não requer auth.
+  render: (content, vars) =>
+    request('/interactive/render', {
+      method: 'POST',
+      body: JSON.stringify({ content, vars }),
+    }),
 };
 
 // Comentários
 export const commentApi = {
   getFanficComments: (fanficId) => request(`/fanfics/${fanficId}/comments`),
   getChapterComments: (chapterId) => request(`/chapters/${chapterId}/comments`),
-  createFanficComment: (fanficId, content) =>
-    request(`/fanfics/${fanficId}/comments`, { method: 'POST', body: JSON.stringify({ content }) }),
-  createChapterComment: (chapterId, content) =>
-    request(`/chapters/${chapterId}/comments`, { method: 'POST', body: JSON.stringify({ content }) }),
+  createFanficComment: (fanficId, content, parentId = null) =>
+    request(`/fanfics/${fanficId}/comments`, { method: 'POST', body: JSON.stringify({ content, parent_id: parentId }) }),
+  createChapterComment: (chapterId, content, parentId = null) =>
+    request(`/chapters/${chapterId}/comments`, { method: 'POST', body: JSON.stringify({ content, parent_id: parentId }) }),
   update: (id, content) =>
     request(`/comments/${id}`, { method: 'PUT', body: JSON.stringify({ content }) }),
   delete: (id) => request(`/comments/${id}`, { method: 'DELETE' }),
+  toggleLike: (id) => request(`/comments/${id}/like`, { method: 'POST' }),
+  report: (id, reason) => request(`/comments/${id}/report`, { method: 'POST', body: JSON.stringify({ reason }) }),
 };
 
 // Notificações

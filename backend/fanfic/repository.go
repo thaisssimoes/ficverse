@@ -193,16 +193,48 @@ func (r *FanficRepository) Update(fanfic *models.Fanfic) error {
 	return nil
 }
 
-// Delete deletes a fanfic by ID
+// Delete deletes a fanfic and all its related records in a transaction.
 func (r *FanficRepository) Delete(id int) error {
-	result := r.db.Delete(&models.Fanfic{}, id)
-	if result.Error != nil {
-		return fmt.Errorf("failed to delete fanfic: %w", result.Error)
-	}
-	if result.RowsAffected == 0 {
-		return ErrFanficNotFound
-	}
-	return nil
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		// 1. comment_likes e comment_reports de comentários desta fanfic
+		var commentIDs []int
+		tx.Model(&models.Comment{}).Where("fanfic_id = ?", id).Pluck("id", &commentIDs)
+		if len(commentIDs) > 0 {
+			tx.Where("comment_id IN ?", commentIDs).Delete(&models.CommentLike{})
+			tx.Where("comment_id IN ?", commentIDs).Delete(&models.CommentReport{})
+		}
+		// 2. Comentários da fanfic
+		tx.Where("fanfic_id = ?", id).Delete(&models.Comment{})
+
+		// 3. chapter_likes de capítulos desta fanfic
+		var chapterIDs []int
+		tx.Model(&models.Chapter{}).Where("fanfic_id = ?", id).Pluck("id", &chapterIDs)
+		if len(chapterIDs) > 0 {
+			tx.Where("chapter_id IN ?", chapterIDs).Delete(&models.ChapterLike{})
+		}
+		// 4. Capítulos
+		tx.Where("fanfic_id = ?", id).Delete(&models.Chapter{})
+
+		// 5. Perguntas interativas e respostas
+		tx.Where("fanfic_id = ?", id).Delete(&models.PendingQuestion{})
+		tx.Where("fanfic_id = ?", id).Delete(&models.Answer{})
+		tx.Where("fanfic_id = ?", id).Delete(&models.Question{})
+
+		// 6. Favoritos, progresso de leitura e tags
+		tx.Where("fanfic_id = ?", id).Delete(&models.FanficFavorite{})
+		tx.Where("fanfic_id = ?", id).Delete(&models.ReadingProgress{})
+		tx.Exec("DELETE FROM fanfic_tags WHERE fanfic_id = ?", id)
+
+		// 7. Finalmente, a fanfic
+		result := tx.Delete(&models.Fanfic{}, id)
+		if result.Error != nil {
+			return fmt.Errorf("failed to delete fanfic: %w", result.Error)
+		}
+		if result.RowsAffected == 0 {
+			return ErrFanficNotFound
+		}
+		return nil
+	})
 }
 
 // SaveCoverImage saves a cover image to disk and returns the URL

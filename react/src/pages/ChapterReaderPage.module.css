@@ -1,4 +1,33 @@
-/* Estilos específicos da página — layout geral gerenciado pelo ReadingContainer */
+/* ============================================
+   ChapterReaderPage — layout editorial bifocal
+   Mesma proporção da FanficDetailPage (1128px),
+   com coluna de leitura centralizada (68ch).
+   ============================================ */
+
+.page {
+  max-width: var(--max-width-editorial); /* 1128px */
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-6) var(--space-16);
+  min-height: 100vh;
+  background-color: var(--color-bg-base);
+}
+
+/* Área de leitura: toolbar sticky à esquerda + artigo ao centro */
+.readingArea {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-8);
+  margin: var(--space-8) 0;
+  /* Centra o conjunto toolbar+artigo na página */
+  justify-content: center;
+}
+
+/* Coluna de leitura — largura fixa de leitura ergonômica */
+.articleColumn {
+  flex: 0 1 850px;
+  min-width: 0;
+  /* font-size e line-height definidos inline via state */
+}
 
 
 .error {
@@ -11,12 +40,33 @@
 /* Navegação entre capítulos */
 .nav {
   display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
   margin: var(--space-12) 0;
   padding: var(--space-6) 0;
   border-top: 1px solid var(--color-border-subtle);
   border-bottom: 1px solid var(--color-border-subtle);
+}
+
+/* Seletor de capítulos */
+.chapterSelect {
+  flex: 1;
+  max-width: 280px;
+  background-color: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-text-secondary);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  outline: none;
+  transition: border-color var(--transition-fast);
+}
+
+.chapterSelect:focus {
+  border-color: var(--color-accent-brand);
 }
 
 /* Modal de perguntas interativas */
@@ -64,4 +114,38 @@
 
 .inputError {
   border-color: var(--color-error);
+}
+
+/* Botão voltar ao topo */
+.backToTop {
+  position: fixed;
+  bottom: var(--space-8);
+  right: var(--space-8);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-subtle);
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: var(--shadow-md);
+  opacity: 0;
+  transform: translateY(12px);
+  pointer-events: none;
+  transition: opacity var(--transition-base), transform var(--transition-base), color var(--transition-fast), background var(--transition-fast);
+  z-index: 50;
+}
+
+.backToTopVisible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.backToTop:hover {
+  color: var(--color-accent-brand);
+  background: var(--color-bg-base);
 }

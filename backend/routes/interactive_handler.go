@@ -28,15 +28,17 @@ func NewInteractiveHandler(db *gorm.DB) *InteractiveHandler {
 
 // CreateQuestionRequest represents question creation request
 type CreateQuestionRequest struct {
-	QuestionText string `json:"question_text" binding:"required"`
-	Placeholder  string `json:"placeholder" binding:"required"`
-	VariableType string `json:"variable_type"` // "standard" or "custom"
-	StandardKey  string `json:"standard_key"`  // only when variable_type == "standard"
+	QuestionText  string `json:"question_text" binding:"required"`
+	Placeholder   string `json:"placeholder" binding:"required"`
+	VariableType  string `json:"variable_type"`   // "standard" or "custom"
+	StandardKey   string `json:"standard_key"`    // only when variable_type == "standard"
+	DefaultAnswer string `json:"default_answer"`  // resposta padrão para modo normal
 }
 
 // UpdateQuestionRequest represents question update request
 type UpdateQuestionRequest struct {
-	QuestionText string `json:"question_text" binding:"required"`
+	QuestionText  string `json:"question_text"`
+	DefaultAnswer string `json:"default_answer"`
 }
 
 // SaveAnswersRequest represents answers save request
@@ -154,7 +156,7 @@ func (h *InteractiveHandler) CreateQuestion(c *gin.Context) {
 	}
 
 	// Create question
-	question, err := h.service.CreateQuestion(fanficID, req.QuestionText, req.Placeholder, req.VariableType, req.StandardKey)
+	question, err := h.service.CreateQuestion(fanficID, req.QuestionText, req.Placeholder, req.VariableType, req.StandardKey, req.DefaultAnswer)
 	if err != nil {
 		statusCode := http.StatusBadRequest
 		code := "CREATION_ERROR"
@@ -217,7 +219,7 @@ func (h *InteractiveHandler) UpdateQuestion(c *gin.Context) {
 	}
 
 	// Update question with authorization check
-	question, err := h.service.UpdateQuestion(questionID, user.ID, req.QuestionText)
+	question, err := h.service.UpdateQuestion(questionID, user.ID, req.QuestionText, req.DefaultAnswer)
 	if err != nil {
 		statusCode := http.StatusBadRequest
 		code := "UPDATE_ERROR"
@@ -436,6 +438,36 @@ func (h *InteractiveHandler) UpdateAnswers(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Answers updated successfully"})
+}
+
+// RenderRequest is the body for the stateless render endpoint.
+type RenderRequest struct {
+	Content string            `json:"content" binding:"required"`
+	Vars    map[string]string `json:"vars"`
+}
+
+// Render aplica o motor de renderização de tags de forma stateless.
+// Não requer autenticação — é uma transformação pura de texto.
+// POST /api/interactive/render
+func (h *InteractiveHandler) Render(c *gin.Context) {
+	var req RenderRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, ErrorResponse{
+			Error: ErrorDetail{
+				Code:    "VALIDATION_ERROR",
+				Message: "Campo 'content' é obrigatório",
+			},
+		})
+		return
+	}
+
+	vars := req.Vars
+	if vars == nil {
+		vars = map[string]string{}
+	}
+
+	rendered := interactive.RenderContent(req.Content, vars)
+	c.JSON(http.StatusOK, gin.H{"rendered_html": rendered})
 }
 
 // GetPendingQuestions checks for pending questions

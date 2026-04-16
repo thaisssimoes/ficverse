@@ -75,8 +75,11 @@ export default function StoryCard({ fanfic, variant = 'grid' }) {
           <div className={styles.coverPlaceholder}>{initial}</div>
         )}
         {fanfic.interactive_mode && (
-          <span className={styles.interactiveBadge}>⚡ Interativa</span>
+          <span className={styles.interactiveBadge}>Interativa</span>
         )}
+        <span className={`${styles.statusBadge} ${fanfic.is_complete ? styles.statusComplete : fanfic.is_hiatus ? styles.statusHiatus : styles.statusOngoing}`}>
+          {fanfic.is_complete ? 'Completa' : fanfic.is_hiatus ? 'Hiatus' : 'Em andamento'}
+        </span>
       </div>
 
       {/* Info mínima — título e autor apenas */}

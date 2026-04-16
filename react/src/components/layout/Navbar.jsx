@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../hooks/useAuth';
 import { useNotifications } from '../../hooks/useNotifications';
@@ -28,6 +28,13 @@ const IconBook = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" aria-hidden>
     <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
     <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+  </svg>
+);
+const IconGuia = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" aria-hidden>
+    <circle cx="12" cy="12" r="10" />
+    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+    <line x1="12" y1="17" x2="12.01" y2="17" />
   </svg>
 );
 const IconHeart = () => (
@@ -94,6 +101,9 @@ export default function Navbar({ readingMode = false }) {
     unreadCount, notifications, isOpen: notifOpen,
     setIsOpen: setNotifOpen, markAsRead, markAllAsRead,
   } = useNotifications();
+
+  const location = useLocation();
+  const publishGuideOpen = location.pathname === '/dashboard' || location.pathname === '/como-publicar';
 
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -263,13 +273,25 @@ export default function Navbar({ readingMode = false }) {
           <>
             <div className={styles.navDivider} />
             <nav className={styles.sideNav}>
-              <NavLink
-                to="/dashboard"
-                className={({ isActive }) => `${styles.navItem} ${isCompact ? styles.navItemCompact : ''} ${isActive ? styles.navActive : ''}`}
-                title="Minhas Histórias"
-              >
-                <IconBook />{!isCompact && <span>Minhas Histórias</span>}
-              </NavLink>
+              {/* Minhas Publicações com submenu "Como Publicar" */}
+              <div className={styles.navGroup}>
+                <NavLink
+                  to="/dashboard"
+                  className={({ isActive }) => `${styles.navItem} ${isCompact ? styles.navItemCompact : ''} ${isActive ? styles.navActive : ''}`}
+                  title="Minhas Publicações"
+                >
+                  <IconBook />{!isCompact && <span>Minhas Publicações</span>}
+                </NavLink>
+                {!isCompact && publishGuideOpen && (
+                  <NavLink
+                    to="/como-publicar"
+                    className={({ isActive }) => `${styles.navSubItem} ${isActive ? styles.navSubItemActive : ''}`}
+                  >
+                    <IconGuia />
+                    Como Publicar
+                  </NavLink>
+                )}
+              </div>
               <NavLink
                 to="/favorites"
                 className={({ isActive }) => `${styles.navItem} ${isCompact ? styles.navItemCompact : ''} ${isActive ? styles.navActive : ''}`}

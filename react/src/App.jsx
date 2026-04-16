@@ -16,6 +16,7 @@ import ProfilePage from './pages/ProfilePage';
 import PublicProfilePage from './pages/PublicProfilePage';
 import DashboardPage from './pages/DashboardPage';
 import ProfilesPage from './pages/ProfilesPage';
+import GuiaPage from './pages/GuiaPage';
 import NotFoundPage from './pages/NotFoundPage';
 
 function PrivateRoute({ children }) {
@@ -38,6 +39,7 @@ export default function App() {
         <Route path="/fanfic/:id" element={<FanficDetailPage />} />
         <Route path="/chapter/:id" element={<ChapterReaderPage />} />
         <Route path="/user/:username" element={<PublicProfilePage />} />
+        <Route path="/como-publicar" element={<GuiaPage />} />
 
         {/* Privadas */}
         <Route path="/home" element={<PrivateRoute><HomePage /></PrivateRoute>} />

@@ -49,6 +49,28 @@ Equipe Lollipopfics`, toName, resetURL)
 	return s.send(toEmail, subject, body)
 }
 
+// SendCommentReport notifies the site's own inbox about a reported comment.
+func (s *EmailService) SendCommentReport(reporterUsername string, commentID int, commentContent, reason string) error {
+	subject := fmt.Sprintf("[Lollipopfics] Denúncia de comentário #%d", commentID)
+	body := fmt.Sprintf(`Uma denúncia foi registrada na plataforma Lollipopfics.
+
+Usuário denunciante : %s
+Comentário ID       : %d
+Motivo              : %s
+
+Conteúdo denunciado:
+--------------------
+%s
+--------------------
+
+Acesse o painel de administração para revisar e tomar providências.
+
+Atenciosamente,
+Sistema Lollipopfics`, reporterUsername, commentID, reason, commentContent)
+
+	return s.send(s.user, subject, body)
+}
+
 func (s *EmailService) send(to, subject, body string) error {
 	addr := net.JoinHostPort(s.host, s.port)
 

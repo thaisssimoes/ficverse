@@ -119,6 +119,54 @@ func (r *ChapterRepository) UpdateOrdersAfterDelete(fanficID int, deletedOrder i
 	return nil
 }
 
+// IncrementViews incrementa atomicamente o contador de visualizações de um capítulo.
+func (r *ChapterRepository) IncrementViews(id int) error {
+	return r.db.Model(&models.Chapter{}).
+		Where("id = ?", id).
+		UpdateColumn("views_count", gorm.Expr("views_count + 1")).Error
+}
+
+// ToggleLike adiciona ou remove o like de um usuário num capítulo.
+// Retorna o novo estado (liked) e a contagem atualizada.
+func (r *ChapterRepository) ToggleLike(userID, chapterID int) (liked bool, count int, err error) {
+	var like models.ChapterLike
+	result := r.db.Where("user_id = ? AND chapter_id = ?", userID, chapterID).First(&like)
+
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		// Ainda não curtiu → curtir
+		if err = r.db.Create(&models.ChapterLike{UserID: userID, ChapterID: chapterID}).Error; err != nil {
+			return false, 0, fmt.Errorf("failed to create chapter like: %w", err)
+		}
+		r.db.Model(&models.Chapter{}).Where("id = ?", chapterID).
+			UpdateColumn("likes_count", gorm.Expr("likes_count + 1"))
+		liked = true
+	} else if result.Error != nil {
+		return false, 0, fmt.Errorf("failed to check chapter like: %w", result.Error)
+	} else {
+		// Já curtiu → descurtir
+		r.db.Delete(&like)
+		r.db.Model(&models.Chapter{}).Where("id = ?", chapterID).
+			UpdateColumn("likes_count", gorm.Expr("GREATEST(likes_count - 1, 0)"))
+		liked = false
+	}
+
+	var ch models.Chapter
+	r.db.Select("likes_count").First(&ch, chapterID)
+	return liked, ch.LikesCount, nil
+}
+
+// LikedIDsByUser retorna os IDs de capítulos que o usuário curtiu dentro de um conjunto de IDs.
+func (r *ChapterRepository) LikedIDsByUser(userID int, chapterIDs []int) ([]int, error) {
+	if len(chapterIDs) == 0 {
+		return nil, nil
+	}
+	var ids []int
+	err := r.db.Model(&models.ChapterLike{}).
+		Where("user_id = ? AND chapter_id IN ?", userID, chapterIDs).
+		Pluck("chapter_id", &ids).Error
+	return ids, err
+}
+
 // UpdateOrder updates the order of a specific chapter
 func (r *ChapterRepository) UpdateOrder(chapterID int, newOrder int) error {
 	result := r.db.Model(&models.Chapter{}).

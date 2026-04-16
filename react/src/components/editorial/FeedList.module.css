@@ -3,15 +3,17 @@
    ============================================ */
 
 .section {
+  margin-top: var(--space-10);
   margin-bottom: var(--space-8);
 }
 
 .sectionTitle {
-  font-family: var(--font-display);
-  font-size: var(--text-xl);
-  font-weight: 400;
-  color: var(--color-text-primary);
-  letter-spacing: var(--tracking-tight);
+  font-family: var(--font-sans);
+  font-size: var(--text-label);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--color-text-muted);
   margin-bottom: var(--space-4);
   padding-bottom: var(--space-3);
   border-bottom: 1px solid var(--color-border-subtle);
@@ -54,19 +56,81 @@
   flex: 1;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: var(--space-3);
   min-width: 0;
 }
 
 .chapterTitle {
-  font-family: var(--font-sans);
-  font-size: var(--text-base);
-  font-weight: 500;
-  color: var(--color-text-primary);
+  font-family: var(--font-serif);
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--color-text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* Estatísticas do capítulo (views + likes) */
+.stats {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-shrink: 0;
+}
+
+.statItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.statBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: none;
+  border: none;
+  padding: 0.2rem 0.3rem;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+
+.statBtn:hover {
+  color: #e11d48;
+}
+
+.statBtnLiked {
+  color: #e11d48;
+}
+
+/* Botão de like — maior e à direita do título */
+.likeBtn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  padding: var(--space-1) var(--space-2);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: color var(--transition-fast);
+}
+
+.likeBtn:hover { color: #e11d48; }
+
+.likeBtnLiked { color: #e11d48; }
 
 .badgeDraft {
   font-family: var(--font-sans);
