@@ -1,0 +1,27 @@
+# Dependências
+node_modules/
+
+# Cache do Vite
+.vite/
+**/node_modules/.vite/
+
+# Variáveis de ambiente
+.env
+.env.local
+backend/.env
+
+# Build
+dist/
+build/
+
+# Uploads locais
+backend/uploads/
+
+# Go binários
+backend/*.exe
+backend/server
+
+# IDE
+.idea/
+.vscode/
+*.swp
