@@ -106,6 +106,15 @@
   color: #fff;
 }
 
+/* Quando o card é um botão (abre modal) */
+.gridBtn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+}
+
 .gridInfo {
   display: flex;
   flex-direction: column;

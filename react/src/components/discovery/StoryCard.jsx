@@ -10,7 +10,7 @@ import styles from './StoryCard.module.css';
  */
 const MAX_VISIBLE_TAGS = 3; // Lei de Hick: limita opções visíveis para reduzir carga cognitiva
 
-export default function StoryCard({ fanfic, variant = 'grid' }) {
+export default function StoryCard({ fanfic, variant = 'grid', onPreview }) {
   const coverUrl = fanfic.cover_url ? fanficApi.getAssetUrl(fanfic.cover_url) : null;
   const initial = fanfic.title?.charAt(0)?.toUpperCase() ?? '?';
 
@@ -65,8 +65,8 @@ export default function StoryCard({ fanfic, variant = 'grid' }) {
   }
 
   /* variante 'grid' (padrão) — foco na capa, info mínima */
-  return (
-    <Link to={`/fanfic/${fanfic.id}`} className={`${styles.card} ${styles.grid}`}>
+  const gridContent = (
+    <>
       {/* Capa com proporção 512:800 (padrão de livro) */}
       <div className={styles.coverWrapper}>
         {coverUrl ? (
@@ -89,6 +89,20 @@ export default function StoryCard({ fanfic, variant = 'grid' }) {
           <span className={styles.gridAuthor}>{fanfic.author_username}</span>
         )}
       </div>
+    </>
+  );
+
+  if (onPreview) {
+    return (
+      <button type="button" onClick={onPreview} className={`${styles.card} ${styles.grid} ${styles.gridBtn}`}>
+        {gridContent}
+      </button>
+    );
+  }
+
+  return (
+    <Link to={`/fanfic/${fanfic.id}`} className={`${styles.card} ${styles.grid}`}>
+      {gridContent}
     </Link>
   );
 }

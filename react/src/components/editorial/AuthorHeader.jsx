@@ -129,6 +129,9 @@ export default function AuthorHeader({
                     >
                       {statusLabel}
                     </Link>
+                    {fanfic.is_adult_content && (
+                      <TagBadge tag={{ id: 'adult', name: '+18', type: 'adult' }} />
+                    )}
                     {allTags.map((t) => <TagBadge key={t.id} tag={t} clickable />)}
                   </div>
                 </div>
