@@ -20,6 +20,19 @@ func RunSafeColumnMigrations(db *gorm.DB) {
 	migrateTagUniqueIndex(db)
 	migrateHiatusColumns(db)
 	migrateScheduledChapters(db)
+	migrateUserFollowsTable(db)
+}
+
+// migrateUserFollowsTable cria a tabela user_follows se não existir.
+func migrateUserFollowsTable(db *gorm.DB) {
+	if err := db.Exec(`CREATE TABLE IF NOT EXISTS user_follows (
+		follower_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+		following_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+		created_at   TIMESTAMPTZ DEFAULT NOW(),
+		PRIMARY KEY (follower_id, following_id)
+	)`).Error; err != nil {
+		log.Printf("Warning: could not create user_follows table: %v", err)
+	}
 }
 
 // migrateCommentsColumns garante que comments tenha parent_id e likes_count.

@@ -60,13 +60,20 @@
   font-weight: 600;
   color: var(--color-accent-brand);
   text-decoration: none;
+  background: none;
   border: 1.5px solid var(--color-accent-brand);
   border-radius: var(--radius-full);
   padding: var(--space-1) var(--space-4);
+  cursor: pointer;
   transition: background-color var(--transition-fast), color var(--transition-fast);
 }
 
 .tocLink:hover {
+  background-color: var(--color-accent-brand);
+  color: #fff;
+}
+
+.tocLinkActive {
   background-color: var(--color-accent-brand);
   color: #fff;
 }

@@ -8,7 +8,13 @@ import styles from './StoryCard.module.css';
  * @param {object}  fanfic         - Dados da história
  * @param {'grid'|'list'} variant  - 'grid' = foco na capa (Wattpad), 'list' = detalhes (Substack)
  */
-const MAX_VISIBLE_TAGS = 3; // Lei de Hick: limita opções visíveis para reduzir carga cognitiva
+const MAX_VISIBLE_TAGS = 3;
+
+// Remove tags HTML da sinopse (salva pelo QuillEditor) para exibição plain-text
+function stripHtml(html) {
+  if (!html) return '';
+  return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+}
 
 export default function StoryCard({ fanfic, variant = 'grid', onPreview }) {
   const coverUrl = fanfic.cover_url ? fanficApi.getAssetUrl(fanfic.cover_url) : null;
@@ -82,11 +88,23 @@ export default function StoryCard({ fanfic, variant = 'grid', onPreview }) {
         </span>
       </div>
 
-      {/* Info mínima — título e autor apenas */}
+      {/* Info — título, sinopse (2 linhas), autor, tags */}
       <div className={styles.gridInfo}>
         <span className={styles.gridTitle}>{fanfic.title}</span>
+        {fanfic.synopsis && (
+          <p className={styles.gridSynopsis}>{stripHtml(fanfic.synopsis)}</p>
+        )}
         {fanfic.author_username && (
           <span className={styles.gridAuthor}>{fanfic.author_username}</span>
+        )}
+        {fanfic.tags?.length > 0 && (
+          <div className={styles.gridTags}>
+            {fanfic.tags.slice(0, 2).map((tag) => (
+              <span key={typeof tag === 'string' ? tag : tag.id} className={styles.gridTag}>
+                {typeof tag === 'string' ? tag : tag.name}
+              </span>
+            ))}
+          </div>
         )}
       </div>
     </>

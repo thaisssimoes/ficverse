@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import DOMPurify from 'dompurify';
-import { fanficApi, chapterApi, interactiveApi, profileApi, tagApi } from '../services/api';
+import { fanficApi, chapterApi, interactiveApi, profileApi, tagApi, userApi } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
 import PageLayout from '../components/layout/PageLayout';
@@ -325,6 +325,15 @@ export default function FanficDetailPage() {
     allProfiles[0] ||
     {};
 
+  // Follow status — só busca quando temos o author_id da fanfic
+  const authorId = fanfic?.author_id;
+  const { data: followStatus } = useQuery({
+    queryKey: ['follow-status', authorId],
+    queryFn: () => userApi.getFollowStatus(authorId),
+    enabled: isAuthenticated && !!authorId && user?.user_id !== authorId,
+  });
+
+  // Favorite status
   const { data: favoriteStatus } = useQuery({
     queryKey: ['favorite-status', id],
     queryFn: () => fanficApi.getFavoriteStatus(id),
@@ -332,16 +341,35 @@ export default function FanficDetailPage() {
   });
 
   // Mutations
+  const followMutation = useMutation({
+    mutationFn: () =>
+      followStatus?.following
+        ? userApi.unfollowUser(authorId)
+        : userApi.followUser(authorId),
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ['follow-status', authorId] });
+      const prev = queryClient.getQueryData(['follow-status', authorId]);
+      queryClient.setQueryData(['follow-status', authorId], (old) => ({
+        following: !old?.following,
+        followers_count: (old?.followers_count ?? 0) + (old?.following ? -1 : 1),
+      }));
+      return { prev };
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(['follow-status', authorId], data);
+    },
+    onError: (_err, _vars, context) => {
+      queryClient.setQueryData(['follow-status', authorId], context?.prev);
+      toast.error('Erro ao atualizar seguimento.');
+    },
+  });
+
   const favoriteMutation = useMutation({
     mutationFn: () => fanficApi.toggleFavorite(id),
     onMutate: async () => {
       await queryClient.cancelQueries({ queryKey: ['favorite-status', id] });
       const prev = queryClient.getQueryData(['favorite-status', id]);
-      queryClient.setQueryData(['favorite-status', id], (old) => ({
-        ...old,
-        favorited: !old?.favorited,
-        favorites_count: (old?.favorites_count ?? 0) + (old?.favorited ? -1 : 1),
-      }));
+      queryClient.setQueryData(['favorite-status', id], (old) => ({ ...old, favorited: !old?.favorited }));
       return { prev };
     },
     onSuccess: (data) => {
@@ -474,6 +502,7 @@ export default function FanficDetailPage() {
     warning:  tags.filter((t) => t.type === 'warning'),
     pairing:  tags.filter((t) => t.type === 'pairing'),
     subgenre: tags.filter((t) => t.type === 'subgenre'),
+    trope:    tags.filter((t) => t.type === 'trope'),
   };
 
   const pendingQuestions = questions.filter((q) => {
@@ -523,9 +552,6 @@ export default function FanficDetailPage() {
           <AuthorHeader
             fanfic={fanfic}
             tagsByType={tagsByType}
-            favorited={!!favoriteStatus?.favorited}
-            favoritesCount={favoriteStatus?.favorites_count ?? 0}
-            onFavorite={() => favoriteMutation.mutate()}
             isAuthor={isAuthor}
             authorActions={
               <Link to={`/dashboard?fanficId=${fanfic.id}`}>
@@ -533,12 +559,11 @@ export default function FanficDetailPage() {
               </Link>
             }
             isAuthenticated={isAuthenticated}
-            loginFavorite={
-              <Link to="/login" className={styles.favoriteBtn}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" /></svg>
-                <span>Favoritar</span>
-              </Link>
-            }
+            following={!!followStatus?.following}
+            followersCount={followStatus?.followers_count ?? fanfic.followers_count ?? 0}
+            onFollow={() => isAuthenticated ? followMutation.mutate() : navigate('/login')}
+            favorited={!!favoriteStatus?.favorited}
+            onFavorite={() => isAuthenticated ? favoriteMutation.mutate() : navigate('/login')}
           />
 
           {/* Aviso +18 — linha tipográfica sempre visível quando is_adult_content */}

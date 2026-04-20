@@ -9,14 +9,14 @@ import LoadingSpinner from '../components/ui/LoadingSpinner';
 import styles from './ProfilesPage.module.css';
 
 const FIELDS = [
-  { key: 'primeiro_nome',   label: 'Nome',           placeholder: 'Ex: Ana' },
-  { key: 'sobrenome',       label: 'Sobrenome',       placeholder: 'Ex: Silva' },
-  { key: 'apelido',         label: 'Apelido / S/N',   placeholder: 'Como a história te chama' },
-  { key: 'cor_olhos',       label: 'Cor dos Olhos',   placeholder: 'Ex: castanho' },
-  { key: 'cor_cabelo',      label: 'Cor do Cabelo',   placeholder: 'Ex: preto' },
-  { key: 'cor_favorita',    label: 'Cor Favorita',    placeholder: 'Ex: roxo' },
+  { key: 'primeiro_nome', label: 'Nome', placeholder: 'Ex: Ana' },
+  { key: 'sobrenome', label: 'Sobrenome', placeholder: 'Ex: Silva' },
+  { key: 'apelido', label: 'Apelido', placeholder: 'Como a história te chama' },
+  { key: 'cor_olhos', label: 'Cor dos Olhos', placeholder: 'Ex: castanho' },
+  { key: 'cor_cabelo', label: 'Cor do Cabelo', placeholder: 'Ex: preto' },
+  { key: 'cor_favorita', label: 'Cor Favorita', placeholder: 'Ex: roxo' },
   { key: 'comida_favorita', label: 'Comida Favorita', placeholder: 'Ex: pizza' },
-  { key: 'idade',           label: 'Idade',            placeholder: 'Ex: 22' },
+  { key: 'idade', label: 'Idade', placeholder: 'Ex: 22' },
 ];
 
 const emptyForm = () => ({
@@ -35,14 +35,14 @@ function ProfileModal({ profile, onClose, onSaved }) {
   const toast = useToast();
   const [form, setForm] = useState(profile ? {
     name: profile.name,
-    primeiro_nome:   profile.primeiro_nome   || '',
-    sobrenome:       profile.sobrenome        || '',
-    apelido:         profile.apelido          || '',
-    cor_olhos:       profile.cor_olhos        || '',
-    cor_cabelo:      profile.cor_cabelo       || '',
-    cor_favorita:    profile.cor_favorita     || '',
-    comida_favorita: profile.comida_favorita  || '',
-    idade:           profile.idade            || '',
+    primeiro_nome: profile.primeiro_nome || '',
+    sobrenome: profile.sobrenome || '',
+    apelido: profile.apelido || '',
+    cor_olhos: profile.cor_olhos || '',
+    cor_cabelo: profile.cor_cabelo || '',
+    cor_favorita: profile.cor_favorita || '',
+    comida_favorita: profile.comida_favorita || '',
+    idade: profile.idade || '',
   } : emptyForm());
   const [saving, setSaving] = useState(false);
   const isEdit = !!profile;

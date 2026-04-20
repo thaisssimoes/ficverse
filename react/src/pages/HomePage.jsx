@@ -1,131 +1,141 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { fanficApi } from '../services/api';
+import { fanficApi, profileApi } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
-import { CATEGORIES } from '../constants';
-import PageLayout from '../components/layout/PageLayout';
-import CoverGrid from '../components/discovery/CoverGrid';
-import Tabs from '../components/ui/Tabs';
-import SocialFeed from '../components/social/SocialFeed';
+
+import PageLayout   from '../components/layout/PageLayout';
+import Tabs         from '../components/ui/Tabs';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
+import SocialFeed   from '../components/social/SocialFeed';
+
+// Componentes da home
+import HeroBanner           from '../components/home/HeroBanner';
+import OnboardingBanner     from '../components/home/OnboardingBanner';
+import StoryShelf           from '../components/home/StoryShelf';
+import ContinueReadingShelf from '../components/home/ContinueReadingShelf';
+
 import styles from './HomePage.module.css';
 
-const QUICK_FILTERS = [
-  { key: 'all',       label: 'Todos' },
-  { key: 'Romance',   label: '💕 Romance' },
-  { key: 'Aventura',  label: '⚔️ Aventura' },
-  { key: 'Fantasia',  label: '🔮 Fantasia' },
-  { key: 'Drama',     label: '🎭 Drama' },
-];
-
 const HOME_TABS = [
-  { key: 'highlights', label: 'Destaques' },
+  { key: 'highlights', label: 'Destaques'          },
   { key: 'feed',       label: 'Feed da Comunidade' },
 ];
 
+function hasTagType(fanfic, type) {
+  return fanfic.tags?.some((t) => t.type === type);
+}
+
 export default function HomePage() {
-  const { user } = useAuth();
-  const [activeTab, setActiveTab]     = useState('highlights');
-  const [activeFilter, setActiveFilter] = useState('all');
+  const { user, isAuthenticated } = useAuth();
+  const [activeTab, setActiveTab] = useState('highlights');
 
-  const { data: trendingData, isLoading: trendingLoading } = useQuery({
-    queryKey: ['trending', activeFilter],
-    queryFn: () => fanficApi.getTrending(activeFilter === 'all' ? '' : activeFilter, 12),
+  // Perfis de leitura — decide se mostra o onboarding banner
+  const { data: profiles = [] } = useQuery({
+    queryKey: ['profiles'],
+    queryFn: profileApi.listProfiles,
+    enabled: isAuthenticated,
+  });
+  const showOnboarding = isAuthenticated && profiles.length === 0;
+
+  // Hero — top 6 com capa
+  const { data: heroData } = useQuery({
+    queryKey: ['hero-stories'],
+    queryFn: () => fanficApi.getFeatured(6),
   });
 
-  const { data: featuredData } = useQuery({
-    queryKey: ['featured'],
-    queryFn: () => fanficApi.getFeatured(1),
+  // Pool grande para derivar as prateleiras temáticas
+  const { data: poolData, isLoading: poolLoading } = useQuery({
+    queryKey: ['home-pool'],
+    queryFn: () => fanficApi.getTrending('', 60),
   });
 
+  // Feed da comunidade
   const { data: feedData, isLoading: feedLoading } = useQuery({
     queryKey: ['feed-recent'],
     queryFn: () => fanficApi.getTrending('', 20),
     enabled: activeTab === 'feed',
   });
 
-  const featured  = Array.isArray(featuredData) ? featuredData[0] : null;
-  const trending  = Array.isArray(trendingData) ? trendingData : [];
-  const feedItems = Array.isArray(feedData) ? feedData : [];
+  const heroStories = Array.isArray(heroData) ? heroData : [];
+  const pool        = Array.isArray(poolData)  ? poolData  : [];
+  const feedItems   = Array.isArray(feedData)  ? feedData  : [];
+
+  // Prateleiras derivadas do pool (sem chamadas extras)
+  const allStories       = pool.slice(0, 16);
+  const fandomStories    = pool.filter((f) => hasTagType(f, 'fandom')).slice(0, 16);
+  const tropeStories     = pool.filter((f) => hasTagType(f, 'trope')).slice(0, 16);
+  const interactiveStories = pool.filter((f) => f.interactive_mode).slice(0, 16);
 
   return (
     <PageLayout>
-      {/* ── Hero com fanfic em destaque ── */}
-      {featured && (
-        <section className={styles.hero}>
-          <div className={styles.heroBg}>
-            {fanficApi.getAssetUrl(featured.cover_url) && (
-              <img
-                src={fanficApi.getAssetUrl(featured.cover_url)}
-                alt={featured.title}
-                className={styles.heroBgImg}
-              />
-            )}
-            <div className={styles.heroOverlay} />
-          </div>
-          <div className={styles.heroContent}>
-            <span className={styles.heroBadge}>✨ Destaque</span>
-            <h1 className={styles.heroTitle}>{featured.title}</h1>
-            {featured.author_username && (
-              <p className={styles.heroSub}>por {featured.author_username}</p>
-            )}
-            <a href={`/fanfic/${featured.id}`} className={styles.heroBtn}>
-              Começar a Ler
-            </a>
-          </div>
-        </section>
-      )}
+      {showOnboarding && <OnboardingBanner />}
+      {!showOnboarding && <HeroBanner stories={heroStories} />}
 
-      {/* ── Abas: Destaques / Feed ── */}
       <div className={styles.tabsBar}>
         <Tabs tabs={HOME_TABS} activeTab={activeTab} onChange={setActiveTab} />
       </div>
 
       {/* ── Aba: Destaques ── */}
       {activeTab === 'highlights' && (
-        <section className={styles.section}>
-          {/* Filtros rápidos de categoria */}
-          <div className={styles.filters}>
-            {QUICK_FILTERS.map((f) => (
-              <button
-                key={f.key}
-                className={`${styles.filterBtn} ${activeFilter === f.key ? styles.active : ''}`}
-                onClick={() => setActiveFilter(f.key)}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Grade de histórias */}
-          {trendingLoading ? (
+        <div className={styles.section}>
+          {poolLoading ? (
             <LoadingSpinner text="Carregando histórias..." />
           ) : (
-            <CoverGrid stories={trending} emptyText="Nenhuma fanfic disponível no momento." />
+            <div className={styles.shelves}>
+              <ContinueReadingShelf />
+
+              <StoryShelf
+                title="Em Alta Agora"
+                stories={allStories}
+                viewAllTo="/explore"
+              />
+
+              {fandomStories.length > 0 && (
+                <StoryShelf
+                  title="Universos que Não Saem da Cabeça"
+                  stories={fandomStories}
+                  viewAllTo="/explore"
+                />
+              )}
+
+              {tropeStories.length > 0 && (
+                <StoryShelf
+                  title="As Dinâmicas que a Gente Ama"
+                  stories={tropeStories}
+                  viewAllTo="/explore"
+                />
+              )}
+
+              {interactiveStories.length > 0 && (
+                <StoryShelf
+                  title="Você É o Protagonista"
+                  stories={interactiveStories}
+                  viewAllTo="/explore?mode=interactive"
+                />
+              )}
+            </div>
           )}
-        </section>
+        </div>
       )}
 
       {/* ── Aba: Feed da Comunidade ── */}
       {activeTab === 'feed' && (
-        <section className={styles.section}>
-          <div className={styles.feedLayout}>
-            <div className={styles.feedMain}>
-              <SocialFeed stories={feedItems} isLoading={feedLoading} />
-            </div>
-            <aside className={styles.feedSidebar}>
-              <div className={styles.sidebarCard}>
-                <h3 className={styles.sidebarTitle}>Bem-vindo, {user?.username}!</h3>
-                <p className={styles.sidebarText}>
-                  Aqui você acompanha as últimas histórias publicadas pela comunidade.
-                </p>
-                <a href="/explore" className={styles.sidebarLink}>
-                  Ver catálogo completo →
-                </a>
-              </div>
-            </aside>
+        <div className={styles.feedLayout}>
+          <div className={styles.feedMain}>
+            <SocialFeed stories={feedItems} isLoading={feedLoading} />
           </div>
-        </section>
+          <aside className={styles.feedSidebar}>
+            <div className={styles.sidebarCard}>
+              <h3 className={styles.sidebarTitle}>Bem-vindo, {user?.username}!</h3>
+              <p className={styles.sidebarText}>
+                Aqui você acompanha as últimas histórias publicadas pela comunidade.
+              </p>
+              <a href="/explore" className={styles.sidebarLink}>
+                Ver catálogo completo →
+              </a>
+            </div>
+          </aside>
+        </div>
       )}
     </PageLayout>
   );

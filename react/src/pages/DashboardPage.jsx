@@ -82,7 +82,7 @@ import { fanficApi, chapterApi, interactiveApi, commentApi, tagApi, profileApi }
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
 import { formatTimestamp, formatAbsoluteDate } from '../utils/formatters';
-import { CATEGORIES, TAG_SUGGESTIONS } from '../constants';
+import { CATEGORIES, TAG_SUGGESTIONS, FANDOM_PAIRING_SUGGESTIONS } from '../constants';
 import PageLayout from '../components/layout/PageLayout';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import Button from '../components/ui/Button';
@@ -447,7 +447,7 @@ function ClassificacoesTab({ fanfic, onUpdated }) {
     const raw = stripHtml(fanfic.trigger_warnings || '');
     return raw ? raw.split(',').map((s) => s.trim()).filter(Boolean) : [];
   });
-  const [tags, setTags] = useState({ fandom: [], pairing: [], subgenre: [] });
+  const [tags, setTags] = useState({ fandom: [], pairing: [], subgenre: [], trope: [] });
   const [saving, setSaving] = useState(false);
 
   const { data: existingTags } = useQuery({
@@ -461,11 +461,20 @@ function ClassificacoesTab({ fanfic, onUpdated }) {
       fandom:   existingTags.filter((t) => t.type === 'fandom').map((t) => t.name),
       pairing:  existingTags.filter((t) => t.type === 'pairing').map((t) => t.name),
       subgenre: existingTags.filter((t) => t.type === 'subgenre').map((t) => t.name),
+      trope:    existingTags.filter((t) => t.type === 'trope').map((t) => t.name),
     });
   }, [existingTags]);
 
   const addTag = (type, name) => setTags((t) => ({ ...t, [type]: [...t[type], name] }));
   const removeTag = (type, idx) => setTags((t) => ({ ...t, [type]: t[type].filter((_, i) => i !== idx) }));
+
+  // Sugestões de casais enriquecidas com ships do(s) fandom(s) selecionados
+  const pairingSuggestions = [
+    ...new Set([
+      ...tags.fandom.flatMap((f) => FANDOM_PAIRING_SUGGESTIONS[f] ?? []),
+      ...TAG_SUGGESTIONS.pairing,
+    ]),
+  ];
 
   const handleSave = async (e) => {
     e.preventDefault();
@@ -482,6 +491,7 @@ function ClassificacoesTab({ fanfic, onUpdated }) {
           ...tags.fandom.map((n) => ({ name: n, type: 'fandom' })),
           ...tags.pairing.map((n) => ({ name: n, type: 'pairing' })),
           ...tags.subgenre.map((n) => ({ name: n, type: 'subgenre' })),
+          ...tags.trope.map((n) => ({ name: n, type: 'trope' })),
         ];
         const oldTagNames = oldTags.map((t) => t.name.toLowerCase());
         const newTagNamesLower = newTagNames.map((t) => t.name.toLowerCase());
@@ -574,12 +584,37 @@ function ClassificacoesTab({ fanfic, onUpdated }) {
 
       <div className={styles.formGroup}>
         <div className={styles.clsLabelRow}>
-          <label className={styles.formLabel}>Pairing</label>
+          <label className={styles.formLabel}>
+            Casais
+            {tags.fandom.length > 0 && (
+              <span className={styles.clsLabelHint}> — sugestões para {tags.fandom[0]}</span>
+            )}
+          </label>
           <CopyTagsBtn tags={tags.pairing} />
         </div>
         <TagInputWithSuggestions neutral tagType="pairing" tags={tags.pairing}
           onAdd={(v) => addTag('pairing', v)} onRemove={(i) => removeTag('pairing', i)}
-          suggestions={TAG_SUGGESTIONS.pairing} placeholder="Ex: M/F" maxTags={5} />
+          suggestions={pairingSuggestions}
+          placeholder="Ex: Naruto x Hinata, Harry x Hermione"
+          maxTags={5} />
+      </div>
+
+      {/* Tropes */}
+      <p className={styles.clsGroupLabel} style={{ marginTop: '1.5rem' }}>Tropes</p>
+
+      <div className={styles.formGroup}>
+        <div className={styles.clsLabelRow}>
+          <label className={styles.formLabel}>
+            Tropes
+            <span className={styles.clsLabelHint}> (máx. 8)</span>
+          </label>
+          <CopyTagsBtn tags={tags.trope} />
+        </div>
+        <TagInputWithSuggestions neutral tagType="trope" tags={tags.trope}
+          onAdd={(v) => addTag('trope', v)} onRemove={(i) => removeTag('trope', i)}
+          suggestions={TAG_SUGGESTIONS.trope}
+          placeholder="Ex: Enemies to Lovers, Slow Burn"
+          maxTags={8} />
       </div>
 
       <div className={styles.formActions}>

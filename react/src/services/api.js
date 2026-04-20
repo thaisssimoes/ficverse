@@ -271,6 +271,12 @@ export const userApi = {
   blockUser: (userId) => request(`/user/${userId}/block`, { method: 'POST' }),
 
   unblockUser: (userId) => request(`/user/${userId}/block`, { method: 'DELETE' }),
+
+  getFollowStatus: (userId) => request(`/user/${userId}/follow`),
+
+  followUser: (userId) => request(`/user/${userId}/follow`, { method: 'POST' }),
+
+  unfollowUser: (userId) => request(`/user/${userId}/follow`, { method: 'DELETE' }),
 };
 
 // Mural (wall) de conversas do perfil

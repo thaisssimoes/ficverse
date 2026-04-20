@@ -43,6 +43,22 @@ func (r *FanficRepository) Create(fanfic *models.Fanfic) error {
 	return nil
 }
 
+// populateStats calcula o total de views e likes (soma dos capítulos publicados) para cada fanfic.
+func (r *FanficRepository) populateStats(fanfics []models.Fanfic) {
+	for i := range fanfics {
+		var stats struct {
+			TotalViews int
+			TotalLikes int
+		}
+		r.db.Model(&models.Chapter{}).
+			Select("COALESCE(SUM(views_count), 0) as total_views, COALESCE(SUM(likes_count), 0) as total_likes").
+			Where("fanfic_id = ? AND is_draft = false", fanfics[i].ID).
+			Scan(&stats)
+		fanfics[i].TotalViews = stats.TotalViews
+		fanfics[i].TotalLikes = stats.TotalLikes
+	}
+}
+
 // GetByID retrieves a fanfic by ID
 func (r *FanficRepository) GetByID(id int) (*models.Fanfic, error) {
 	var fanfic models.Fanfic
@@ -53,6 +69,10 @@ func (r *FanficRepository) GetByID(id int) (*models.Fanfic, error) {
 		}
 		return nil, fmt.Errorf("failed to get fanfic: %w", result.Error)
 	}
+	slice := []models.Fanfic{fanfic}
+	r.populateStats(slice)
+	fanfic.TotalViews = slice[0].TotalViews
+	fanfic.TotalLikes = slice[0].TotalLikes
 	return &fanfic, nil
 }
 
@@ -137,6 +157,7 @@ func (r *FanficRepository) GetFeatured(limit int) ([]models.Fanfic, error) {
 	// Get published fanfics with covers, ordered by creation date
 	result := r.db.Where("cover_url != '' AND is_draft = ? AND "+hasChaptersClause, false).
 		Preload("Author").
+		Preload("Tags").
 		Order("created_at DESC").
 		Limit(limit).
 		Find(&fanfics)
@@ -144,17 +165,16 @@ func (r *FanficRepository) GetFeatured(limit int) ([]models.Fanfic, error) {
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to get featured fanfics: %w", result.Error)
 	}
+	r.populateStats(fanfics)
 	return fanfics, nil
 }
 
 // GetTrending retrieves trending published fanfics (most recent, excludes drafts)
 func (r *FanficRepository) GetTrending(limit int) ([]models.Fanfic, error) {
 	var fanfics []models.Fanfic
-	
-	// For now, trending is based on most recent published fanfics
-	// In the future, this could be based on views, likes, comments, etc.
 	result := r.db.Where("is_draft = ? AND "+hasChaptersClause, false).
 		Preload("Author").
+		Preload("Tags").
 		Order("created_at DESC").
 		Limit(limit).
 		Find(&fanfics)
@@ -162,15 +182,16 @@ func (r *FanficRepository) GetTrending(limit int) ([]models.Fanfic, error) {
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to get trending fanfics: %w", result.Error)
 	}
+	r.populateStats(fanfics)
 	return fanfics, nil
 }
 
 // GetTrendingByCategory retrieves trending published fanfics filtered by category (excludes drafts)
 func (r *FanficRepository) GetTrendingByCategory(category string, limit int) ([]models.Fanfic, error) {
 	var fanfics []models.Fanfic
-	
 	result := r.db.Where("category = ? AND is_draft = ? AND "+hasChaptersClause, category, false).
 		Preload("Author").
+		Preload("Tags").
 		Order("created_at DESC").
 		Limit(limit).
 		Find(&fanfics)
@@ -178,6 +199,7 @@ func (r *FanficRepository) GetTrendingByCategory(category string, limit int) ([]
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to get trending fanfics by category: %w", result.Error)
 	}
+	r.populateStats(fanfics)
 	return fanfics, nil
 }
 

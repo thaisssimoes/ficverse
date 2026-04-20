@@ -250,9 +250,14 @@ func Setup(router *gin.Engine, db *gorm.DB, cfg *config.Config, store storage.St
 			userGroup.POST("/banner", auth.AuthMiddleware(authService), userHandler.UploadBanner)
 			// Public profile by username (optional auth to check block status)
 			userGroup.GET("/:username", auth.OptionalAuthMiddleware(authService), userHandler.GetPublicProfile)
+			// Follow / unfollow — parâmetro :username usado como ID numérico
+			// (mesmo nome que o profile route para evitar conflito de wildcard no Gin)
+			userGroup.GET("/:username/follow", auth.AuthMiddleware(authService), userHandler.GetFollowStatus)
+			userGroup.POST("/:username/follow", auth.AuthMiddleware(authService), userHandler.FollowUser)
+			userGroup.DELETE("/:username/follow", auth.AuthMiddleware(authService), userHandler.UnfollowUser)
 			// Block / unblock
-			userGroup.POST("/:id/block", auth.AuthMiddleware(authService), userHandler.BlockUser)
-			userGroup.DELETE("/:id/block", auth.AuthMiddleware(authService), userHandler.UnblockUser)
+			userGroup.POST("/:username/block", auth.AuthMiddleware(authService), userHandler.BlockUser)
+			userGroup.DELETE("/:username/block", auth.AuthMiddleware(authService), userHandler.UnblockUser)
 		}
 
 		// Wall (mural) routes

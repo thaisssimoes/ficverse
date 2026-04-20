@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { fanficApi } from '../services/api';
-import { CATEGORIES, CATEGORY_ICONS } from '../constants';
+import { CATEGORIES } from '../constants';
 import PageLayout from '../components/layout/PageLayout';
 import CoverGrid from '../components/discovery/CoverGrid';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
@@ -102,7 +102,7 @@ export default function ExplorePage() {
               className={`${styles.catBtn} ${activeCategory === cat ? styles.active : ''}`}
               onClick={() => setActiveCategory(cat)}
             >
-              {CATEGORY_ICONS[cat]} {cat}
+              {cat}
             </button>
           ))}
         </div>
