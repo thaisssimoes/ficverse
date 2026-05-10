@@ -28,6 +28,7 @@ type Claims struct {
 	UserID   int    `json:"user_id"`
 	Username string `json:"username"`
 	Email    string `json:"email"`
+	IsAdmin  bool   `json:"is_admin"`
 	jwt.RegisteredClaims
 }
 
@@ -211,6 +212,7 @@ func (s *AuthService) generateToken(user *models.User) (string, error) {
 		UserID:   user.ID,
 		Username: user.Username,
 		Email:    user.Email,
+		IsAdmin:  user.IsAdmin,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expirationTime),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),

@@ -27,6 +27,7 @@ type Fanfic struct {
 	Tags     []Tag     `gorm:"many2many:fanfic_tags" json:"tags,omitempty"`
 
 	// Campos calculados — não persistidos no banco
-	TotalViews int `gorm:"-" json:"total_views"`
-	TotalLikes int `gorm:"-" json:"total_likes"`
+	TotalViews   int `gorm:"-" json:"total_views"`
+	TotalLikes   int `gorm:"-" json:"total_likes"`
+	ChapterCount int `gorm:"-" json:"chapter_count"`
 }

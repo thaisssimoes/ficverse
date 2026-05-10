@@ -7,14 +7,36 @@ import { useToast } from '../hooks/useToast';
 import PageLayout from '../components/layout/PageLayout';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import Button from '../components/ui/Button';
-import Modal from '../components/ui/Modal';
 import CommentsSection from '../components/fanfic/CommentsSection';
 import ReadingContent from '../components/reading/ReadingContent';
 import StoryHeader from '../components/reading/StoryHeader';
 import ReadingToolbar from '../components/reading/ReadingToolbar';
 import styles from './ChapterReaderPage.module.css';
 
-// Modal de perguntas (pendentes ou iniciais)
+// ─── Design tokens (leitor) ───────────────────────────────────────────────────
+const RD = {
+  paper: '#fbf3e2', paperAlt: '#f5e9d0', surface: '#fffbf3',
+  ink: '#1f1610', inkSoft: '#4d3f30', inkMute: '#8c7a62',
+  border: '#e7d8b8',
+  brick: '#d24a2e', brickSoft: '#fad6cc', brickBg: '#fce8df', onBrick: '#fffbf3',
+};
+
+// Dots SVG pattern para o header do modal
+function DotsBg({ color }) {
+  return (
+    <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}
+      viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <pattern id="qm-dots" width="12" height="12" patternUnits="userSpaceOnUse">
+          <circle cx="6" cy="6" r="1.4" fill={color} opacity="0.28"/>
+        </pattern>
+      </defs>
+      <rect width="100" height="100" fill="url(#qm-dots)"/>
+    </svg>
+  );
+}
+
+// Modal de perguntas v3 — estética "Atelier Alegre"
 function QuestionsModal({ isOpen, onClose, questions, existingAnswers, onSave }) {
   const [inputs, setInputs] = useState(() => {
     const init = {};
@@ -22,6 +44,8 @@ function QuestionsModal({ isOpen, onClose, questions, existingAnswers, onSave })
     return init;
   });
   const [errors, setErrors] = useState([]);
+
+  if (!isOpen) return null;
 
   const handleSubmit = async () => {
     const empty = Object.entries(inputs).filter(([, v]) => !v.trim()).map(([k]) => k);
@@ -31,40 +55,170 @@ function QuestionsModal({ isOpen, onClose, questions, existingAnswers, onSave })
     onClose();
   };
 
+  const handleSkip = () => {
+    // preenche com defaults vazios e fecha
+    onClose();
+  };
+
+  // Detecta se uma pergunta é de pronome (placeholder contém "pronome")
+  const isPronomeField = (q) => (q.placeholder || '').toLowerCase().includes('pronome');
+
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Perguntas Interativas"
-      size="lg"
-      footer={
-        <>
-          <Button variant="secondary" onClick={onClose}>Cancelar</Button>
-          <Button variant="primary" onClick={handleSubmit}>Salvar Respostas</Button>
-        </>
-      }
-    >
-      {errors.length > 0 && (
-        <p className={styles.validationMsg}>Por favor, responda todas as perguntas antes de continuar.</p>
-      )}
-      <div className={styles.questionsList}>
-        {questions.map((q, i) => (
-          <div key={q.id} className={styles.questionItem}>
-            <label className={styles.questionLabel}>{i + 1}. {q.question_text}</label>
-            <input
-              type="text"
-              className={`${styles.questionInput} ${errors.includes(q.placeholder) ? styles.inputError : ''}`}
-              value={inputs[q.placeholder] || ''}
-              onChange={(e) => {
-                setInputs((p) => ({ ...p, [q.placeholder]: e.target.value }));
-                setErrors((err) => err.filter((x) => x !== q.placeholder));
-              }}
-              placeholder="Digite sua resposta..."
-            />
+    <div style={{
+      position: 'fixed', inset: 0,
+      background: 'rgba(31,22,16,0.6)', backdropFilter: 'blur(6px)',
+      zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24,
+    }}>
+      <div style={{
+        maxWidth: 540, width: '100%',
+        background: RD.surface, border: `1px solid ${RD.brickSoft}`,
+        borderRadius: 14, overflow: 'hidden', position: 'relative',
+        boxShadow: '0 2px 4px rgba(80,40,15,.06), 0 12px 24px rgba(80,40,15,.12), 0 24px 48px rgba(80,40,15,.10)',
+        maxHeight: '90vh', display: 'flex', flexDirection: 'column',
+      }}>
+        {/* Fechar */}
+        <button onClick={onClose} style={{
+          position: 'absolute', top: 14, right: 14,
+          width: 32, height: 32, borderRadius: '50%',
+          background: RD.paper, border: `1px solid ${RD.border}`,
+          cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: RD.inkSoft, zIndex: 2,
+        }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+        </button>
+
+        {/* Header */}
+        <div style={{
+          padding: '32px 32px 24px', textAlign: 'center',
+          borderBottom: `1px solid ${RD.border}`,
+          background: RD.brickBg, position: 'relative', overflow: 'hidden',
+        }}>
+          <DotsBg color={RD.brick} />
+          <div style={{ position: 'relative' }}>
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 7,
+              fontFamily: "'JetBrains Mono', monospace", fontSize: 11,
+              letterSpacing: '0.18em', textTransform: 'uppercase',
+              color: RD.brick, fontWeight: 700, marginBottom: 12,
+            }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={RD.brick} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/>
+              </svg>
+              Personalização · interativa
+            </div>
+            <h2 style={{
+              fontFamily: "'Fraunces', Georgia, serif", fontStyle: 'italic',
+              fontSize: 26, fontWeight: 400, letterSpacing: -0.6,
+              color: RD.ink, lineHeight: 1.2, margin: '0 0 10px',
+            }}>
+              Antes da história começar —<br />quem você quer ser nela?
+            </h2>
+            <p style={{
+              fontFamily: "'Fraunces', Georgia, serif", fontStyle: 'italic',
+              fontSize: 13.5, color: RD.inkSoft, margin: 0, lineHeight: 1.5,
+              maxWidth: 380, marginLeft: 'auto', marginRight: 'auto',
+            }}>
+              Os campos abaixo aparecem ao longo da história. Você pode pular qualquer um — vai aparecer com o valor padrão da autora.
+            </p>
           </div>
-        ))}
+        </div>
+
+        {/* Campos */}
+        <div style={{ padding: '24px 32px', overflowY: 'auto', flex: 1 }}>
+          {errors.length > 0 && (
+            <div style={{
+              padding: '10px 14px', borderRadius: 8, marginBottom: 16,
+              background: RD.brickBg, border: `1px solid ${RD.brickSoft}`,
+              fontFamily: 'Inter', fontSize: 13, color: RD.brick, fontWeight: 500,
+            }}>
+              Por favor, preencha todos os campos obrigatórios.
+            </div>
+          )}
+          {questions.map((q, i) => (
+            <div key={q.id} style={{ marginBottom: 18 }}>
+              <label style={{
+                display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 6,
+              }}>
+                <span style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 600, color: RD.ink }}>
+                  {q.question_text}
+                  {q.required && <span style={{ color: RD.brick, marginLeft: 3 }}>*</span>}
+                </span>
+                {q.hint && (
+                  <span style={{ fontFamily: "'Fraunces', Georgia, serif", fontStyle: 'italic', fontSize: 11.5, color: RD.inkMute }}>
+                    {q.hint}
+                  </span>
+                )}
+              </label>
+
+              {isPronomeField(q) ? (
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {['ela/dela', 'ele/dele', 'elu/delu'].map(opt => (
+                    <button key={opt} onClick={() => setInputs(p => ({ ...p, [q.placeholder]: opt }))}
+                      style={{
+                        flex: 1, padding: '10px 12px', cursor: 'pointer',
+                        background: inputs[q.placeholder] === opt ? RD.brick : RD.surface,
+                        color: inputs[q.placeholder] === opt ? RD.onBrick : RD.ink,
+                        border: `1px solid ${inputs[q.placeholder] === opt ? RD.brick : RD.border}`,
+                        borderRadius: 8, fontFamily: 'Inter', fontSize: 13,
+                        fontWeight: inputs[q.placeholder] === opt ? 600 : 500,
+                        transition: 'background .12s, border-color .12s',
+                      }}>
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <input
+                  type="text"
+                  value={inputs[q.placeholder] || ''}
+                  onChange={e => {
+                    setInputs(p => ({ ...p, [q.placeholder]: e.target.value }));
+                    setErrors(err => err.filter(x => x !== q.placeholder));
+                  }}
+                  placeholder={q.default_answer || 'sua resposta…'}
+                  style={{
+                    width: '100%', padding: '10px 14px', boxSizing: 'border-box',
+                    border: `1px solid ${errors.includes(q.placeholder) ? RD.brick : RD.border}`,
+                    background: RD.paperAlt, borderRadius: 8, outline: 'none',
+                    fontFamily: "'Fraunces', Georgia, serif", fontSize: 14.5, color: RD.ink,
+                    transition: 'border-color .12s',
+                  }}
+                  onFocus={e => e.currentTarget.style.borderColor = RD.brick}
+                  onBlur={e => e.currentTarget.style.borderColor = errors.includes(q.placeholder) ? RD.brick : RD.border}
+                />
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Footer */}
+        <div style={{
+          padding: '18px 32px', borderTop: `1px solid ${RD.border}`,
+          background: RD.paperAlt, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16,
+        }}>
+          <button onClick={handleSkip} style={{
+            background: 'transparent', border: 'none', color: RD.inkSoft,
+            fontFamily: 'Inter', fontSize: 12.5, fontWeight: 500,
+            cursor: 'pointer', textDecoration: 'underline', padding: 0,
+          }}>
+            Pular · usar valores padrão
+          </button>
+          <button onClick={handleSubmit} style={{
+            display: 'inline-flex', alignItems: 'center', gap: 7,
+            padding: '10px 20px', borderRadius: 8, cursor: 'pointer',
+            background: RD.brick, color: RD.onBrick, border: 'none',
+            fontFamily: 'Inter', fontSize: 14, fontWeight: 600,
+          }}>
+            Começar a ler
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </button>
+        </div>
       </div>
-    </Modal>
+    </div>
   );
 }
 

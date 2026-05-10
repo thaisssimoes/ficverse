@@ -43,19 +43,21 @@ func (r *FanficRepository) Create(fanfic *models.Fanfic) error {
 	return nil
 }
 
-// populateStats calcula o total de views e likes (soma dos capítulos publicados) para cada fanfic.
+// populateStats calcula o total de views, likes e capítulos publicados para cada fanfic.
 func (r *FanficRepository) populateStats(fanfics []models.Fanfic) {
 	for i := range fanfics {
 		var stats struct {
-			TotalViews int
-			TotalLikes int
+			TotalViews   int
+			TotalLikes   int
+			ChapterCount int
 		}
 		r.db.Model(&models.Chapter{}).
-			Select("COALESCE(SUM(views_count), 0) as total_views, COALESCE(SUM(likes_count), 0) as total_likes").
+			Select("COALESCE(SUM(views_count), 0) as total_views, COALESCE(SUM(likes_count), 0) as total_likes, COUNT(*) as chapter_count").
 			Where("fanfic_id = ? AND is_draft = false", fanfics[i].ID).
 			Scan(&stats)
 		fanfics[i].TotalViews = stats.TotalViews
 		fanfics[i].TotalLikes = stats.TotalLikes
+		fanfics[i].ChapterCount = stats.ChapterCount
 	}
 }
 
@@ -73,6 +75,7 @@ func (r *FanficRepository) GetByID(id int) (*models.Fanfic, error) {
 	r.populateStats(slice)
 	fanfic.TotalViews = slice[0].TotalViews
 	fanfic.TotalLikes = slice[0].TotalLikes
+	fanfic.ChapterCount = slice[0].ChapterCount
 	return &fanfic, nil
 }
 
@@ -92,15 +95,16 @@ func (r *FanficRepository) GetByAuthorID(authorID int) ([]models.Fanfic, error) 
 func (r *FanficRepository) GetByAuthorIDWithDraftFilter(authorID int, includeDrafts bool) ([]models.Fanfic, error) {
 	var fanfics []models.Fanfic
 	query := r.db.Where("author_id = ?", authorID)
-	
+
 	if !includeDrafts {
 		query = query.Where("is_draft = ?", false)
 	}
-	
-	result := query.Order("created_at DESC").Find(&fanfics)
+
+	result := query.Preload("Author").Order("created_at DESC").Find(&fanfics)
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to get fanfics by author: %w", result.Error)
 	}
+	r.populateStats(fanfics)
 	return fanfics, nil
 }
 

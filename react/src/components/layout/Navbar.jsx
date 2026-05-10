@@ -2,7 +2,6 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../hooks/useAuth';
-import { useNotifications } from '../../hooks/useNotifications';
 import { authApi } from '../../services/api';
 import styles from './Navbar.module.css';
 
@@ -48,12 +47,6 @@ const IconUser = () => (
     <circle cx="12" cy="7" r="4" />
   </svg>
 );
-const IconBell = ({ size = 20 }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width={size} height={size} aria-hidden>
-    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-  </svg>
-);
 const IconSun = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" aria-hidden>
     <circle cx="12" cy="12" r="5" />
@@ -76,6 +69,11 @@ const IconLogout = () => (
   </svg>
 );
 /* Ícone de painel com seta — indica recolher/expandir sidebar */
+const IconAdmin = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" aria-hidden>
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+  </svg>
+);
 const IconPanelClose = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" width="16" height="16" aria-hidden>
     {/* painel esquerdo */}
@@ -97,11 +95,6 @@ const IconPanelOpen = () => (
 export default function Navbar({ readingMode = false }) {
   const { isAuthenticated, user, logout } = useAuth();
   const queryClient = useQueryClient();
-  const {
-    unreadCount, notifications, isOpen: notifOpen,
-    setIsOpen: setNotifOpen, markAsRead, markAllAsRead,
-  } = useNotifications();
-
   const location = useLocation();
   const publishGuideOpen = location.pathname === '/dashboard' || location.pathname === '/como-publicar';
 
@@ -143,7 +136,6 @@ export default function Navbar({ readingMode = false }) {
     }
   };
 
-  const notifRef = useRef(null);
   const mobileSearchRef = useRef(null);
 
   const toggleTheme = useCallback(() => {
@@ -155,14 +147,13 @@ export default function Navbar({ readingMode = false }) {
 
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (notifRef.current && !notifRef.current.contains(e.target)) setNotifOpen(false);
       if (mobileSearchRef.current && !mobileSearchRef.current.contains(e.target)) {
         setMobileSearchOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [setNotifOpen]);
+  }, []);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -182,33 +173,6 @@ export default function Navbar({ readingMode = false }) {
 
   const initials = user?.username?.charAt(0)?.toUpperCase() ?? '?';
 
-  /* ── Dropdown de notificações (compartilhado desktop/mobile) ── */
-  const NotifDropdown = () => (
-    <div className={styles.notifDropdown}>
-      <div className={styles.notifHeader}>
-        <span>Notificações</span>
-        <button className={styles.markAllBtn} onClick={markAllAsRead}>
-          Marcar todas como lidas
-        </button>
-      </div>
-      <div className={styles.notifList}>
-        {notifications.length === 0 ? (
-          <p className={styles.noNotif}>Nenhuma notificação</p>
-        ) : (
-          notifications.map((n) => (
-            <div
-              key={n.id}
-              className={`${styles.notifItem} ${!n.read ? styles.unread : ''}`}
-              onClick={() => markAsRead(n.id)}
-            >
-              <p className={styles.notifMsg}>{n.message}</p>
-            </div>
-          ))
-        )}
-      </div>
-    </div>
-  );
-
   return (
     <>
       {/* ═══════════════════════════════════════════════════
@@ -224,25 +188,22 @@ export default function Navbar({ readingMode = false }) {
         <Link
           to={isAuthenticated ? '/home' : '/'}
           className={styles.logo}
-          title="FicVerse"
+          title="ficverse"
         >
-          {isCompact ? 'FV' : 'FicVerse'}
+          {isCompact ? (
+            <span className={styles.logoCompact}>
+              <span className={styles.logoItalic}>f</span>
+              <span className={styles.logoDot} />
+            </span>
+          ) : (
+            <>
+              <span className={styles.logoItalic}>fic</span>
+              <span className={styles.logoDot} />
+              <span>verse</span>
+            </>
+          )}
         </Link>
 
-        {/* Search — oculto quando compacto */}
-        {!isCompact && (
-          <form className={styles.sideSearch} onSubmit={handleSearch}>
-            <IconExplore />
-            <input
-              type="text"
-              className={styles.sideSearchInput}
-              placeholder="Buscar histórias..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              aria-label="Buscar fanfics"
-            />
-          </form>
-        )}
 
         {/* Navegação principal */}
         <nav className={styles.sideNav}>
@@ -310,42 +271,11 @@ export default function Navbar({ readingMode = false }) {
           </>
         )}
 
+
         {/* Rodapé da sidebar */}
         <div className={styles.sidebarFooter}>
           {isAuthenticated ? (
             <>
-              {/* Notificações */}
-              <div className={styles.notifWrapper} ref={notifRef}>
-                <button
-                  className={`${styles.sideFooterBtn} ${isCompact ? styles.navItemCompact : ''}`}
-                  onClick={() => setNotifOpen(!notifOpen)}
-                  aria-label="Notificações"
-                  title="Notificações"
-                >
-                  <IconBell />
-                  {!isCompact && <span>Notificações</span>}
-                  {unreadCount > 0 && (
-                    <span className={styles.badge}>{unreadCount > 9 ? '9+' : unreadCount}</span>
-                  )}
-                </button>
-                {notifOpen && <NotifDropdown />}
-              </div>
-
-              {/* Perfil do usuário */}
-              <NavLink
-                to="/profile"
-                className={({ isActive }) => `${styles.userRow} ${isCompact ? styles.userRowCompact : ''} ${isActive ? styles.navActive : ''}`}
-                title={user?.username}
-              >
-                <div className={styles.avatar}>{initials}</div>
-                {!isCompact && (
-                  <div className={styles.userInfo}>
-                    <span className={styles.userDisplayName}>{user?.username}</span>
-                    <span className={styles.userHandle}>@{user?.username}</span>
-                  </div>
-                )}
-              </NavLink>
-
               {/* Logout */}
               <button
                 className={`${styles.logoutBtn} ${isCompact ? styles.navItemCompact : ''}`}
@@ -383,6 +313,17 @@ export default function Navbar({ readingMode = false }) {
             {!isCompact && <span>{isDark ? 'Modo Claro' : 'Modo Escuro'}</span>}
           </button>
 
+          {/* Botão Admin — visível apenas para admins */}
+          {isAuthenticated && user?.is_admin && (
+            <NavLink
+              to="/admin"
+              className={({ isActive }) => `${styles.navItem} ${isCompact ? styles.navItemCompact : ''} ${isActive ? styles.navActive : ''}`}
+              title="Painel Admin"
+            >
+              <IconAdmin />{!isCompact && <span>Admin</span>}
+            </NavLink>
+          )}
+
           {/* Botão de recolher/expandir — sempre visível */}
           <button
             className={styles.collapseBtn}
@@ -397,11 +338,58 @@ export default function Navbar({ readingMode = false }) {
       </aside>
 
       {/* ═══════════════════════════════════════════════════
+          DESKTOP: Content-area top bar (search + avatar)
+          ═══════════════════════════════════════════════════ */}
+      <div className={styles.contentTopBar}>
+        <form className={styles.contentTopBarSearch} onSubmit={handleSearch}>
+          <IconExplore />
+          <input
+            type="text"
+            className={styles.contentTopBarInput}
+            placeholder="Buscar histórias, autoras, universos..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            aria-label="Buscar fanfics"
+          />
+        </form>
+        <div className={styles.contentTopBarRight}>
+          {isAuthenticated && (
+            <Link
+              to="/dashboard"
+              className={styles.newFanficBtn}
+              title="Nova fanfic"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" width="14" height="14" aria-hidden>
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+              Nova fanfic
+            </Link>
+          )}
+          {isAuthenticated ? (
+            <NavLink
+              to="/profile"
+              className={styles.contentTopBarAvatar}
+              title={user?.username}
+            >
+              <div className={styles.avatar}>{initials}</div>
+            </NavLink>
+          ) : (
+            <div style={{ display: 'flex', gap: 8 }}>
+              <Link to="/login" className={styles.btnEntrar} style={{ padding: '7px 14px' }}>Entrar</Link>
+              <Link to="/login?tab=register" className={styles.btnCadastrar} style={{ padding: '7px 14px' }}>Cadastrar</Link>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ═══════════════════════════════════════════════════
           MOBILE: Topbar
           ═══════════════════════════════════════════════════ */}
       <header className={styles.topBar}>
-        <Link to={isAuthenticated ? '/home' : '/'} className={styles.logo}>
-          FicVerse
+        <Link to={isAuthenticated ? '/home' : '/'} className={styles.logo} title="ficverse">
+          <span className={styles.logoItalic}>fic</span>
+          <span className={styles.logoDot} />
+          <span>verse</span>
         </Link>
         <div className={styles.topBarActions}>
           {/* Busca mobile */}
@@ -426,23 +414,6 @@ export default function Navbar({ readingMode = false }) {
               </form>
             )}
           </div>
-
-          {/* Notificações mobile */}
-          {isAuthenticated && (
-            <div className={styles.notifWrapper} ref={notifRef}>
-              <button
-                className={styles.topIconBtn}
-                onClick={() => setNotifOpen(!notifOpen)}
-                aria-label="Notificações"
-              >
-                <IconBell size={20} />
-                {unreadCount > 0 && (
-                  <span className={styles.badge}>{unreadCount > 9 ? '9+' : unreadCount}</span>
-                )}
-              </button>
-              {notifOpen && <NotifDropdown />}
-            </div>
-          )}
 
           {/* Theme toggle mobile */}
           <button

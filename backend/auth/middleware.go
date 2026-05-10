@@ -101,3 +101,22 @@ func GetCurrentUserID(c *gin.Context) (int, bool) {
 	}
 	return userID.(int), true
 }
+
+// AdminMiddleware rejects requests from non-admin users with 403.
+// Must be used after AuthMiddleware (requires user to be set in context).
+func AdminMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		user, exists := GetCurrentUser(c)
+		if !exists || !user.IsAdmin {
+			c.JSON(http.StatusForbidden, gin.H{
+				"error": gin.H{
+					"code":    "FORBIDDEN",
+					"message": "Acesso restrito a administradoras.",
+				},
+			})
+			c.Abort()
+			return
+		}
+		c.Next()
+	}
+}

@@ -85,6 +85,7 @@ func Setup(router *gin.Engine, db *gorm.DB, cfg *config.Config, store storage.St
 
 	// Create handlers
 	authHandler := NewAuthHandler(authService)
+	adminHandler := NewAdminHandler(db)
 	fanficHandler := NewFanficHandler(db, store)
 	chapterHandler := NewChapterHandler(db, store)
 	interactiveHandler := NewInteractiveHandler(db)
@@ -269,6 +270,26 @@ func Setup(router *gin.Engine, db *gorm.DB, cfg *config.Config, store storage.St
 			// Moderation — delete or pin a specific message
 			wallGroup.DELETE("/:msgId", auth.AuthMiddleware(authService), wallHandler.DeleteWallMessage)
 			wallGroup.PUT("/:msgId/pin", auth.AuthMiddleware(authService), wallHandler.PinWallMessage)
+		}
+
+		// Admin routes — requer auth + is_admin
+		adminGroup := api.Group("/admin",
+			auth.AuthMiddleware(authService),
+			auth.AdminMiddleware(),
+		)
+		{
+			adminGroup.GET("/stats", adminHandler.GetStats)
+
+			adminGroup.GET("/users", adminHandler.ListUsers)
+			adminGroup.PUT("/users/:id/ban", adminHandler.BanUser)
+			adminGroup.DELETE("/users/:id/ban", adminHandler.UnbanUser)
+			adminGroup.PUT("/users/:id/admin", adminHandler.SetAdmin)
+
+			adminGroup.GET("/fanfics", adminHandler.ListFanfics)
+			adminGroup.DELETE("/fanfics/:id", adminHandler.DeleteFanfic)
+
+			adminGroup.GET("/reports", adminHandler.ListReports)
+			adminGroup.PUT("/reports/:id", adminHandler.ResolveReport)
 		}
 	}
 }

@@ -10,6 +10,8 @@ type User struct {
 	Bio          string    `gorm:"size:500" json:"bio"`
 	AvatarURL    string    `gorm:"size:512" json:"avatar_url"`
 	BannerURL    string    `gorm:"size:512" json:"banner_url"`
+	IsAdmin      bool      `gorm:"default:false;not null" json:"is_admin"`
+	IsBanned     bool      `gorm:"default:false;not null" json:"is_banned"`
 	CreatedAt    time.Time `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt    time.Time `gorm:"autoUpdateTime" json:"updated_at"`
 }

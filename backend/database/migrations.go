@@ -21,6 +21,14 @@ func RunSafeColumnMigrations(db *gorm.DB) {
 	migrateHiatusColumns(db)
 	migrateScheduledChapters(db)
 	migrateUserFollowsTable(db)
+	migrateAdminColumns(db)
+}
+
+// migrateAdminColumns adiciona is_admin e is_banned à tabela users.
+func migrateAdminColumns(db *gorm.DB) {
+	db.Exec(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin  BOOLEAN NOT NULL DEFAULT false`)
+	db.Exec(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_banned BOOLEAN NOT NULL DEFAULT false`)
+	log.Println("Admin columns ensured on users table.")
 }
 
 // migrateUserFollowsTable cria a tabela user_follows se não existir.

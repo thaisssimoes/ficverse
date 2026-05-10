@@ -6,24 +6,24 @@
 
 /* ---------- LIGHT MODE (padrão editorial) ---------- */
 :root {
-  /* Fundos — Bone White editorial (simula papel de alta gramatura) */
-  --color-bg-base:      #F9F8F3;
-  --color-bg-surface:   #FFFFFF;
-  --color-bg-elevated:  #F2F1EC;
+  /* Fundos — creme quente editorial (Atelier Alegre) */
+  --color-bg-base:      #fbf3e2;
+  --color-bg-surface:   #fffbf3;
+  --color-bg-elevated:  #f5e9cf;
 
-  /* Texto */
-  --color-text-primary:   #2B2823;
-  --color-text-secondary: #776B63;
-  --color-text-muted:     #9A9187;
+  /* Texto — ink quente */
+  --color-text-primary:   #1f1610;
+  --color-text-secondary: #4d3f30;
+  --color-text-muted:     #8c7a62;
 
-  /* Bordas neutras — sem tint de cor */
-  --color-border-subtle: #EAEAEA;
-  --color-border:        #D4D0C8;
+  /* Bordas neutras — quentes */
+  --color-border-subtle: #ead8b3;
+  --color-border:        #d2bd92;
 
-  /* Accent teal editorial — reservado estritamente para interações */
-  --color-accent-brand:  #005871;
-  --color-accent-hover:  #004660;
-  --color-accent-alt:    #0369a1;
+  /* Accent brick editorial — reservado estritamente para interações */
+  --color-accent-brand:  #d24a2e;
+  --color-accent-hover:  #a23320;
+  --color-accent-alt:    #e0a428;
 
   /* Estados */
   --color-success: #10b981;
@@ -32,9 +32,10 @@
   --color-info:    #3b82f6;
 
   /* Tipografia */
-  --font-serif:     'Lora', 'Georgia', serif;
-  --font-display:   'DM Serif Display', 'Georgia', serif;
-  --font-sans:      'Inter', 'DM Sans', system-ui, sans-serif;
+  --font-serif:     'Fraunces', 'Georgia', serif;
+  --font-display:   'Fraunces', 'Georgia', serif;
+  --font-sans:      'Inter', system-ui, sans-serif;
+  --font-mono:      'JetBrains Mono', 'SF Mono', Menlo, monospace;
 
   /* Escala tipográfica (usando clamp para fluidez) */
   --text-label: 0.700rem;                                  /* 14px — títulos de seção uppercase */
@@ -117,6 +118,24 @@
   --transition-slow:   0.4s ease;
   --transition-spring: 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
 
+  /* Cores estendidas da paleta Atelier Alegre */
+  --color-brick:      #d24a2e;
+  --color-brick-deep: #a23320;
+  --color-brick-bg:   #fce8df;
+  --color-brick-soft: #fad6cc;
+  --color-moss:       #5a8038;
+  --color-moss-bg:    #ecf2da;
+  --color-moss-soft:  #d6e0b9;
+  --color-mustard:    #e0a428;
+  --color-mustard-bg: #fcefc7;
+  --color-mustard-soft: #f5dfa3;
+  --color-plum:       #6e2c52;
+  --color-plum-bg:    #f7e0eb;
+  --color-plum-soft:  #e8c8d6;
+  --color-sky:        #3a8aa8;
+  --color-sky-bg:     #d6eaf2;
+  --color-sky-soft:   #c4dde5;
+
   /* ---- Aliases de compatibilidade (componentes legados) ---- */
 
   /* Tipografia */
@@ -159,18 +178,18 @@
 
   /* Accent (aliases legados) */
   --primary-purple:  var(--color-accent-brand);
-  --primary-blue:    var(--color-accent-alt);
-  --primary-pink:    #be185d;
+  --primary-blue:    #3a8aa8;
+  --primary-pink:    #6e2c52;
 
-  /* Gradientes — usados em placeholders de capa */
-  --gradient-purple-blue:  linear-gradient(135deg, #005871 0%, #0369a1 100%);
-  --gradient-pink-purple:  linear-gradient(135deg, #be185d 0%, #005871 100%);
-  --gradient-blue-cyan:    linear-gradient(135deg, #0369a1 0%, #06b6d4 100%);
-  --gradient-hero:         linear-gradient(135deg, #005871 0%, #004660 100%);
+  /* Gradientes — paleta Atelier Alegre */
+  --gradient-purple-blue:  linear-gradient(135deg, #d24a2e 0%, #a23320 100%);
+  --gradient-pink-purple:  linear-gradient(135deg, #6e2c52 0%, #d24a2e 100%);
+  --gradient-blue-cyan:    linear-gradient(135deg, #3a8aa8 0%, #5a8038 100%);
+  --gradient-hero:         linear-gradient(135deg, #d24a2e 0%, #a23320 100%);
 
-  /* Sombras com accent */
-  --shadow-purple:    0 4px 16px rgba(0, 88, 113, 0.18);
-  --shadow-purple-lg: 0 8px 32px rgba(0, 88, 113, 0.24);
+  /* Sombras com accent brick */
+  --shadow-purple:    0 4px 16px rgba(210, 74, 46, 0.18);
+  --shadow-purple-lg: 0 8px 32px rgba(210, 74, 46, 0.24);
 
   /* Tags — neutras, discretas */
   --tag-fandom-bg:     rgba(0, 0, 0, 0.05);
