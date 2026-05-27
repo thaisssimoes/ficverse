@@ -16,6 +16,7 @@ build/
 
 # Uploads locais
 backend/uploads/
+backend/fanfic/uploads/
 
 # Go binários
 backend/*.exe
