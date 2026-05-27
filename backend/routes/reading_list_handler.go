@@ -23,15 +23,16 @@ func NewReadingListHandler(db *gorm.DB) *ReadingListHandler {
 
 // ReadingListItem represents a fanfic in the user's reading list
 type ReadingListItem struct {
-	FanficID           int     `json:"fanfic_id"`
-	FanficTitle        string  `json:"fanfic_title"`
-	FanficCoverURL     string  `json:"fanfic_cover_url"`
-	FanficCategory     string  `json:"fanfic_category"`
-	FanficSynopsis     string  `json:"fanfic_synopsis"`
-	LastChapterRead    int     `json:"last_chapter_read"`
-	TotalChapters      int     `json:"total_chapters"`
-	LastReadAt         string  `json:"last_read_at"`
-	ProgressPercentage float64 `json:"progress_percentage"`
+	FanficID              int     `json:"fanfic_id"`
+	FanficTitle           string  `json:"fanfic_title"`
+	FanficCoverURL        string  `json:"fanfic_cover_url"`
+	FanficCategory        string  `json:"fanfic_category"`
+	FanficSynopsis        string  `json:"fanfic_synopsis"`
+	FanficInteractiveMode bool    `json:"fanfic_interactive_mode"`
+	LastChapterRead       int     `json:"last_chapter_read"`
+	TotalChapters         int     `json:"total_chapters"`
+	LastReadAt            string  `json:"last_read_at"`
+	ProgressPercentage    float64 `json:"progress_percentage"`
 }
 
 // GetReadingList retrieves the user's reading list
@@ -81,15 +82,16 @@ func (h *ReadingListHandler) GetReadingList(c *gin.Context) {
 		}
 
 		readingList = append(readingList, ReadingListItem{
-			FanficID:           progress.Fanfic.ID,
-			FanficTitle:        progress.Fanfic.Title,
-			FanficCoverURL:     progress.Fanfic.CoverURL,
-			FanficCategory:     progress.Fanfic.Category,
-			FanficSynopsis:     progress.Fanfic.Synopsis,
-			LastChapterRead:    progress.LastChapterRead,
-			TotalChapters:      int(totalChapters),
-			LastReadAt:         progress.LastReadAt.Format("2006-01-02T15:04:05Z07:00"),
-			ProgressPercentage: progressPercentage,
+			FanficID:              progress.Fanfic.ID,
+			FanficTitle:           progress.Fanfic.Title,
+			FanficCoverURL:        progress.Fanfic.CoverURL,
+			FanficCategory:        progress.Fanfic.Category,
+			FanficSynopsis:        progress.Fanfic.Synopsis,
+			FanficInteractiveMode: progress.Fanfic.InteractiveMode,
+			LastChapterRead:       progress.LastChapterRead,
+			TotalChapters:         int(totalChapters),
+			LastReadAt:            progress.LastReadAt.Format("2006-01-02T15:04:05Z07:00"),
+			ProgressPercentage:    progressPercentage,
 		})
 	}
 

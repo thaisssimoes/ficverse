@@ -3,7 +3,6 @@ import { useAuth } from './hooks/useAuth';
 
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import HomePage from './pages/HomePage';
@@ -17,6 +16,7 @@ import PublicProfilePage from './pages/PublicProfilePage';
 import DashboardPage from './pages/DashboardPage';
 import ProfilesPage from './pages/ProfilesPage';
 import GuiaPage from './pages/GuiaPage';
+import AdminPage from './pages/AdminPage';
 import NotFoundPage from './pages/NotFoundPage';
 
 function PrivateRoute({ children }) {
@@ -31,7 +31,7 @@ export default function App() {
         {/* Públicas */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/register" element={<Navigate to="/login?tab=register" replace />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/explore" element={<ExplorePage />} />
@@ -47,6 +47,7 @@ export default function App() {
         <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
         <Route path="/profiles" element={<PrivateRoute><ProfilesPage /></PrivateRoute>} />
         <Route path="/dashboard" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
+        <Route path="/admin" element={<AdminPage />} />
 
         {/* 404 */}
         <Route path="*" element={<NotFoundPage />} />

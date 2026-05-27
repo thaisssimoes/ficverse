@@ -130,24 +130,43 @@
   text-overflow: ellipsis;
 }
 
-.followBtn {
+.bookmarkBtn {
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: none;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-full);
-  padding: var(--space-1) var(--space-3);
-  font-family: var(--font-sans);
-  font-size: var(--text-xs);
-  font-weight: 600;
-  color: var(--color-text-secondary);
+  border: none;
+  padding: var(--space-1);
+  margin-top: 6px;
+  color: var(--color-text-muted);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: color var(--transition-fast);
 }
 
-.followBtn:hover {
-  border-color: var(--color-accent-brand);
+.bookmarkBtn:hover {
   color: var(--color-accent-brand);
-  background-color: rgba(0, 88, 113, 0.04);
+}
+
+.bookmarkBtnActive {
+  color: var(--color-accent-brand);
+}
+
+/* Stats: views, likes, seguidores */
+.statsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+}
+
+.statItem {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
 }
 
 /* Informações */
@@ -190,6 +209,14 @@
   gap: var(--space-3);
 }
 
+.titleWithBookmark {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  flex: 1;
+  min-width: 0;
+}
+
 .title {
   font-family: var(--font-display);
   font-size: clamp(1.75rem, 3vw, 3rem);
@@ -199,6 +226,7 @@
   color: var(--color-text-primary);
   flex: 1;
   min-width: 0;
+  margin: 0;
 }
 
 /* Badge de status de conclusão (ao lado do título) */

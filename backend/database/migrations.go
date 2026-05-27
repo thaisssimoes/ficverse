@@ -20,6 +20,27 @@ func RunSafeColumnMigrations(db *gorm.DB) {
 	migrateTagUniqueIndex(db)
 	migrateHiatusColumns(db)
 	migrateScheduledChapters(db)
+	migrateUserFollowsTable(db)
+	migrateAdminColumns(db)
+}
+
+// migrateAdminColumns adiciona is_admin e is_banned à tabela users.
+func migrateAdminColumns(db *gorm.DB) {
+	db.Exec(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin  BOOLEAN NOT NULL DEFAULT false`)
+	db.Exec(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_banned BOOLEAN NOT NULL DEFAULT false`)
+	log.Println("Admin columns ensured on users table.")
+}
+
+// migrateUserFollowsTable cria a tabela user_follows se não existir.
+func migrateUserFollowsTable(db *gorm.DB) {
+	if err := db.Exec(`CREATE TABLE IF NOT EXISTS user_follows (
+		follower_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+		following_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+		created_at   TIMESTAMPTZ DEFAULT NOW(),
+		PRIMARY KEY (follower_id, following_id)
+	)`).Error; err != nil {
+		log.Printf("Warning: could not create user_follows table: %v", err)
+	}
 }
 
 // migrateCommentsColumns garante que comments tenha parent_id e likes_count.

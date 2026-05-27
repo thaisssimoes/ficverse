@@ -8,9 +8,15 @@ import styles from './StoryCard.module.css';
  * @param {object}  fanfic         - Dados da história
  * @param {'grid'|'list'} variant  - 'grid' = foco na capa (Wattpad), 'list' = detalhes (Substack)
  */
-const MAX_VISIBLE_TAGS = 3; // Lei de Hick: limita opções visíveis para reduzir carga cognitiva
+const MAX_VISIBLE_TAGS = 3;
 
-export default function StoryCard({ fanfic, variant = 'grid' }) {
+// Remove tags HTML da sinopse (salva pelo QuillEditor) para exibição plain-text
+function stripHtml(html) {
+  if (!html) return '';
+  return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+export default function StoryCard({ fanfic, variant = 'grid', onPreview }) {
   const coverUrl = fanfic.cover_url ? fanficApi.getAssetUrl(fanfic.cover_url) : null;
   const initial = fanfic.title?.charAt(0)?.toUpperCase() ?? '?';
 
@@ -65,8 +71,8 @@ export default function StoryCard({ fanfic, variant = 'grid' }) {
   }
 
   /* variante 'grid' (padrão) — foco na capa, info mínima */
-  return (
-    <Link to={`/fanfic/${fanfic.id}`} className={`${styles.card} ${styles.grid}`}>
+  const gridContent = (
+    <>
       {/* Capa com proporção 512:800 (padrão de livro) */}
       <div className={styles.coverWrapper}>
         {coverUrl ? (
@@ -82,13 +88,39 @@ export default function StoryCard({ fanfic, variant = 'grid' }) {
         </span>
       </div>
 
-      {/* Info mínima — título e autor apenas */}
+      {/* Info — título, sinopse (2 linhas), autor, tags */}
       <div className={styles.gridInfo}>
         <span className={styles.gridTitle}>{fanfic.title}</span>
+        {fanfic.synopsis && (
+          <p className={styles.gridSynopsis}>{stripHtml(fanfic.synopsis)}</p>
+        )}
         {fanfic.author_username && (
           <span className={styles.gridAuthor}>{fanfic.author_username}</span>
         )}
+        {fanfic.tags?.length > 0 && (
+          <div className={styles.gridTags}>
+            {fanfic.tags.slice(0, 2).map((tag) => (
+              <span key={typeof tag === 'string' ? tag : tag.id} className={styles.gridTag}>
+                {typeof tag === 'string' ? tag : tag.name}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
+    </>
+  );
+
+  if (onPreview) {
+    return (
+      <button type="button" onClick={onPreview} className={`${styles.card} ${styles.grid} ${styles.gridBtn}`}>
+        {gridContent}
+      </button>
+    );
+  }
+
+  return (
+    <Link to={`/fanfic/${fanfic.id}`} className={`${styles.card} ${styles.grid}`}>
+      {gridContent}
     </Link>
   );
 }

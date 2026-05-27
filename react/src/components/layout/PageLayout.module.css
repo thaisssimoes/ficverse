@@ -7,19 +7,18 @@
   min-height: 100vh;
 }
 
-/* Área principal — largura total da viewport, padding-left empurra o conteúdo para fora da nav */
+/* Área principal — padding-left empurra o conteúdo para fora da nav; padding-top para a topbar */
 .main {
   flex: 1;
-  /* padding-left empurra o conteúdo, mas o centro é calculado sobre a largura total */
-  padding: var(--space-10) var(--space-8) var(--space-16) calc(var(--nav-sidebar-width) + var(--space-8));
+  padding: calc(56px + var(--space-8)) var(--space-8) var(--space-16) calc(var(--nav-sidebar-width) + var(--space-8));
   min-width: 0;
-  /* Transição suave quando o menu recolhe/expande */
+  font-size: 1.1rem;
   transition: padding-left 0.22s ease;
 }
 
 /* Sem max-width (páginas de leitura, hero full-width) */
 .fullWidth {
-  padding: 0 0 0 var(--nav-sidebar-width);
+  padding: 56px 0 0 var(--nav-sidebar-width);
 }
 
 /* Sem nav — ocupa a tela toda (usado em ReadingEnvironment) */

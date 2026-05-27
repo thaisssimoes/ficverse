@@ -271,6 +271,12 @@ export const userApi = {
   blockUser: (userId) => request(`/user/${userId}/block`, { method: 'POST' }),
 
   unblockUser: (userId) => request(`/user/${userId}/block`, { method: 'DELETE' }),
+
+  getFollowStatus: (userId) => request(`/user/${userId}/follow`),
+
+  followUser: (userId) => request(`/user/${userId}/follow`, { method: 'POST' }),
+
+  unfollowUser: (userId) => request(`/user/${userId}/follow`, { method: 'DELETE' }),
 };
 
 // Mural (wall) de conversas do perfil
@@ -296,4 +302,19 @@ export const profileApi = {
   createProfile: (data) => request('/profile/profiles', { method: 'POST', body: JSON.stringify(data) }),
   updateProfile: (id, data) => request(`/profile/profiles/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteProfile: (id) => request(`/profile/profiles/${id}`, { method: 'DELETE' }),
+};
+
+// Admin
+export const adminApi = {
+  getStats: () => request('/admin/stats'),
+  getUsers: ({ page = 1, search = '' } = {}) =>
+    request(`/admin/users?page=${page}&search=${encodeURIComponent(search)}`),
+  banUser:   (userId) => request(`/admin/users/${userId}/ban`,   { method: 'POST' }),
+  unbanUser: (userId) => request(`/admin/users/${userId}/ban`,   { method: 'DELETE' }),
+  setAdmin:  (userId, admin) => request(`/admin/users/${userId}/admin`, { method: 'PUT', body: JSON.stringify({ is_admin: admin }) }),
+  getFanfics: ({ search = '' } = {}) =>
+    request(`/admin/fanfics?search=${encodeURIComponent(search)}`),
+  deleteFanfic: (id) => request(`/admin/fanfics/${id}`, { method: 'DELETE' }),
+  getReports: () => request('/admin/reports'),
+  resolveReport: (id, action) => request(`/admin/reports/${id}`, { method: 'PUT', body: JSON.stringify({ action }) }),
 };

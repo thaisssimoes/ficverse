@@ -85,6 +85,7 @@ func Setup(router *gin.Engine, db *gorm.DB, cfg *config.Config, store storage.St
 
 	// Create handlers
 	authHandler := NewAuthHandler(authService)
+	adminHandler := NewAdminHandler(db)
 	fanficHandler := NewFanficHandler(db, store)
 	chapterHandler := NewChapterHandler(db, store)
 	interactiveHandler := NewInteractiveHandler(db)
@@ -250,9 +251,14 @@ func Setup(router *gin.Engine, db *gorm.DB, cfg *config.Config, store storage.St
 			userGroup.POST("/banner", auth.AuthMiddleware(authService), userHandler.UploadBanner)
 			// Public profile by username (optional auth to check block status)
 			userGroup.GET("/:username", auth.OptionalAuthMiddleware(authService), userHandler.GetPublicProfile)
+			// Follow / unfollow — parâmetro :username usado como ID numérico
+			// (mesmo nome que o profile route para evitar conflito de wildcard no Gin)
+			userGroup.GET("/:username/follow", auth.AuthMiddleware(authService), userHandler.GetFollowStatus)
+			userGroup.POST("/:username/follow", auth.AuthMiddleware(authService), userHandler.FollowUser)
+			userGroup.DELETE("/:username/follow", auth.AuthMiddleware(authService), userHandler.UnfollowUser)
 			// Block / unblock
-			userGroup.POST("/:id/block", auth.AuthMiddleware(authService), userHandler.BlockUser)
-			userGroup.DELETE("/:id/block", auth.AuthMiddleware(authService), userHandler.UnblockUser)
+			userGroup.POST("/:username/block", auth.AuthMiddleware(authService), userHandler.BlockUser)
+			userGroup.DELETE("/:username/block", auth.AuthMiddleware(authService), userHandler.UnblockUser)
 		}
 
 		// Wall (mural) routes
@@ -264,6 +270,26 @@ func Setup(router *gin.Engine, db *gorm.DB, cfg *config.Config, store storage.St
 			// Moderation — delete or pin a specific message
 			wallGroup.DELETE("/:msgId", auth.AuthMiddleware(authService), wallHandler.DeleteWallMessage)
 			wallGroup.PUT("/:msgId/pin", auth.AuthMiddleware(authService), wallHandler.PinWallMessage)
+		}
+
+		// Admin routes — requer auth + is_admin
+		adminGroup := api.Group("/admin",
+			auth.AuthMiddleware(authService),
+			auth.AdminMiddleware(),
+		)
+		{
+			adminGroup.GET("/stats", adminHandler.GetStats)
+
+			adminGroup.GET("/users", adminHandler.ListUsers)
+			adminGroup.PUT("/users/:id/ban", adminHandler.BanUser)
+			adminGroup.DELETE("/users/:id/ban", adminHandler.UnbanUser)
+			adminGroup.PUT("/users/:id/admin", adminHandler.SetAdmin)
+
+			adminGroup.GET("/fanfics", adminHandler.ListFanfics)
+			adminGroup.DELETE("/fanfics/:id", adminHandler.DeleteFanfic)
+
+			adminGroup.GET("/reports", adminHandler.ListReports)
+			adminGroup.PUT("/reports/:id", adminHandler.ResolveReport)
 		}
 	}
 }

@@ -25,4 +25,9 @@ type Fanfic struct {
 	Author   User      `gorm:"foreignKey:AuthorID" json:"author,omitempty"`
 	Chapters []Chapter `gorm:"foreignKey:FanficID" json:"chapters,omitempty"`
 	Tags     []Tag     `gorm:"many2many:fanfic_tags" json:"tags,omitempty"`
+
+	// Campos calculados — não persistidos no banco
+	TotalViews   int `gorm:"-" json:"total_views"`
+	TotalLikes   int `gorm:"-" json:"total_likes"`
+	ChapterCount int `gorm:"-" json:"chapter_count"`
 }

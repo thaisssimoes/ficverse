@@ -40,9 +40,9 @@ export default function FeedList({ chapters = [], onReadChapter, onLikeChapter, 
       {chapters.length === 0 ? (
         <p className={styles.empty}>Nenhum capítulo disponível ainda.</p>
       ) : (
-        chapters.map((ch) => (
+        chapters.map((ch, i) => (
           <div key={ch.id} className={styles.item}>
-            <span className={styles.chapterNum}>Cap. {ch.order}</span>
+            <span className={styles.chapterNum}>Cap. {i + 1}</span>
 
             <div className={styles.chapterInfo}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', minWidth: 0 }}>

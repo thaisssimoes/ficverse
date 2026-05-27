@@ -28,13 +28,15 @@ func NewUserHandler(db *gorm.DB, authService *auth.AuthService, store storage.St
 
 // PublicProfileResponse is the public-facing profile payload
 type PublicProfileResponse struct {
-	ID           int    `json:"id"`
-	Username     string `json:"username"`
-	Bio          string `json:"bio"`
-	AvatarURL    string `json:"avatar_url"`
-	BannerURL    string `json:"banner_url"`
-	FanficsCount int64  `json:"fanfics_count"`
-	IsBlocked    bool   `json:"is_blocked"`
+	ID             int    `json:"id"`
+	Username       string `json:"username"`
+	Bio            string `json:"bio"`
+	AvatarURL      string `json:"avatar_url"`
+	BannerURL      string `json:"banner_url"`
+	FanficsCount   int64  `json:"fanfics_count"`
+	FollowersCount int64  `json:"followers_count"`
+	IsBlocked      bool   `json:"is_blocked"`
+	IsFollowing    bool   `json:"is_following"`
 }
 
 // GetPublicProfile — GET /api/user/:username (no auth required)
@@ -47,25 +49,35 @@ func (h *UserHandler) GetPublicProfile(c *gin.Context) {
 		return
 	}
 
-	var count int64
-	h.db.Model(&models.Fanfic{}).Where("author_id = ? AND is_draft = false", user.ID).Count(&count)
+	var fanficsCount int64
+	h.db.Model(&models.Fanfic{}).Where("author_id = ? AND is_draft = false", user.ID).Count(&fanficsCount)
+
+	var followersCount int64
+	h.db.Model(&models.UserFollow{}).Where("following_id = ?", user.ID).Count(&followersCount)
 
 	isBlocked := false
+	isFollowing := false
 	if callerID, exists := c.Get("user_id"); exists {
 		var block models.UserBlock
 		if err := h.db.Where("blocker_id = ? AND blocked_id = ?", callerID, user.ID).First(&block).Error; err == nil {
 			isBlocked = true
 		}
+		var follow models.UserFollow
+		if err := h.db.Where("follower_id = ? AND following_id = ?", callerID, user.ID).First(&follow).Error; err == nil {
+			isFollowing = true
+		}
 	}
 
 	c.JSON(http.StatusOK, PublicProfileResponse{
-		ID:           user.ID,
-		Username:     user.Username,
-		Bio:          user.Bio,
-		AvatarURL:    user.AvatarURL,
-		BannerURL:    user.BannerURL,
-		FanficsCount: count,
-		IsBlocked:    isBlocked,
+		ID:             user.ID,
+		Username:       user.Username,
+		Bio:            user.Bio,
+		AvatarURL:      user.AvatarURL,
+		BannerURL:      user.BannerURL,
+		FanficsCount:   fanficsCount,
+		FollowersCount: followersCount,
+		IsBlocked:      isBlocked,
+		IsFollowing:    isFollowing,
 	})
 }
 
@@ -175,10 +187,60 @@ func (h *UserHandler) UploadBanner(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"banner_url": url})
 }
 
-// BlockUser — POST /api/user/:id/block
+// FollowUser — POST /api/user/:username/follow
+func (h *UserHandler) FollowUser(c *gin.Context) {
+	followerID := c.GetInt("user_id")
+	followingID, err := strconv.Atoi(c.Param("username"))
+	if err != nil || followingID == followerID {
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: ErrorDetail{Code: "INVALID_ID", Message: "ID inválido"}})
+		return
+	}
+	follow := models.UserFollow{FollowerID: followerID, FollowingID: followingID}
+	if err := h.db.FirstOrCreate(&follow, follow).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: ErrorDetail{Code: "DB_ERROR", Message: "Erro ao seguir usuário"}})
+		return
+	}
+	var count int64
+	h.db.Model(&models.UserFollow{}).Where("following_id = ?", followingID).Count(&count)
+	c.JSON(http.StatusOK, gin.H{"following": true, "followers_count": count})
+}
+
+// UnfollowUser — DELETE /api/user/:username/follow
+func (h *UserHandler) UnfollowUser(c *gin.Context) {
+	followerID := c.GetInt("user_id")
+	followingID, err := strconv.Atoi(c.Param("username"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: ErrorDetail{Code: "INVALID_ID", Message: "ID inválido"}})
+		return
+	}
+	if err := h.db.Where("follower_id = ? AND following_id = ?", followerID, followingID).Delete(&models.UserFollow{}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: ErrorDetail{Code: "DB_ERROR", Message: "Erro ao deixar de seguir"}})
+		return
+	}
+	var count int64
+	h.db.Model(&models.UserFollow{}).Where("following_id = ?", followingID).Count(&count)
+	c.JSON(http.StatusOK, gin.H{"following": false, "followers_count": count})
+}
+
+// GetFollowStatus — GET /api/user/:username/follow
+func (h *UserHandler) GetFollowStatus(c *gin.Context) {
+	followerID := c.GetInt("user_id")
+	followingID, err := strconv.Atoi(c.Param("username"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: ErrorDetail{Code: "INVALID_ID", Message: "ID inválido"}})
+		return
+	}
+	var follow models.UserFollow
+	isFollowing := h.db.Where("follower_id = ? AND following_id = ?", followerID, followingID).First(&follow).Error == nil
+	var count int64
+	h.db.Model(&models.UserFollow{}).Where("following_id = ?", followingID).Count(&count)
+	c.JSON(http.StatusOK, gin.H{"following": isFollowing, "followers_count": count})
+}
+
+// BlockUser — POST /api/user/:username/block
 func (h *UserHandler) BlockUser(c *gin.Context) {
 	blockerID := c.GetInt("user_id")
-	blockedID, err := strconv.Atoi(c.Param("id"))
+	blockedID, err := strconv.Atoi(c.Param("username"))
 	if err != nil || blockedID == blockerID {
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: ErrorDetail{Code: "INVALID_ID", Message: "ID inválido"}})
 		return
@@ -192,10 +254,10 @@ func (h *UserHandler) BlockUser(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Usuário bloqueado"})
 }
 
-// UnblockUser — DELETE /api/user/:id/block
+// UnblockUser — DELETE /api/user/:username/block
 func (h *UserHandler) UnblockUser(c *gin.Context) {
 	blockerID := c.GetInt("user_id")
-	blockedID, err := strconv.Atoi(c.Param("id"))
+	blockedID, err := strconv.Atoi(c.Param("username"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: ErrorDetail{Code: "INVALID_ID", Message: "ID inválido"}})
 		return
