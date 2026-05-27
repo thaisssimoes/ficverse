@@ -1,6 +1,8 @@
-# Interactive Fanfic Platform
+# Ficverse — Interactive Fanfic Platform
 
-A plataforma de fanfics interativas permite aos usuários publicar e ler histórias de fãs com um recurso único de personalização através de perguntas interativas.
+A fanfic publishing platform with a personalization layer: authors can mark spots in the story where the reader is asked a question (their own name, a friend's name, a favorite color), and the platform substitutes those answers into the text as the reader goes through the chapters.
+
+> **Working title.** `ficverse` is a placeholder repo name — the product brand is still being chosen. The original codename is "Lollipopfics".
 
 ## Project Structure
 
@@ -13,10 +15,8 @@ A plataforma de fanfics interativas permite aos usuários publicar e ler histór
 │   ├── routes/       # HTTP routes
 │   └── main.go       # Application entry point
 │
-└── frontend/         # Web frontend
-    ├── css/          # Stylesheets
-    ├── js/           # JavaScript files
-    └── *.html        # HTML pages
+└── react/            # React + Vite frontend
+    └── src/
 ```
 
 ## Backend Setup
@@ -59,20 +59,15 @@ The backend will start on `http://localhost:8080`.
 
 ## Frontend Setup
 
-The frontend is a static web application that can be served using any web server.
-
-### Development
-
-You can use a simple HTTP server to serve the frontend:
+The frontend is a React + Vite app.
 
 ```bash
-cd frontend
-python -m http.server 3000
+cd react
+npm install
+npm run dev
 ```
 
-Or use any other static file server of your choice.
-
-The frontend will be available at `http://localhost:3000`.
+The frontend will be available at `http://localhost:5173`.
 
 ## Database Schema
 
@@ -107,11 +102,11 @@ The application uses the following tables:
 - `PUT /api/chapters/:id` - Update chapter (authenticated)
 - `DELETE /api/chapters/:id` - Delete chapter (authenticated)
 
-### Interactive Mode
-- `GET /api/fanfics/:id/questions` - List questions
+### Personalization (interactive substitution)
+- `GET /api/fanfics/:id/questions` - List the substitution questions defined by the author
 - `POST /api/fanfics/:id/questions` - Create question (authenticated)
-- `GET /api/fanfics/:id/answers` - Get user answers (authenticated)
-- `POST /api/fanfics/:id/answers` - Save answers (authenticated)
+- `GET /api/fanfics/:id/answers` - Get the reader's saved answers (authenticated)
+- `POST /api/fanfics/:id/answers` - Save the reader's answers (authenticated)
 
 ### Comments
 - `GET /api/fanfics/:id/comments` - Get fanfic comments
