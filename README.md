@@ -119,4 +119,8 @@ This project is being developed incrementally following the task list in `.kiro/
 
 ## License
 
-MIT
+All rights reserved.
+
+This source is published for reference and portfolio purposes only. No permission is granted to use, copy, modify, merge, publish, distribute, sublicense, or sell copies of the code, in whole or in part, without explicit written permission from the author.
+
+A formal open-source or source-available license may be adopted in the future as the product matures.
